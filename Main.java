@@ -4,26 +4,73 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetype
 
 public class Main {
     public static void main(String args[]) throws Exception {
+        try {
+            if(args.length < 1)
+                throw new Exception("You should have at least two arguments: massa [entity] [action] [parameters]");
+
+            switch (args[0])
+            {
+                case "init":
+                    InitCAHierarchyDemo initCAHierarchyDemo = new InitCAHierarchyDemo();
+                    initCAHierarchyDemo.init();
+                    return;
+
+                case "its":
+                    switch (args[1])
+                    {
+                        case "-genreq":
+                            String pathToEnrollmentCA = args[3];
+                            String pathToOutputFile = args[5];
+                            ITSEntityDemo itsStation = new ITSEntityDemo();
+                            EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = itsStation.generateInitialEnrollmentRequest(pathToEnrollmentCA);
+                            Utils.dumpToFile(pathToOutputFile, initialEnrolRequestMessage);
+                            System.out.println("InitialEnrolRequestMessage : " + initialEnrolRequestMessage.toString() + "\n");
+                            return;
+
+                    }
+
+                case "ea":
+                    switch (args[1])
+                    {
+                        case "-genrsp":
+                            String pathToRootCA = args[3];
+                            String pathToEnrollmentCA = args[5];
+                            String pathToEaSignPublicKey = args[7];
+                            String pathToEaSignPrivateKey = args[9];
+                            String pathToEaEncPrivateKey = args[11];
+                            String pathToOutput = args[13];
+
+                            EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = Utils.readDataEncryptedUnicast("certificates/enroll-request.bin");
+                            EnrollmentAuthorityAppDemo ea_app = new EnrollmentAuthorityAppDemo(pathToEnrollmentCA,pathToRootCA);
+                            EtsiTs103097DataEncryptedUnicast enrolResponseMessage = ea_app.verifyEnrollmentRequestMessage(initialEnrolRequestMessage, pathToEaSignPublicKey, pathToEaSignPrivateKey, pathToEaEncPrivateKey);
+                            Utils.dumpToFile(pathToOutput, enrolResponseMessage);
+                            System.out.println("EnrolResponseMessage : " + enrolResponseMessage.toString() + "\n");
+                            return;
+                    }
+
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println(e.toString());
+            return;
+        }
+
+
         System.out.println("Medvei is here! Let the tests begin!");
 
         /* Initialize the CA hierarchy: RootCA, EnrollmentCA, AuthorizationCA */
-        InitCAHierarchyDemo initCAHierarchyDemo = new InitCAHierarchyDemo();
-        initCAHierarchyDemo.init();
+
+
 
         /* Generate the initial enrollment request (if necessary) [–genreq –outreq EnrollmentRequest.bin ] */
-        ITSEntityDemo itsStation = new ITSEntityDemo();
-        EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = itsStation.generateInitialEnrollmentRequest();
-        Utils.dumpToFile("enrollment//EnrollmentRequest.bin ", initialEnrolRequestMessage);
-        System.out.println("InitialEnrolRequestMessage : " + initialEnrolRequestMessage.toString() + "\n");
+
 
         /* Generate the corresponding enrollment response */
-        EnrollmentAuthorityAppDemo ea_app = new EnrollmentAuthorityAppDemo();
-        EtsiTs103097DataEncryptedUnicast enrolResponseMessage = ea_app.verifyEnrollmentRequestMessage(initialEnrolRequestMessage);
-        Utils.dumpToFile("enrollment//EnrolmentResponse.bin ", enrolResponseMessage);
-        System.out.println("EnrolResponseMessage : " + enrolResponseMessage.toString() + "\n");
+
 
         /* Verify the enrollment response */
-        itsStation.verifyEnrolmentResponse(enrolResponseMessage);
+//        itsStation.verifyEnrolmentResponse(enrolResponseMessage);
 
         /* Generate an Authorization Validation Request */
 

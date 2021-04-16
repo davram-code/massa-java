@@ -36,7 +36,7 @@ public class EnrollmentAuthorityAppDemo {
 
     private ETSIEnrollmentCredentialGenerator enrollmentCredentialCertGenerator;
 
-    public EnrollmentAuthorityAppDemo() throws Exception {
+    public EnrollmentAuthorityAppDemo(String pathToEnrollmentCA, String pathToRootCA) throws Exception {
         cryptoManager = new DefaultCryptoManager();
         cryptoManager.setupAndConnect(new DefaultCryptoManagerParams("BC"));
 
@@ -48,20 +48,21 @@ public class EnrollmentAuthorityAppDemo {
 
         enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
 
-        enrollmentCAChain = new EtsiTs103097Certificate[]{InitCAHierarchyDemo.enrollmentCACertificate, InitCAHierarchyDemo.rootCACertificate};
+
+        enrollmentCAChain = new EtsiTs103097Certificate[]{Utils.readCertFromFile(pathToEnrollmentCA), Utils.readCertFromFile(pathToRootCA)};
     }
 
-    public EtsiTs103097DataEncryptedUnicast verifyEnrollmentRequestMessage(EtsiTs103097DataEncryptedUnicast enrolRequestMessage) throws Exception {
+    public EtsiTs103097DataEncryptedUnicast verifyEnrollmentRequestMessage(EtsiTs103097DataEncryptedUnicast enrolRequestMessage, String pathToEaSignPublicKey, String pathToEaSignPrivateKey, String pathToEaEncPrivateKey) throws Exception {
          /*
          To verify both initial and rekey EnrolRequestMessage.
          */
         // First build a certificate store and a trust store to verify signature.
         // These can be null if only initial messages are used.
         Map<HashedId8, Certificate> enrolCredCertStore = messagesCaGenerator.buildCertStore(enrollmentCAChain);
-        Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{InitCAHierarchyDemo.rootCACertificate});
+        Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{enrollmentCAChain[1]});
 
         // Then create a receiver store to decrypt the message
-        Map<HashedId8, Receiver> enrolCARecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(InitCAHierarchyDemo.enrollmentCAEncryptionKeys.getPrivate(), InitCAHierarchyDemo.enrollmentCACertificate)});
+        Map<HashedId8, Receiver> enrolCARecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(Utils.readPrivateKey(pathToEaEncPrivateKey), enrollmentCAChain[0])});
 
         // Then decrypt and verify with:
         // Important: this method only verifies the signature, it does not validate header information.
@@ -90,9 +91,9 @@ public class EnrollmentAuthorityAppDemo {
                 3, // confidenceLevel
                 Signature.SignatureChoices.ecdsaNistP256Signature, //signingPublicKeyAlgorithm
                 enrolCredSignKeys_public, // signPublicKey, i.e public key in certificate
-                InitCAHierarchyDemo.enrollmentCACertificate, // signerCertificate
-                InitCAHierarchyDemo.enrollmentCASigningKeys.getPublic(), // signCertificatePublicKey,
-                InitCAHierarchyDemo.enrollmentCASigningKeys.getPrivate(),
+                enrollmentCAChain[1], // signerCertificate
+                Utils.readPublicKey(pathToEaSignPublicKey), // signCertificatePublicKey,
+                Utils.readPrivateKey(pathToEaSignPrivateKey),
                 SymmAlgorithm.aes128Ccm, // symmAlgorithm
                 BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256, // encPublicKeyAlgorithm
                 enrolCredEncKeys_public // encryption public key
@@ -107,7 +108,7 @@ public class EnrollmentAuthorityAppDemo {
                 new Time64(new Date()), // generation Time
                 innerEcResponse,
                 enrollmentCAChain, // Chain of EA used to sign message
-                InitCAHierarchyDemo.enrollmentCASigningKeys.getPrivate(),
+                Utils.readPrivateKey(pathToEaSignPrivateKey),
                 SymmAlgorithm.aes128Ccm, // Encryption algorithm used
                 enrolmentRequestResult.getSecretKey()); // Use symmetric key from the verification result when verifying the request.
 

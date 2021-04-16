@@ -26,6 +26,11 @@ public class InitCAHierarchyDemo {
     final private String pathRootCACert = "certificates//rootCA.bin";
     final private String pathEnrollmentCACert = "certificates//enrollmentCA.bin";
     final private String pathAuthorizationCACert = "certificates//authorizationCA.bin";
+    final private String pathEaSignPubKey = "certificates//eaSignPubKey.bin";
+    final private String pathEaSignPrvKey = "certificates//eaSignPrvKey.bin";
+    final private String pathEaEncPubKey = "certificates//eaEncPubKey.bin";
+    final private String pathEaEncPrvKey = "certificates//eaEncPrvKey.bin";
+
     private GeographicRegion region;
     private Ieee1609Dot2CryptoManager cryptoManager;
     private ETSIAuthorityCertGenerator authorityCertGenerator;
@@ -62,6 +67,11 @@ public class InitCAHierarchyDemo {
         initAuthorizationCA();
 
         dumpCertificates();
+
+        Utils.dumpToFile(pathEaSignPubKey, enrollmentCASigningKeys.getPublic());
+        Utils.dumpToFile(pathEaSignPrvKey, enrollmentCASigningKeys.getPrivate());
+        Utils.dumpToFile(pathEaEncPubKey, enrollmentCAEncryptionKeys.getPublic());
+        Utils.dumpToFile(pathEaEncPrvKey, enrollmentCAEncryptionKeys.getPrivate());
     }
 
     private void initRootCA() throws Exception {
@@ -154,6 +164,7 @@ public class InitCAHierarchyDemo {
         try (FileOutputStream outputStream = new FileOutputStream(foutRootCA)) {
             outputStream.write(rootCACertificate.getEncoded());
         }
+
         try (FileOutputStream outputStream = new FileOutputStream(foutEnrollmentCA)) {
             outputStream.write(enrollmentCACertificate.getEncoded());
         }
@@ -161,4 +172,5 @@ public class InitCAHierarchyDemo {
             outputStream.write(authorityCACertificate.getEncoded());
         }
     }
+
 }

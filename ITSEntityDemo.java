@@ -37,7 +37,7 @@ public class ITSEntityDemo {
     static final PublicVerificationKey.PublicVerificationKeyChoices signAlg = ecdsaNistP256;
     static final BasePublicEncryptionKey.BasePublicEncryptionKeyChoices encAlg = BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256;
 
-    static Ieee1609Dot2CryptoManager cryptoManager;
+    private Ieee1609Dot2CryptoManager cryptoManager;
     private ETSITS102941MessagesCaGenerator messagesCaGenerator;
 
     private EncryptResult initialEnrolRequestMessageResult;
@@ -53,7 +53,7 @@ public class ITSEntityDemo {
                 false); // If EC points should be represented as uncompressed.
     }
 
-    public EtsiTs103097DataEncryptedUnicast generateInitialEnrollmentRequest() throws Exception {
+    public EtsiTs103097DataEncryptedUnicast generateInitialEnrollmentRequest(String pathToEnrollmentCACert) throws Exception {
 
         EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage;
 
@@ -80,7 +80,7 @@ public class ITSEntityDemo {
                 new Time64(new Date()), // generation Time
                 initialInnerEcRequest,
                 enrolCredSignKeys.getPublic(), enrolCredSignKeys.getPrivate(), // The key pair used in the enrolment credential used for self signed PoP
-                InitCAHierarchyDemo.enrollmentCACertificate); // The EA certificate to encrypt message to.
+                Utils.readCertFromFile(pathToEnrollmentCACert)); // The EA certificate to encrypt message to.
 
         initialEnrolRequestMessage = (EtsiTs103097DataEncryptedUnicast) initialEnrolRequestMessageResult.getEncryptedData();
 
