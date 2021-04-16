@@ -23,13 +23,14 @@ public class InitCAHierarchyDemo {
     public static KeyPair enrollmentCAEncryptionKeys;
     public static EtsiTs103097Certificate enrollmentCACertificate;
     public static EtsiTs103097Certificate authorityCACertificate;
-    final private String pathRootCACert = "certificates//rootCA.bin";
-    final private String pathEnrollmentCACert = "certificates//enrollmentCA.bin";
-    final private String pathAuthorizationCACert = "certificates//authorizationCA.bin";
-    final private String pathEaSignPubKey = "certificates//eaSignPubKey.bin";
-    final private String pathEaSignPrvKey = "certificates//eaSignPrvKey.bin";
-    final private String pathEaEncPubKey = "certificates//eaEncPubKey.bin";
-    final private String pathEaEncPrvKey = "certificates//eaEncPrvKey.bin";
+    private String pathInitDirectory;
+    private String pathRootCACert;
+    private String pathEnrollmentCACert;
+    private String pathAuthorizationCACert;
+    private String pathEaSignPubKey;
+    private String pathEaSignPrvKey;
+    private String pathEaEncPubKey;
+    private String pathEaEncPrvKey;
 
     private GeographicRegion region;
     private Ieee1609Dot2CryptoManager cryptoManager;
@@ -40,6 +41,17 @@ public class InitCAHierarchyDemo {
     /* Authorization CA */
     private KeyPair authorityCASigningKeys;
     private KeyPair authorityCAEncryptionKeys;
+
+    public InitCAHierarchyDemo(String pathInitDirectory) {
+        this.pathInitDirectory = pathInitDirectory;
+        pathRootCACert = pathInitDirectory + "/rootCA.bin";
+        pathEnrollmentCACert = pathInitDirectory + "/enrollmentCA.bin";
+        pathAuthorizationCACert = pathInitDirectory + "/authorizationCA.bin";
+        pathEaSignPubKey = pathInitDirectory + "/eaSignPubKey.bin";
+        pathEaSignPrvKey = pathInitDirectory + "/eaSignPrvKey.bin";
+        pathEaEncPubKey = pathInitDirectory + "/eaEncPubKey.bin";
+        pathEaEncPrvKey = pathInitDirectory + "/eaEncPrvKey.bin";
+    }
 
     public void init() throws Exception {
 
@@ -96,8 +108,8 @@ public class InitCAHierarchyDemo {
                 BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256,  // encPublicKeyAlgorithm
                 rootCAEncryptionKeys.getPublic()); // encPublicKey
 
-       // System.out.println("Root CA : " + rootCACertificate.toString());
-       // System.out.println("Encoded: " + Hex.toHexString(rootCACertificate.getEncoded()));
+        // System.out.println("Root CA : " + rootCACertificate.toString());
+        // System.out.println("Encoded: " + Hex.toHexString(rootCACertificate.getEncoded()));
     }
 
     private void initEnrollmentCA() throws Exception {
@@ -122,9 +134,9 @@ public class InitCAHierarchyDemo {
                 enrollmentCAEncryptionKeys.getPublic() // encryption public key
         );
 
-       // System.out.println("-----\n");
-       // System.out.println("EA CA : " + enrollmentCACertificate.toString());
-       // System.out.println("Encoded: " + Hex.toHexString(enrollmentCACertificate.getEncoded()));
+        // System.out.println("-----\n");
+        // System.out.println("EA CA : " + enrollmentCACertificate.toString());
+        // System.out.println("Encoded: " + Hex.toHexString(enrollmentCACertificate.getEncoded()));
     }
 
     private void initAuthorizationCA() throws Exception {

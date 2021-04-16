@@ -2,56 +2,120 @@ package massa;
 
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 
+
+import com.beust.jcommander.Parameter;
+import com.beust.jcommander.JCommander;
+
+class Args {
+    @Parameter(names = {"-v", "--verbose"}, description = "Verbose")
+    public boolean verbose = false;
+
+    @Parameter(names = {"-init"}, description = "Initialize Hierarchy")
+    public boolean init = false;
+
+    @Parameter(names = {"-initDir"}, description = "Directory used in Initialize Hierarchy")
+    public String pathInitDir = "";
+
+    @Parameter(names = {"-e", "--entity"}, description = "The entity that executes the action")
+    public String entity = "";
+
+    @Parameter(names = {"-a", "--action"}, description = "The the action to be executed by the entity")
+    public String action = "";
+
+    @Parameter(names = {"--ea-crt"}, description = "The certificate of the Enrollment Authority")
+    public String pathCertEnrollmentCA = "";
+
+    @Parameter(names = {"--root-crt"}, description = "The certificate of the Root Authority")
+    public String pathCertRootCA = "";
+
+    @Parameter(names = {"--ea-sign-pub-key"}, description = "The signing public key of the Enrollment Authority")
+    public String pathPubKeySignEA = "";
+
+    @Parameter(names = {"--ea-sign-prv-key"}, description = "The signing private key of the Enrollment Authority")
+    public String pathPrvKeySignEA = "";
+
+    @Parameter(names = {"--ea-enc-prv-key"}, description = "The encryption private key of the Enrollment Authority")
+    public String pathPrvKeyEncEA = "";
+
+    @Parameter(names = {"--enroll-req"}, description = "The Enrollment Request")
+    public String pathEnrollRequest = "";
+
+    @Parameter(names = {"--outfile"}, description = "The output file")
+    public String pathOutputFile = "";
+}
+
 public class Main {
+
     public static void main(String args[]) throws Exception {
         try {
-            if(args.length < 1)
-                throw new Exception("You should have at least two arguments: massa [entity] [action] [parameters]");
+            Args arguments = new Args();
+            String[] argv = {"-log", "2", "-groups", "unit"};
+            JCommander.newBuilder()
+                    .addObject(arguments)
+                    .build()
+                    .parse(args);
 
-            switch (args[0])
-            {
-                case "init":
-                    InitCAHierarchyDemo initCAHierarchyDemo = new InitCAHierarchyDemo();
+            if (arguments.init) {
+                if (arguments.pathInitDir != "") {
+                    InitCAHierarchyDemo initCAHierarchyDemo = new InitCAHierarchyDemo(arguments.pathInitDir);
                     initCAHierarchyDemo.init();
-                    return;
-
-                case "its":
-                    switch (args[1])
-                    {
-                        case "-genreq":
-                            String pathToEnrollmentCA = args[3];
-                            String pathToOutputFile = args[5];
-                            ITSEntityDemo itsStation = new ITSEntityDemo();
-                            EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = itsStation.generateInitialEnrollmentRequest(pathToEnrollmentCA);
-                            Utils.dumpToFile(pathToOutputFile, initialEnrolRequestMessage);
-                            System.out.println("InitialEnrolRequestMessage : " + initialEnrolRequestMessage.toString() + "\n");
-                            return;
-
-                    }
-
-                case "ea":
-                    switch (args[1])
-                    {
-                        case "-genrsp":
-                            String pathToRootCA = args[3];
-                            String pathToEnrollmentCA = args[5];
-                            String pathToEaSignPublicKey = args[7];
-                            String pathToEaSignPrivateKey = args[9];
-                            String pathToEaEncPrivateKey = args[11];
-                            String pathToOutput = args[13];
-
-                            EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = Utils.readDataEncryptedUnicast("certificates/enroll-request.bin");
-                            EnrollmentAuthorityAppDemo ea_app = new EnrollmentAuthorityAppDemo(pathToEnrollmentCA,pathToRootCA);
-                            EtsiTs103097DataEncryptedUnicast enrolResponseMessage = ea_app.verifyEnrollmentRequestMessage(initialEnrolRequestMessage, pathToEaSignPublicKey, pathToEaSignPrivateKey, pathToEaEncPrivateKey);
-                            Utils.dumpToFile(pathToOutput, enrolResponseMessage);
-                            System.out.println("EnrolResponseMessage : " + enrolResponseMessage.toString() + "\n");
-                            return;
-                    }
-
+                } else {
+                    throw new Exception("You should also specify the path to the Init Dirctory!");
+                }
+                return;
             }
-        }
-        catch (Exception e)
-        {
+
+
+            if (arguments.entity != "") {
+                switch (arguments.entity) {
+                    case "its":
+                        switch (arguments.action) {
+                            case "genreq":
+                                if (arguments.pathCertEnrollmentCA == "" ||
+                                        arguments.pathOutputFile == "")
+                                    throw new Exception("Not enough arguments!");
+
+                                ITSEntityDemo itsStation = new ITSEntityDemo();
+                                EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = itsStation.generateInitialEnrollmentRequest(arguments.pathCertEnrollmentCA);
+                                Utils.dumpToFile(arguments.pathOutputFile, initialEnrolRequestMessage);
+
+                                if (arguments.verbose)
+                                    System.out.println("InitialEnrolRequestMessage : " + initialEnrolRequestMessage.toString() + "\n");
+
+                                return;
+
+                            default:
+                                throw new Exception("ITS cannot do action " + arguments.action);
+                        }
+
+                    case "ea":
+                        switch (arguments.action) {
+                            case "genrsp":
+                                if (arguments.pathCertRootCA == "" ||
+                                        arguments.pathCertEnrollmentCA == "" ||
+                                        arguments.pathPrvKeySignEA == "" ||
+                                        arguments.pathPubKeySignEA == "" ||
+                                        arguments.pathPrvKeyEncEA == "" ||
+                                        arguments.pathOutputFile == "" ||
+                                        arguments.pathEnrollRequest == "")
+                                    throw new Exception("Not enough arguments!");
+
+
+                                EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = Utils.readDataEncryptedUnicast(arguments.pathEnrollRequest);
+                                EnrollmentAuthorityAppDemo ea_app = new EnrollmentAuthorityAppDemo(arguments.pathCertEnrollmentCA, arguments.pathCertRootCA);
+                                EtsiTs103097DataEncryptedUnicast enrolResponseMessage = ea_app.verifyEnrollmentRequestMessage(
+                                        initialEnrolRequestMessage, arguments.pathPubKeySignEA, arguments.pathPrvKeySignEA, arguments.pathPrvKeyEncEA);
+                                Utils.dumpToFile(arguments.pathOutputFile, enrolResponseMessage);
+                                if (arguments.verbose)
+                                    System.out.println("EnrolResponseMessage : " + enrolResponseMessage.toString() + "\n");
+                                return;
+                        }
+                    default:
+                        throw new Exception("Unknown entity: This application supports the following entities: ea, its.");
+
+                }
+            }
+        } catch (Exception e) {
             System.out.println(e.toString());
             return;
         }
