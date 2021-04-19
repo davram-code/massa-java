@@ -5,6 +5,7 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetype
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.JCommander;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 
 import java.awt.*;
 
@@ -36,6 +37,10 @@ class Args {
     @Parameter(names = {"--ea-sign-pub-key"}, description = "The signing public key of the Enrollment Authority")
     public String pathPubKeySignEA = "";
 
+    @Parameter(names = {"--aa-sign-pub-key"}, description = "The signing public key of the Authorization Authority")
+    public String pathPubKeySignAA = "";
+
+
     @Parameter(names = {"--ea-sign-prv-key"}, description = "The signing private key of the Enrollment Authority")
     public String pathPrvKeySignEA = "";
 
@@ -58,6 +63,9 @@ class Args {
 
     @Parameter(names = {"--auth-req"}, description = "The Enrollment Response Message")
     public String pathAuthRequestMessage = "";
+
+    @Parameter(names = {"--auth-rsp"}, description = "The Enrollment Response Message")
+    public String pathAuthResponseMessage = "";
 
     @Parameter(names = {"--auth-val-req"}, description = "The Authentification Validation Request Message")
     public String pathAuthValRequestMessage = "";
@@ -159,6 +167,21 @@ public class Main {
                                         arguments.pathSecretKey);
                                 return;
                             }
+                            case "verify-auth":
+                            {
+                                System.out.println("Aciisa");
+                                ITSEntityDemo itsStation = new ITSEntityDemo();
+                                EtsiTs103097Certificate cert = itsStation.verifyAuthorizationResponse(
+                                        arguments.pathCertAuthCA,
+                                        arguments.pathCertRootCA,
+                                        arguments.pathAuthResponseMessage,
+                                        arguments.pathAuthRequestMessage,
+                                        arguments.pathSecretKey
+                                );
+                                System.out.println(cert.toString());
+                                Utils.dumpToFile(arguments.pathOutputFile, cert);
+                                return;
+                            }
                             default:
                                 throw new Exception("ITS cannot do action " + arguments.action);
                         }
@@ -226,7 +249,16 @@ public class Main {
                                 System.out.println("Last sstep!");
                                 /// AICI SA VERIFICI RASPUNSUL DE LA VALIDARE!
                                 AuthorizationAuthorityAppDemo aa_app = new AuthorizationAuthorityAppDemo();
-
+                                EtsiTs103097DataEncryptedUnicast authResponse = aa_app.generateAutorizationResponse(
+                                        arguments.pathAuthRequestMessage,
+                                        arguments.pathCertAuthCA,
+                                        arguments.pathCertRootCA,
+                                        arguments.pathPrvKeyEncAA,
+                                        arguments.pathPrvKeySignAA,
+                                        arguments.pathPubKeySignAA
+                                );
+                                System.out.println(authResponse.toString());
+                                Utils.dumpToFile(arguments.pathOutputFile, authResponse);
                                 return;
                             }
                         }

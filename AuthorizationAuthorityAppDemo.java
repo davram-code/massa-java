@@ -1,5 +1,6 @@
 package massa;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.AuthorizationResponseCode;
@@ -26,6 +27,8 @@ import java.security.PublicKey;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
+
+import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 
 public class AuthorizationAuthorityAppDemo {
 
@@ -79,17 +82,21 @@ public class AuthorizationAuthorityAppDemo {
     public EtsiTs103097DataEncryptedUnicast generateAutorizationResponse(
             String pathAuthRequestMsg,
             String pathAACert,
+            String pathRootCert,
             String pathPrvEncKeyAA,
             String pathPrvSignKeyAA,
-            String pathPubSignKeyAA,
+            String pathPubSignKeyAA
 
             ) throws Exception {
         EtsiTs103097Certificate authorizationCACert = Utils.readCertFromFile(pathAACert);
+        EtsiTs103097Certificate rootCACert = Utils.readCertFromFile(pathRootCert);
         PrivateKey prvEncKeyAA = Utils.readPrivateKey(pathPrvEncKeyAA);
         PrivateKey prvSignKeyAA = Utils.readPrivateKey(pathPrvSignKeyAA);
         PublicKey pubSignKeyAA = Utils.readPublicKey(pathPubSignKeyAA);
         EtsiTs103097DataEncryptedUnicast authRequestMessage = Utils.readDataEncryptedUnicast(pathAuthRequestMsg);
 
+
+        EtsiTs103097Certificate[] authorizationCAChain = new EtsiTs103097Certificate[]{authorizationCACert,rootCACert};
         Map<HashedId8, Receiver> authorizationCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(prvEncKeyAA, authorizationCACert)});
 
         RequestVerifyResult<InnerAtRequest> authRequestResult = messagesCaGenerator.decryptAndVerifyAuthorizationRequestMessage(authRequestMessage,
@@ -99,20 +106,33 @@ public class AuthorizationAuthorityAppDemo {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
         Date timeStamp = dateFormat.parse("20181202 12:12:21");
         ETSIAuthorizationTicketGenerator eatg = new ETSIAuthorizationTicketGenerator(cryptoManager);
+        PublicKey ticketSignKey_public = (PublicKey) cryptoManager.decodeEccPoint(
+                authRequestResult.getValue().getPublicKeys().getVerificationKey().getType(),
+                (EccCurvePoint) authRequestResult.getValue().getPublicKeys().getVerificationKey().getValue()
+        );
+
+        PublicKey ticketEncKey_public = (PublicKey) cryptoManager.decodeEccPoint(
+                authRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
+                (EccCurvePoint) authRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
+        );
+        PsidSsp appPermCertMan = new PsidSsp(SecuredCertificateRequestService, new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("0132")));
+        PsidSsp[] appPermissions = new PsidSsp[]{appPermCertMan};
+
         EtsiTs103097Certificate authTicketCert = eatg.genAuthorizationTicket(
                 authRequestResult.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getValidityPeriod(),
                 authRequestResult.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getRegion(),
                 authRequestResult.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getAssuranceLevel(),
-                authRequestResult.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getAppPermissions(), //appPermissions,
+                appPermissions, //  TO SOLVE
                 authRequestResult.getSignAlg(), // signAlg,
-                authRequestResult.getValue().getPublicKeys().getVerificationKey(), //authTicketSignKeys.getPublic(),
+                ticketSignKey_public, //authTicketSignKeys.getPublic(),
                 authorizationCACert,
                 pubSignKeyAA, //authorizationCASignKeys.getPublic(),
                 prvSignKeyAA, //authorizationCASignKeys.getPrivate(),
                 SymmAlgorithm.aes128Ccm,
                 BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256, //to chage
-                authRequestResult.getValue().getPublicKeys().getEncryptionKey() //authTicketEncKeys.getPublic()
-    );
+                ticketEncKey_public
+        );//authTicketEncKeys.getPublic()
+
 
 
 
@@ -130,12 +150,13 @@ public class AuthorizationAuthorityAppDemo {
                 new Time64(new Date()), // generation Time
                 innerAtResponse,
                 authorizationCAChain, // The AA certificate chain signing the message
-                authorizationCASignKeys.getPrivate(),
+                prvSignKeyAA,
                 SymmAlgorithm.aes128Ccm, // Encryption algorithm used.
                 authRequestResult.getSecretKey()); // The symmetric key generated in the request.
+
+        return  authResponseMessage;
     }
 
-    ;
 
     public EtsiTs103097DataEncryptedUnicast generateAutorizationValidationRequest(
             String pathAuthorizationCACert,
