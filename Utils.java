@@ -3,17 +3,18 @@ package massa;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+
 
 class PrivateKeyReader {
 
@@ -33,6 +34,7 @@ class PrivateKeyReader {
         return kf.generatePrivate(spec);
     }
 }
+
 
 
 class PublicKeyReader {
@@ -84,6 +86,13 @@ public class Utils {
         }
     }
 
+    public static void dumpToFile(String path, SecretKey pubKey) throws Exception{
+        File fout = new File(path);
+        try (FileOutputStream outputStream = new FileOutputStream(fout)) {
+            outputStream.write(pubKey.getEncoded());
+        }
+    }
+
     private static byte [] getByteArray(String path) throws Exception{
         File fin = new File(path);
         return Files.readAllBytes(fin.toPath());
@@ -104,4 +113,10 @@ public class Utils {
     public  static EtsiTs103097DataEncryptedUnicast readDataEncryptedUnicast(String path) throws Exception{
         return new EtsiTs103097DataEncryptedUnicast(getByteArray(path));
     }
+
+    public static SecretKey readSecretKey(String path) throws Exception{
+        return new SecretKeySpec(getByteArray(path), "AES");
+    }
+
+
 }

@@ -6,6 +6,8 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetype
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.JCommander;
 
+import java.awt.*;
+
 class Args {
     @Parameter(names = {"-v", "--verbose"}, description = "Verbose")
     public boolean verbose = false;
@@ -28,6 +30,9 @@ class Args {
     @Parameter(names = {"--root-crt"}, description = "The certificate of the Root Authority")
     public String pathCertRootCA = "";
 
+    @Parameter(names = {"--aa-crt"}, description = "The certificate of the Authorization Authority")
+    public String pathCertAuthCA = "";
+
     @Parameter(names = {"--ea-sign-pub-key"}, description = "The signing public key of the Enrollment Authority")
     public String pathPubKeySignEA = "";
 
@@ -37,11 +42,43 @@ class Args {
     @Parameter(names = {"--ea-enc-prv-key"}, description = "The encryption private key of the Enrollment Authority")
     public String pathPrvKeyEncEA = "";
 
-    @Parameter(names = {"--enroll-req"}, description = "The Enrollment Request")
+    @Parameter(names = {"--aa-enc-prv-key"}, description = "The encryption private key of the Authorization Authority")
+    public String pathPrvKeyEncAA = "";
+
+    @Parameter(names = {"--aa-sign-prv-key"}, description = "The signing private key of the Authorization Authority")
+    public String pathPrvKeySignAA = "";
+
+
+    /* Messages  */
+    @Parameter(names = {"--enroll-req"}, description = "The Enrollment Request Message")
     public String pathEnrollRequest = "";
 
-    @Parameter(names = {"--outfile"}, description = "The output file")
+    @Parameter(names = {"--enroll-rsp"}, description = "The Enrollment Response Message")
+    public String pathEnrollResponse = "";
+
+    @Parameter(names = {"--auth-req"}, description = "The Enrollment Response Message")
+    public String pathAuthRequestMessage = "";
+
+    @Parameter(names = {"--auth-val-req"}, description = "The Authentification Validation Request Message")
+    public String pathAuthValRequestMessage = "";
+
+
+    @Parameter(names = {"--secret-key"}, description = "The Enrollment Response Message")
+    public String pathSecretKey = "";
+
+
+    @Parameter(names = {"--outfile"}, description = "The output file") /* Deprecated */
     public String pathOutputFile = "";
+
+    @Parameter(names = {"--out-enroll-req"}, description = "The Enrollment Request Message")
+    public String pathOutEnrollRequest = "";
+
+    @Parameter(names = {"--out-secret-key"}, description = "The Enrollment Request Message")
+    public String pathOutSecretKey = "";
+
+    @Parameter(names = {"--cred-crt"}, description = "The Enrollment Credential Certificate of the ITS Message")
+    public String pathCredCert = "";
+
 }
 
 public class Main {
@@ -50,6 +87,7 @@ public class Main {
         try {
             Args arguments = new Args();
             String[] argv = {"-log", "2", "-groups", "unit"};
+
             JCommander.newBuilder()
                     .addObject(arguments)
                     .build()
@@ -70,27 +108,64 @@ public class Main {
                 switch (arguments.entity) {
                     case "its":
                         switch (arguments.action) {
-                            case "genreq":
+                            case "genreq": {
                                 if (arguments.pathCertEnrollmentCA == "" ||
-                                        arguments.pathOutputFile == "")
+                                        arguments.pathOutEnrollRequest == "" ||
+                                        arguments.pathOutSecretKey == "")
                                     throw new Exception("Not enough arguments!");
 
                                 ITSEntityDemo itsStation = new ITSEntityDemo();
                                 EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = itsStation.generateInitialEnrollmentRequest(arguments.pathCertEnrollmentCA);
-                                Utils.dumpToFile(arguments.pathOutputFile, initialEnrolRequestMessage);
+
+                                Utils.dumpToFile(arguments.pathOutSecretKey, itsStation.getInitialEnrollRequestSecretKey());
+                                Utils.dumpToFile(arguments.pathOutEnrollRequest, initialEnrolRequestMessage);
 
                                 if (arguments.verbose)
                                     System.out.println("InitialEnrolRequestMessage : " + initialEnrolRequestMessage.toString() + "\n");
 
                                 return;
+                            }
 
+                            case "gen-auth-req": {
+                                System.out.println("Aici");
+                                ITSEntityDemo itsStation = new ITSEntityDemo();
+                                EtsiTs103097DataEncryptedUnicast authRequestMessage = itsStation.generateAuthorizationRequestMessage(
+                                        arguments.pathCertEnrollmentCA,
+                                        arguments.pathCredCert,
+                                        arguments.pathCertRootCA,
+                                        arguments.pathCertAuthCA,
+                                        arguments.pathEnrollResponse
+                                );
+                                System.out.println(authRequestMessage.toString());
+                                Utils.dumpToFile(arguments.pathOutputFile, authRequestMessage);
+
+                                return;
+                            }
+
+                            case "verify": {
+                                // salvam certificatul primit in raspunsul de la EA !!!
+                                if (arguments.pathEnrollResponse == "" ||
+                                        arguments.pathEnrollRequest == "" ||
+                                        arguments.pathCertEnrollmentCA == "" ||
+                                        arguments.pathCertRootCA == "" ||
+                                        arguments.pathSecretKey == "")
+                                    throw new Exception("Not enough arguments!");
+                                ITSEntityDemo itsStation = new ITSEntityDemo();
+                                itsStation.verifyEnrolmentResponse(
+                                        arguments.pathEnrollResponse,
+                                        arguments.pathEnrollRequest,
+                                        arguments.pathCertRootCA,
+                                        arguments.pathCertEnrollmentCA,
+                                        arguments.pathSecretKey);
+                                return;
+                            }
                             default:
                                 throw new Exception("ITS cannot do action " + arguments.action);
                         }
 
                     case "ea":
                         switch (arguments.action) {
-                            case "genrsp":
+                            case "genrsp": {
                                 if (arguments.pathCertRootCA == "" ||
                                         arguments.pathCertEnrollmentCA == "" ||
                                         arguments.pathPrvKeySignEA == "" ||
@@ -109,6 +184,51 @@ public class Main {
                                 if (arguments.verbose)
                                     System.out.println("EnrolResponseMessage : " + enrolResponseMessage.toString() + "\n");
                                 return;
+                            }
+
+                            case "validauth":
+                            {
+                                System.out.println("AIIC");
+                                EnrollmentAuthorityAppDemo ea_app = new EnrollmentAuthorityAppDemo(arguments.pathCertEnrollmentCA, arguments.pathCertRootCA);
+                                EtsiTs103097DataEncryptedUnicast validation = ea_app.genAuthentificationValidationResponse(
+                                        arguments.pathAuthValRequestMessage,
+                                        arguments.pathCertAuthCA,
+                                        arguments.pathCertRootCA,
+                                        arguments.pathCertEnrollmentCA,
+                                        arguments.pathPrvKeyEncEA,
+                                        arguments.pathPrvKeySignEA
+                                );
+                                System.out.println(validation.toString());
+                                Utils.dumpToFile(arguments.pathOutputFile, validation);
+                                return;
+                            }
+                        }
+
+                    case "aa":
+                        switch (arguments.action) {
+                            case "validreq": {
+                                System.out.println("Aici!");
+                                AuthorizationAuthorityAppDemo aa_app = new AuthorizationAuthorityAppDemo();
+                                EtsiTs103097DataEncryptedUnicast authValReq = aa_app.generateAutorizationValidationRequest(
+                                        arguments.pathCertAuthCA,
+                                        arguments.pathCertEnrollmentCA,
+                                        arguments.pathCertRootCA,
+                                        arguments.pathPrvKeyEncAA,
+                                        arguments.pathPrvKeySignAA,
+                                        arguments.pathAuthRequestMessage
+                                );
+                                System.out.println(authValReq.toString());
+                                Utils.dumpToFile(arguments.pathOutputFile, authValReq);
+                                return;
+                            }
+
+                            case "genrsp" : {
+                                System.out.println("Last sstep!");
+                                /// AICI SA VERIFICI RASPUNSUL DE LA VALIDARE!
+                                AuthorizationAuthorityAppDemo aa_app = new AuthorizationAuthorityAppDemo();
+
+                                return;
+                            }
                         }
                     default:
                         throw new Exception("Unknown entity: This application supports the following entities: ea, its.");
@@ -134,7 +254,7 @@ public class Main {
 
 
         /* Verify the enrollment response */
-//        itsStation.verifyEnrolmentResponse(enrolResponseMessage);
+
 
         /* Generate an Authorization Validation Request */
 

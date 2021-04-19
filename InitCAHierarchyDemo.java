@@ -15,12 +15,12 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import static org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.PublicVerificationKey.PublicVerificationKeyChoices.ecdsaNistP256;
+
 public class InitCAHierarchyDemo {
     final static int SWEDEN = 752;
     public static EtsiTs103097Certificate rootCACertificate;
-    /* Enrollment CA */
-    public static KeyPair enrollmentCASigningKeys;
-    public static KeyPair enrollmentCAEncryptionKeys;
+
     public static EtsiTs103097Certificate enrollmentCACertificate;
     public static EtsiTs103097Certificate authorityCACertificate;
     private String pathInitDirectory;
@@ -32,25 +32,46 @@ public class InitCAHierarchyDemo {
     private String pathEaEncPubKey;
     private String pathEaEncPrvKey;
 
+    private String pathITSSignPubKey;
+    private String pathITSSignPrvKey;
+    private String pathITSEncPubKey;
+    private String pathITSEncPrvKey;
+
+
     private GeographicRegion region;
     private Ieee1609Dot2CryptoManager cryptoManager;
     private ETSIAuthorityCertGenerator authorityCertGenerator;
     /* Root CA */
     private KeyPair rootCASigningKeys;
     private KeyPair rootCAEncryptionKeys;
+
+    /* Enrollment CA */
+    public static KeyPair enrollmentCASigningKeys;
+    public static KeyPair enrollmentCAEncryptionKeys;
+
     /* Authorization CA */
     private KeyPair authorityCASigningKeys;
     private KeyPair authorityCAEncryptionKeys;
 
+    /* ITS */
+    private KeyPair enrolCredSignKeys;
+    private KeyPair enrolCredEncKeys;
+
+    private KeyPair authTicketSignKeys; // TO SAVE
+    private KeyPair authTicketEncKeys; // TO SAVE
+
     public InitCAHierarchyDemo(String pathInitDirectory) {
         this.pathInitDirectory = pathInitDirectory;
-        pathRootCACert = pathInitDirectory + "/rootCA.bin";
-        pathEnrollmentCACert = pathInitDirectory + "/enrollmentCA.bin";
-        pathAuthorizationCACert = pathInitDirectory + "/authorizationCA.bin";
-        pathEaSignPubKey = pathInitDirectory + "/eaSignPubKey.bin";
-        pathEaSignPrvKey = pathInitDirectory + "/eaSignPrvKey.bin";
-        pathEaEncPubKey = pathInitDirectory + "/eaEncPubKey.bin";
-        pathEaEncPrvKey = pathInitDirectory + "/eaEncPrvKey.bin";
+        pathRootCACert = pathInitDirectory + "/ca/cert.bin";
+        pathEnrollmentCACert = pathInitDirectory + "/ea/cert.bin";
+        pathAuthorizationCACert = pathInitDirectory + "/aa/cert.bin";
+
+        pathEaSignPubKey = pathInitDirectory + "/ea/SignPubKey.bin";
+        pathEaSignPrvKey = pathInitDirectory + "/ea/SignPrvKey.bin";
+        pathEaEncPubKey = pathInitDirectory + "/ea/EncPubKey.bin";
+        pathEaEncPrvKey = pathInitDirectory + "/ea/EncPrvKey.bin";
+
+
     }
 
     public void init() throws Exception {
@@ -78,12 +99,31 @@ public class InitCAHierarchyDemo {
         //Step 2.4 - Authorization CA
         initAuthorizationCA();
 
+        initITS();
+
         dumpCertificates();
 
         Utils.dumpToFile(pathEaSignPubKey, enrollmentCASigningKeys.getPublic());
         Utils.dumpToFile(pathEaSignPrvKey, enrollmentCASigningKeys.getPrivate());
         Utils.dumpToFile(pathEaEncPubKey, enrollmentCAEncryptionKeys.getPublic());
         Utils.dumpToFile(pathEaEncPrvKey, enrollmentCAEncryptionKeys.getPrivate());
+
+        Utils.dumpToFile(pathInitDirectory + "/aa/SignKey.pub", authorityCASigningKeys.getPublic());
+        Utils.dumpToFile(pathInitDirectory + "/aa/SignKey.prv", authorityCASigningKeys.getPrivate());
+        Utils.dumpToFile(pathInitDirectory + "/aa/EncKey.pub", authorityCAEncryptionKeys.getPublic());
+        Utils.dumpToFile(pathInitDirectory + "/aa/EncKey.prv", authorityCAEncryptionKeys.getPrivate());
+
+        Utils.dumpToFile(pathInitDirectory + "/its/CredSignKey.pub", enrolCredSignKeys.getPublic());
+        Utils.dumpToFile(pathInitDirectory + "/its/CredSignKey.prv", enrolCredSignKeys.getPrivate());
+        Utils.dumpToFile(pathInitDirectory + "/its/CredEncKey.pub", enrolCredEncKeys.getPublic());
+        Utils.dumpToFile(pathInitDirectory + "/its/CredEncKey.prv", enrolCredEncKeys.getPrivate());
+        Utils.dumpToFile(pathInitDirectory + "/its/TicketSignKey.pub", authTicketSignKeys.getPublic());
+        Utils.dumpToFile(pathInitDirectory + "/its/TicketSignKey.prv", authTicketSignKeys.getPrivate());
+        Utils.dumpToFile(pathInitDirectory + "/its/TicketEncKey.pub", authTicketEncKeys.getPublic());
+        Utils.dumpToFile(pathInitDirectory + "/its/TicketEncKey.prv", authTicketEncKeys.getPrivate());
+
+
+
     }
 
     private void initRootCA() throws Exception {
@@ -183,6 +223,13 @@ public class InitCAHierarchyDemo {
         try (FileOutputStream outputStream = new FileOutputStream(foutAuthorizationCA)) {
             outputStream.write(authorityCACertificate.getEncoded());
         }
+    }
+
+    private void initITS() throws Exception {
+        enrolCredSignKeys = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
+        enrolCredEncKeys = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
+        authTicketSignKeys = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
+        authTicketEncKeys = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
     }
 
 }

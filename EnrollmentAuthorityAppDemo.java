@@ -3,6 +3,10 @@ package massa;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationRequest;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponse;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponseCode;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.CertificateSubjectAttributes;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.EnrollmentResponseCode;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.InnerEcRequest;
@@ -14,14 +18,19 @@ import org.certificateservices.custom.c2x.etsits103097.v131.generator.ETSIEnroll
 import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.Certificate;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.CertificateId;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.PsidGroupPermissions;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.SequenceOfPsidGroupPermissions;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.Ieee1609Dot2Data;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.CertificateReciever;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
 
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Date;
 import java.util.Map;
 
+import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 import static org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.PublicVerificationKey.PublicVerificationKeyChoices.ecdsaNistP256;
 
 public class EnrollmentAuthorityAppDemo {
@@ -113,6 +122,68 @@ public class EnrollmentAuthorityAppDemo {
                 enrolmentRequestResult.getSecretKey()); // Use symmetric key from the verification result when verifying the request.
 
         return enrolResponseMessage;
+    }
+
+    public EtsiTs103097DataEncryptedUnicast genAuthentificationValidationResponse(
+            String pathAuthValReqMsg,
+            String pathAuthCACert,
+            String pathRootCACert,
+            String pathEnrollCACert,
+            String pathEAEncPrvKey,
+            String pathEASignPrvKey
+    ) throws Exception {
+        EtsiTs103097DataEncryptedUnicast authorizationValidationRequestMessage = Utils.readDataEncryptedUnicast(pathAuthValReqMsg);
+        EtsiTs103097Certificate authorizationCACert = Utils.readCertFromFile(pathAuthCACert);
+        EtsiTs103097Certificate rootCACert = Utils.readCertFromFile(pathRootCACert);
+        EtsiTs103097Certificate enrolmentCACert = Utils.readCertFromFile(pathEnrollCACert);
+        PrivateKey enrolCAEncPrvKey = Utils.readPrivateKey(pathEAEncPrvKey);
+        PrivateKey enrolCASignPrvKey = Utils.readPrivateKey(pathEASignPrvKey);
+
+        EtsiTs103097Certificate[] authorizationCAChain = new EtsiTs103097Certificate[]{authorizationCACert, rootCACert};
+        Map<HashedId8, Certificate> authCACertStore = messagesCaGenerator.buildCertStore(authorizationCAChain);
+        Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{rootCACert});
+        Map<HashedId8, Receiver> enrolCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(enrolCAEncPrvKey, enrolmentCACert)});
+
+        RequestVerifyResult<AuthorizationValidationRequest> authorizationValidationRequestVerifyResult = messagesCaGenerator.decryptAndVerifyAuthorizationValidationRequestMessage(
+                authorizationValidationRequestMessage,
+                authCACertStore, // certificate store containing certificates for auth cert.
+                trustStore,
+                enrolCAReceipients);
+
+        AuthorizationValidationResponse authorizationValidationResponse = new AuthorizationValidationResponse(
+                authorizationValidationRequestVerifyResult.getRequestHash(),
+                AuthorizationValidationResponseCode.ok,
+                genDummyConfirmedSubjectAttributes(enrolmentCACert));
+        EtsiTs103097DataEncryptedUnicast authorizationValidationResponseMessage = messagesCaGenerator.genAuthorizationValidationResponseMessage(
+                new Time64(new Date()), // generation Time
+                authorizationValidationResponse,
+                enrollmentCAChain, // EA signing chain
+                enrolCASignPrvKey, // EA signing private key
+                SymmAlgorithm.aes128Ccm, // Encryption algorithm used.
+                authorizationValidationRequestVerifyResult.getSecretKey() // The symmetric key generated in the request.
+        );
+        return authorizationValidationResponseMessage;
+    }
+
+    private CertificateSubjectAttributes genDummyConfirmedSubjectAttributes(EtsiTs103097Certificate enrollCert) throws Exception {
+        PsidSsp appPermCertMan = new PsidSsp(SecuredCertificateRequestService, new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("0132")));
+        PsidSsp[] appPermissions = new PsidSsp[]{appPermCertMan};
+        CertificateSubjectAttributes certificateSubjectAttributes = genCertificateSubjectAttributes(null,
+                enrollCert.getToBeSigned().getValidityPeriod(),
+                enrollCert.getToBeSigned().getRegion(),
+                enrollCert.getToBeSigned().getAssuranceLevel(),
+                appPermissions, null);
+        return certificateSubjectAttributes;
+    }
+
+    private CertificateSubjectAttributes genCertificateSubjectAttributes(String hostname, ValidityPeriod validityPeriod, GeographicRegion region,
+                                                                         SubjectAssurance assuranceLevel,
+                                                                         PsidSsp[] appPermissions, PsidGroupPermissions[] certIssuePermissions) throws Exception {
+
+        return new CertificateSubjectAttributes((hostname != null ? new CertificateId(new Hostname(hostname)) : new CertificateId()),
+                validityPeriod, region, assuranceLevel,
+                new SequenceOfPsidSsp(appPermissions), (certIssuePermissions != null ?
+                new SequenceOfPsidGroupPermissions(certIssuePermissions) : null));
     }
 }
 
