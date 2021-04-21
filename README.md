@@ -1,9 +1,30 @@
 # MASSA
-IDE: IntelliJ IDEA
+#### A "swiss army knife" for PKI on Intelligent Transport Systems
+IDE: IntelliJ IDEA 2021.1
 
-JDK version: 13
+JDK version: 13.0.2
 
-Gradle version: 
+Gradle version: 6.8.3
+
+Setari: 
+ * Settings/Preferences (Ctrl+Alt+S) > Build, Execution, Deployment > Build Tools  > Gradle
+
+Dependencies:
+```aidl
+git clone https://github.com/pvendil/c2c-common.git
+
+// cam asa am rezolvat dependintele pentru moment :)
+cd c2c-common/src/main/java
+
+git clone https://github.com/dima331453/massa.git
+```
+
+Run with JAR:
+ * File > Project Structure > Artifacts > Add > Jar > From modules ..
+ * Build > Build Artifacts > Build
+```aidl
+java -jar c2c-common.main.jar [see  options below]
+```
 
 Initializare:
 ```aidl
