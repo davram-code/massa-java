@@ -1,12 +1,12 @@
-package massa;
+package massa.its.entities;
 
+import massa.Utils;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
-import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.InnerAtRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.InnerAtResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.SharedAtRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.CertificateFormat;
@@ -16,7 +16,6 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetype
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.InnerEcRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.InnerEcResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.ETSITS102941MessagesCaGenerator;
-import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
@@ -46,7 +45,15 @@ import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSA
 import static org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.PublicVerificationKey.PublicVerificationKeyChoices.ecdsaNistP256;
 
 public class ITSEntityDemo {
-    final static int SWEDEN = 752;
+    // am mutat campurile ce vor fi setate din fisier de configurare aici
+    final static int COUNTRY_CODE = 752;
+    final static String enrollmentDate = "20181202 12:12:21";
+    final static int enrollmentDurationYears = 5;
+    final static int assuranceLevel = 1;
+    final static int confidenceLevel = 3;
+    final static String hostname = "massa.mta.ro";
+    final static String enrollCredCannonicalName = "SomeEnrolCredCanonicalName";
+
     static final PublicVerificationKey.PublicVerificationKeyChoices signAlg = ecdsaNistP256;
     static final BasePublicEncryptionKey.BasePublicEncryptionKeyChoices encAlg = BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256;
 
@@ -96,33 +103,41 @@ public class ITSEntityDemo {
         EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage;
 
         //Step1 - The ITS Station will generate an ECC private key and the corresponding public key (verificationKey) to be included in the Enrollment Certificate.
-        // Generate keys for an enrollment credential.
         KeyPair enrolCredSignKeys = getEnrollCredSignKeys();
         KeyPair enrolCredEncKeys = getEnrollCredEncKeys();
 
-
-//        KeyPair enrolCredSignKeys = cryptoManager.generateKeyPair(ecdsaNistP256);
-//        KeyPair enrolCredEncKeys = cryptoManager.generateKeyPair(ecdsaNistP256);
-
         PublicKeys publicKeys = messagesCaGenerator.genPublicKeys(signAlg, enrolCredSignKeys.getPublic(), SymmAlgorithm.aes128Ccm, encAlg, enrolCredEncKeys.getPublic());
-        PsidSsp appPermCertMan = new PsidSsp(SecuredCertificateRequestService, new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("0132")));
+        PsidSsp appPermCertMan = new PsidSsp(SecuredCertificateRequestService, new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("01C0")));
         PsidSsp[] appPermissions = new PsidSsp[]{appPermCertMan};
-        ValidityPeriod enrolValidityPeriod = new ValidityPeriod((new SimpleDateFormat("yyyyMMdd HH:mm:ss")).parse("20181202 12:12:21"), Duration.DurationChoices.years, 5);
-        GeographicRegion regionSwe = GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
-        SubjectAssurance subjectAssurance = new SubjectAssurance(1, 3);
 
-        CertificateSubjectAttributes certificateSubjectAttributes = genCertificateSubjectAttributes("enroll1", enrolValidityPeriod,
+        ValidityPeriod enrolValidityPeriod = new ValidityPeriod(
+                (new SimpleDateFormat("yyyyMMdd HH:mm:ss")).parse(enrollmentDate),
+                Duration.DurationChoices.years, enrollmentDurationYears
+        );
+
+        GeographicRegion regionSwe = GeographicRegion.generateRegionForCountrys(Arrays.asList(COUNTRY_CODE));
+
+        SubjectAssurance subjectAssurance = new SubjectAssurance(assuranceLevel, confidenceLevel);
+
+        CertificateSubjectAttributes certificateSubjectAttributes = genCertificateSubjectAttributes(hostname, enrolValidityPeriod,
                 regionSwe, subjectAssurance,
-                appPermissions, null);
+                appPermissions, null
+        );
 
-        InnerEcRequest initialInnerEcRequest = new InnerEcRequest("SomeEnrolCredCanonicalName".getBytes("UTF-8"), CertificateFormat.TS103097C131, publicKeys, certificateSubjectAttributes);
+        InnerEcRequest initialInnerEcRequest = new InnerEcRequest(
+                enrollCredCannonicalName.getBytes("UTF-8"),
+                CertificateFormat.TS103097C131,
+                publicKeys,
+                certificateSubjectAttributes
+        );
 
-        System.out.println("ITS-S - InitialEnrolRequestMessageResult:" + initialInnerEcRequest.toString() + "\n");
         initialEnrolRequestMessageResult = messagesCaGenerator.genInitialEnrolmentRequestMessage(
                 new Time64(new Date()), // generation Time
                 initialInnerEcRequest,
-                enrolCredSignKeys.getPublic(), enrolCredSignKeys.getPrivate(), // The key pair used in the enrolment credential used for self signed PoP
-                Utils.readCertFromFile(pathToEnrollmentCACert)); // The EA certificate to encrypt message to.
+                enrolCredSignKeys.getPublic(),
+                enrolCredSignKeys.getPrivate(), // The key pair used in the enrolment credential used for self signed PoP
+                Utils.readCertFromFile(pathToEnrollmentCACert)
+        ); // The EA certificate to encrypt message to.
 
         initialEnrolRequestMessage = (EtsiTs103097DataEncryptedUnicast) initialEnrolRequestMessageResult.getEncryptedData();
 
@@ -290,7 +305,7 @@ public class ITSEntityDemo {
     private CertificateSubjectAttributes genCertificateSubjectAttributes(String hostname, ValidityPeriod validityPeriod, GeographicRegion region,
                                                                          SubjectAssurance assuranceLevel,
                                                                          PsidSsp[] appPermissions, PsidGroupPermissions[] certIssuePermissions) throws Exception {
-        System.out.println("DATA:" + hostname + " " + validityPeriod + " " + region.toString() + "\n");
+//        System.out.println("DATA:" + hostname + " " + validityPeriod + " " + region.toString() + "\n");
         return new CertificateSubjectAttributes((hostname != null ? new CertificateId(new Hostname(hostname)) : new CertificateId()),
                 validityPeriod, region, assuranceLevel,
                 new SequenceOfPsidSsp(appPermissions), (certIssuePermissions != null ?

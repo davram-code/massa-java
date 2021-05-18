@@ -1,5 +1,6 @@
-package massa;
+package massa.its.entities;
 
+import massa.Utils;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
@@ -20,8 +21,6 @@ import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Certif
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
 
 
-import java.nio.file.Path;
-import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.text.SimpleDateFormat;

@@ -1,5 +1,6 @@
-package massa;
+package massa.its.entities;
 
+import massa.Utils;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
@@ -44,6 +45,7 @@ public class EnrollmentAuthorityAppDemo {
     private EtsiTs103097Certificate[] enrollmentCAChain;
 
     private ETSIEnrollmentCredentialGenerator enrollmentCredentialCertGenerator;
+    private Map<HashedId8, Certificate> trustStore;
 
     public EnrollmentAuthorityAppDemo(String pathToEnrollmentCA, String pathToRootCA) throws Exception {
         cryptoManager = new DefaultCryptoManager();
@@ -58,46 +60,57 @@ public class EnrollmentAuthorityAppDemo {
         enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
 
 
-        enrollmentCAChain = new EtsiTs103097Certificate[]{Utils.readCertFromFile(pathToEnrollmentCA), Utils.readCertFromFile(pathToRootCA)};
+        enrollmentCAChain = new EtsiTs103097Certificate[]{
+                Utils.readCertFromFile(pathToEnrollmentCA),
+                Utils.readCertFromFile(pathToRootCA)
+        };
+
+        trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{enrollmentCAChain[1]});
     }
 
-    public EtsiTs103097DataEncryptedUnicast verifyEnrollmentRequestMessage(EtsiTs103097DataEncryptedUnicast enrolRequestMessage, String pathToEaSignPublicKey, String pathToEaSignPrivateKey, String pathToEaEncPrivateKey) throws Exception {
-         /*
-         To verify both initial and rekey EnrolRequestMessage.
-         */
-        // First build a certificate store and a trust store to verify signature.
-        // These can be null if only initial messages are used.
-        Map<HashedId8, Certificate> enrolCredCertStore = messagesCaGenerator.buildCertStore(enrollmentCAChain);
-        Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{enrollmentCAChain[1]});
+    public EtsiTs103097DataEncryptedUnicast verifyEnrollmentRequestMessage(
+            String pathEnrollRequest,
+            String pathToEaSignPublicKey,
+            String pathToEaSignPrivateKey,
+            String pathToEaEncPrivateKey
+    ) throws Exception {
+        /* TODO: This method should be used also when rekey-ing */
+        EtsiTs103097DataEncryptedUnicast enrolRequestMessage = Utils.readDataEncryptedUnicast(pathEnrollRequest);
 
-        // Then create a receiver store to decrypt the message
+        Map<HashedId8, Certificate> enrolCredCertStore = messagesCaGenerator.buildCertStore(enrollmentCAChain);
         Map<HashedId8, Receiver> enrolCARecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(Utils.readPrivateKey(pathToEaEncPrivateKey), enrollmentCAChain[0])});
 
-        // Then decrypt and verify with:
-        // Important: this method only verifies the signature, it does not validate header information.
+        /** Verify (just) the signature **/
         RequestVerifyResult<InnerEcRequest> enrolmentRequestResult = messagesCaGenerator.decryptAndVerifyEnrolmentRequestMessage(enrolRequestMessage, enrolCredCertStore, trustStore, enrolCARecipients);
+
         // The verify result for enrolment request returns a special value object containing both inner message and
         // requestHash used in response.
 
-        System.out.println("EA: ReceivedInitialEnrolRequestMessageResult:" + enrolmentRequestResult.toString() + "\n");
-
-        // The result object of all verify message method contains the following information:
-        enrolmentRequestResult.getSignerIdentifier(); // The identifier of the signer
-        enrolmentRequestResult.getHeaderInfo(); // The header information of the signer of the message
-        enrolmentRequestResult.getValue(); // The inner message that was signed and or encrypted.
-        enrolmentRequestResult.getSecretKey(); // The symmetrical key used in Ecies request operations and is set when verifying all
-        // request messages. The secret key should usually be used to encrypt the response back to the requester.
+//        // The result object of all verify message method contains the following information:
+//        enrolmentRequestResult.getSignerIdentifier(); // The identifier of the signer
+//        enrolmentRequestResult.getHeaderInfo(); // The header information of the signer of the message
+//        enrolmentRequestResult.getValue(); // The inner message that was signed and or encrypted.
+//        enrolmentRequestResult.getSecretKey(); // The symmetrical key used in Ecies request operations and is set when verifying all
+//        // request messages. The secret key should usually be used to encrypt the response back to the requester.
 
         /* Extract Public keys */
-        PublicKey enrolCredSignKeys_public = ((PublicKey) cryptoManager.decodeEccPoint(enrolmentRequestResult.getValue().getPublicKeys().getVerificationKey().getType(), (EccCurvePoint) enrolmentRequestResult.getValue().getPublicKeys().getVerificationKey().getValue()));
-        PublicKey enrolCredEncKeys_public = ((PublicKey) cryptoManager.decodeEccPoint(enrolmentRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(), (EccCurvePoint) enrolmentRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()));
+        PublicKey enrolCredSignKeys_public = (PublicKey) cryptoManager.decodeEccPoint(
+                enrolmentRequestResult.getValue().getPublicKeys().getVerificationKey().getType(),
+                (EccCurvePoint) enrolmentRequestResult.getValue().getPublicKeys().getVerificationKey().getValue()
+        );
+
+        PublicKey enrolCredEncKeys_public = (PublicKey) cryptoManager.decodeEccPoint(
+                enrolmentRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
+                (EccCurvePoint) enrolmentRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
+        );
+
         EtsiTs103097Certificate enrollmentCredentialCert = enrollmentCredentialCertGenerator.genEnrollCredential(
                 enrolmentRequestResult.getValue().getItsId().toString(), // unique identifier name
                 enrolmentRequestResult.getValue().getRequestedSubjectAttributes().getValidityPeriod(),
                 enrolmentRequestResult.getValue().getRequestedSubjectAttributes().getRegion(),
                 Hex.decode("0132"), //SSP data set in SecuredCertificateRequestService appPermission, two byte, for example: 0x01C0
-                1, // assuranceLevel
-                3, // confidenceLevel
+                enrolmentRequestResult.getValue().getRequestedSubjectAttributes().getAssuranceLevel().getAssuranceLevel(),
+                enrolmentRequestResult.getValue().getRequestedSubjectAttributes().getAssuranceLevel().getConfidenceLevel(),
                 Signature.SignatureChoices.ecdsaNistP256Signature, //signingPublicKeyAlgorithm
                 enrolCredSignKeys_public, // signPublicKey, i.e public key in certificate
                 enrollmentCAChain[1], // signerCertificate
