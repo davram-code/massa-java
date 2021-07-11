@@ -34,7 +34,7 @@ import java.util.Map;
 import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 import static org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.PublicVerificationKey.PublicVerificationKeyChoices.ecdsaNistP256;
 
-public class EnrollmentAuthorityAppDemo {
+public class EnrollmentAuthority {
 
     static final PublicVerificationKey.PublicVerificationKeyChoices signAlg = ecdsaNistP256;
     static final BasePublicEncryptionKey.BasePublicEncryptionKeyChoices encAlg = BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256;
@@ -47,7 +47,7 @@ public class EnrollmentAuthorityAppDemo {
     private ETSIEnrollmentCredentialGenerator enrollmentCredentialCertGenerator;
     private Map<HashedId8, Certificate> trustStore;
 
-    public EnrollmentAuthorityAppDemo(String pathToEnrollmentCA, String pathToRootCA) throws Exception {
+    public EnrollmentAuthority(String pathToEnrollmentCA, String pathToRootCA) throws Exception {
         cryptoManager = new DefaultCryptoManager();
         cryptoManager.setupAndConnect(new DefaultCryptoManagerParams("BC"));
 

@@ -2,14 +2,13 @@ package massa.cli;
 
 import com.beust.jcommander.JCommander;
 import massa.Utils;
-import massa.its.InitCAHierarchyDemo;
-import massa.its.entities.AuthorizationAuthorityAppDemo;
-import massa.its.entities.EnrollmentAuthorityAppDemo;
-import massa.its.entities.ITSEntityDemo;
+import massa.its.init.ServicesHierarchyInitializer;
+import massa.its.entities.AuthorizationAuthority;
+import massa.its.entities.EnrollmentAuthority;
+import massa.its.entities.ITSStation;
+import massa.its.init.StationInitializer;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
-
-import java.util.List;
 
 public class CommandLineParser {
     public static void parse(String[] args) {
@@ -21,11 +20,15 @@ public class CommandLineParser {
                     .build()
                     .parse(args);
 
-            if (arguments.init) {
-                initializeHierarchy(arguments);
+            if (arguments.initServices) {
+                initializeServices(arguments);
                 return;
             }
 
+            if (arguments.initStation) {
+                initializeStation(arguments);
+                return;
+            }
 
             if (arguments.entity != "") {
                 switch (arguments.entity) {
@@ -49,26 +52,39 @@ public class CommandLineParser {
         }
     }
 
-    private static void initializeHierarchy(ArgumentList arguments) throws Exception {
-        if (arguments.pathInitDir != "") {
-            InitCAHierarchyDemo initCAHierarchyDemo = new InitCAHierarchyDemo(arguments.pathInitDir);
-            initCAHierarchyDemo.init();
-        } else {
-            throw new Exception("You should also specify the path to the Init Dirctory!");
-        }
+    private static void initializeServices(ArgumentList arguments) throws Exception {
+        checkNeededArguments(new String[]{arguments.pathInitDir});
+        ServicesHierarchyInitializer initCAHierarchyDemo = new ServicesHierarchyInitializer(arguments.pathInitDir);
+        initCAHierarchyDemo.init();
+    }
+
+    private static void initializeStation(ArgumentList arguments) throws Exception {
+        checkNeededArguments(new String[]{arguments.pathInitDir});
+        StationInitializer stationInitializer = new StationInitializer(arguments.pathInitDir);
+        stationInitializer.init();
     }
 
     private static void parseITSActions(ArgumentList arguments) throws Exception {
         switch (arguments.action) {
             case "genreq": {
-                checkNeededArguments(new String[] {
-                    arguments.pathCertEnrollmentCA,
-                    arguments.pathOutEnrollRequest,
-                    arguments.pathOutSecretKey
+                checkNeededArguments(new String[]{
+                        arguments.pathCertEnrollmentCA,
+                        arguments.pathOutEnrollRequest,
+                        arguments.pathOutSecretKey,
+                        arguments.pathStationEnrollSignPrvKey,
+                        arguments.pathStationEnrollSignPubKey,
+                        arguments.pathStationEnrollEncPrvKey,
+                        arguments.pathStationEnrollEncPubKey
                 });
 
-                ITSEntityDemo itsStation = new ITSEntityDemo();
-                EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = itsStation.generateInitialEnrollmentRequest(arguments.pathCertEnrollmentCA);
+                ITSStation itsStation = new ITSStation();
+                EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = itsStation.generateInitialEnrollmentRequest(
+                        arguments.pathCertEnrollmentCA,
+                        arguments.pathStationEnrollSignPubKey,
+                        arguments.pathStationEnrollSignPrvKey,
+                        arguments.pathStationEnrollEncPubKey,
+                        arguments.pathStationEnrollEncPrvKey
+                );
 
                 Utils.dumpToFile(arguments.pathOutSecretKey, itsStation.getInitialEnrollRequestSecretKey());
                 Utils.dumpToFile(arguments.pathOutEnrollRequest, initialEnrolRequestMessage);
@@ -79,22 +95,36 @@ public class CommandLineParser {
             }
 
             case "gen-auth-req": {
-                checkNeededArguments(new String []{
+                checkNeededArguments(new String[]{
                         arguments.pathCertEnrollmentCA,
                         arguments.pathCredCert,
                         arguments.pathCertRootCA,
                         arguments.pathCertAuthCA,
                         arguments.pathEnrollResponse,
-                        arguments.pathOutputFile
+                        arguments.pathOutputFile,
+                        arguments.pathOutSecretKey,
+                        arguments.pathStationEnrollSignPubKey,
+                        arguments.pathStationEnrollSignPrvKey,
+                        arguments.pathStationAuthSignPubKey,
+                        arguments.pathStationAuthSignPrvKey,
+                        arguments.pathStationAuthEncPubKey,
+                        arguments.pathStationAuthEncPrvKey
                 });
 
-                ITSEntityDemo itsStation = new ITSEntityDemo();
+                ITSStation itsStation = new ITSStation();
                 EtsiTs103097DataEncryptedUnicast authRequestMessage = itsStation.generateAuthorizationRequestMessage(
                         arguments.pathCertEnrollmentCA,
                         arguments.pathCredCert,
                         arguments.pathCertRootCA,
                         arguments.pathCertAuthCA,
-                        arguments.pathEnrollResponse
+                        arguments.pathEnrollResponse,
+                        arguments.pathStationEnrollSignPubKey,
+                        arguments.pathStationEnrollSignPrvKey,
+                        arguments.pathStationAuthSignPubKey,
+                        arguments.pathStationAuthSignPrvKey,
+                        arguments.pathStationAuthEncPubKey,
+                        arguments.pathStationAuthEncPrvKey,
+                        arguments.pathOutSecretKey
                 );
 
                 Utils.dumpToFile(arguments.pathOutputFile, authRequestMessage);
@@ -103,21 +133,23 @@ public class CommandLineParser {
             }
 
             case "verify": {
-                checkNeededArguments(new String[] {
+                checkNeededArguments(new String[]{
                         arguments.pathEnrollResponse,
                         arguments.pathEnrollRequest,
                         arguments.pathCertEnrollmentCA,
                         arguments.pathCertRootCA,
                         arguments.pathSecretKey,
+                        arguments.pathOutputFile
                 });
 
-                ITSEntityDemo itsStation = new ITSEntityDemo();
+                ITSStation itsStation = new ITSStation();
                 itsStation.verifyEnrolmentResponse(
                         arguments.pathEnrollResponse,
                         arguments.pathEnrollRequest,
                         arguments.pathCertRootCA,
                         arguments.pathCertEnrollmentCA,
-                        arguments.pathSecretKey);
+                        arguments.pathSecretKey,
+                        arguments.pathOutputFile);
 
                 // salvam certificatul primit in raspunsul de la EA !!!
                 return;
@@ -132,7 +164,7 @@ public class CommandLineParser {
                         arguments.pathOutputFile,
                 });
 
-                ITSEntityDemo itsStation = new ITSEntityDemo();
+                ITSStation itsStation = new ITSStation();
                 EtsiTs103097Certificate cert = itsStation.verifyAuthorizationResponse(
                         arguments.pathCertAuthCA,
                         arguments.pathCertRootCA,
@@ -163,7 +195,7 @@ public class CommandLineParser {
                         arguments.pathOutputFile
                 });
 
-                EnrollmentAuthorityAppDemo ea_app = new EnrollmentAuthorityAppDemo(arguments.pathCertEnrollmentCA, arguments.pathCertRootCA);
+                EnrollmentAuthority ea_app = new EnrollmentAuthority(arguments.pathCertEnrollmentCA, arguments.pathCertRootCA);
                 EtsiTs103097DataEncryptedUnicast enrolResponseMessage = ea_app.verifyEnrollmentRequestMessage(
                         arguments.pathEnrollRequest,
                         arguments.pathPubKeySignEA,
@@ -176,8 +208,7 @@ public class CommandLineParser {
             }
 
             case "validauth": {
-                System.out.println("AIIC");
-                EnrollmentAuthorityAppDemo ea_app = new EnrollmentAuthorityAppDemo(arguments.pathCertEnrollmentCA, arguments.pathCertRootCA);
+                EnrollmentAuthority ea_app = new EnrollmentAuthority(arguments.pathCertEnrollmentCA, arguments.pathCertRootCA);
                 EtsiTs103097DataEncryptedUnicast validation = ea_app.genAuthentificationValidationResponse(
                         arguments.pathAuthValRequestMessage,
                         arguments.pathCertAuthCA,
@@ -186,7 +217,7 @@ public class CommandLineParser {
                         arguments.pathPrvKeyEncEA,
                         arguments.pathPrvKeySignEA
                 );
-                System.out.println(validation.toString());
+//                System.out.println(validation.toString());
                 Utils.dumpToFile(arguments.pathOutputFile, validation);
                 return;
             }
@@ -197,8 +228,7 @@ public class CommandLineParser {
     private static void parseAAActions(ArgumentList arguments) throws Exception {
         switch (arguments.action) {
             case "validreq": {
-                System.out.println("Aici!");
-                AuthorizationAuthorityAppDemo aa_app = new AuthorizationAuthorityAppDemo();
+                AuthorizationAuthority aa_app = new AuthorizationAuthority();
                 EtsiTs103097DataEncryptedUnicast authValReq = aa_app.generateAutorizationValidationRequest(
                         arguments.pathCertAuthCA,
                         arguments.pathCertEnrollmentCA,
@@ -207,15 +237,14 @@ public class CommandLineParser {
                         arguments.pathPrvKeySignAA,
                         arguments.pathAuthRequestMessage
                 );
-                System.out.println(authValReq.toString());
+//                System.out.println(authValReq.toString());
                 Utils.dumpToFile(arguments.pathOutputFile, authValReq);
                 return;
             }
 
             case "genrsp": {
-                System.out.println("Last sstep!");
-                /// AICI SA VERIFICI RASPUNSUL DE LA VALIDARE!
-                AuthorizationAuthorityAppDemo aa_app = new AuthorizationAuthorityAppDemo();
+                /*TODO: AICI SA VERIFICI RASPUNSUL DE LA VALIDARE!*/
+                AuthorizationAuthority aa_app = new AuthorizationAuthority();
                 EtsiTs103097DataEncryptedUnicast authResponse = aa_app.generateAutorizationResponse(
                         arguments.pathAuthRequestMessage,
                         arguments.pathCertAuthCA,
@@ -224,19 +253,16 @@ public class CommandLineParser {
                         arguments.pathPrvKeySignAA,
                         arguments.pathPubKeySignAA
                 );
-                System.out.println(authResponse.toString());
+//                System.out.println(authResponse.toString());
                 Utils.dumpToFile(arguments.pathOutputFile, authResponse);
                 return;
             }
         }
     }
 
-    private static void checkNeededArguments(String [] argValues) throws Exception
-    {
-        for (String arg: argValues)
-        {
-            if(arg == "")
-            {
+    private static void checkNeededArguments(String[] argValues) throws Exception {
+        for (String arg : argValues) {
+            if (arg == "") {
                 throw new Exception("Not enough arguments!");
             }
         }

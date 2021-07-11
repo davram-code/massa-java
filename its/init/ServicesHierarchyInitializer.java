@@ -1,4 +1,4 @@
-package massa.its;
+package massa.its.init;
 
 import massa.Utils;
 import org.bouncycastle.util.encoders.Hex;
@@ -18,13 +18,13 @@ import java.util.List;
 
 import static org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.PublicVerificationKey.PublicVerificationKeyChoices.ecdsaNistP256;
 
-public class InitCAHierarchyDemo {
+public class ServicesHierarchyInitializer extends Initializer {
     final static int SWEDEN = 752;
     public static EtsiTs103097Certificate rootCACertificate;
 
     public static EtsiTs103097Certificate enrollmentCACertificate;
     public static EtsiTs103097Certificate authorityCACertificate;
-    private String pathInitDirectory;
+
     private String pathRootCACert;
     private String pathEnrollmentCACert;
     private String pathAuthorizationCACert;
@@ -33,14 +33,8 @@ public class InitCAHierarchyDemo {
     private String pathEaEncPubKey;
     private String pathEaEncPrvKey;
 
-    private String pathITSSignPubKey;
-    private String pathITSSignPrvKey;
-    private String pathITSEncPubKey;
-    private String pathITSEncPrvKey;
-
 
     private GeographicRegion region;
-    private Ieee1609Dot2CryptoManager cryptoManager;
     private ETSIAuthorityCertGenerator authorityCertGenerator;
     /* Root CA */
     private KeyPair rootCASigningKeys;
@@ -54,15 +48,15 @@ public class InitCAHierarchyDemo {
     private KeyPair authorityCASigningKeys;
     private KeyPair authorityCAEncryptionKeys;
 
-    /* ITS */
-    private KeyPair enrolCredSignKeys;
-    private KeyPair enrolCredEncKeys;
 
-    private KeyPair authTicketSignKeys; // TO SAVE
-    private KeyPair authTicketEncKeys; // TO SAVE
 
-    public InitCAHierarchyDemo(String pathInitDirectory) {
-        this.pathInitDirectory = pathInitDirectory;
+    public ServicesHierarchyInitializer(String pathInitDirectory) throws Exception {
+        super(pathInitDirectory);
+
+        (new File(pathInitDirectory + "/ca")).mkdir();
+        (new File(pathInitDirectory + "/aa")).mkdir();
+        (new File(pathInitDirectory + "/ea")).mkdir();
+
         pathRootCACert = pathInitDirectory + "/ca/cert.bin";
         pathEnrollmentCACert = pathInitDirectory + "/ea/cert.bin";
         pathAuthorizationCACert = pathInitDirectory + "/aa/cert.bin";
@@ -71,17 +65,10 @@ public class InitCAHierarchyDemo {
         pathEaSignPrvKey = pathInitDirectory + "/ea/SignPrvKey.bin";
         pathEaEncPubKey = pathInitDirectory + "/ea/EncPubKey.bin";
         pathEaEncPrvKey = pathInitDirectory + "/ea/EncPrvKey.bin";
-
-
     }
 
     public void init() throws Exception {
 
-        //Step 1 - Crypto Manager
-        // Create a crypto manager in charge of communicating with underlying cryptographic components
-        cryptoManager = new DefaultCryptoManager();
-        // Initialize the crypto manager to use soft keys using the bouncy castle cryptographic provider.
-        cryptoManager.setupAndConnect(new DefaultCryptoManagerParams("BC"));
 
         // Define the region
         List<Integer> countries = new ArrayList<Integer>();
@@ -100,7 +87,6 @@ public class InitCAHierarchyDemo {
         //Step 2.4 - Authorization CA
         initAuthorizationCA();
 
-        initITS();
 
         dumpCertificates();
 
@@ -113,17 +99,6 @@ public class InitCAHierarchyDemo {
         Utils.dumpToFile(pathInitDirectory + "/aa/SignKey.prv", authorityCASigningKeys.getPrivate());
         Utils.dumpToFile(pathInitDirectory + "/aa/EncKey.pub", authorityCAEncryptionKeys.getPublic());
         Utils.dumpToFile(pathInitDirectory + "/aa/EncKey.prv", authorityCAEncryptionKeys.getPrivate());
-
-        Utils.dumpToFile(pathInitDirectory + "/its/CredSignKey.pub", enrolCredSignKeys.getPublic());
-        Utils.dumpToFile(pathInitDirectory + "/its/CredSignKey.prv", enrolCredSignKeys.getPrivate());
-        Utils.dumpToFile(pathInitDirectory + "/its/CredEncKey.pub", enrolCredEncKeys.getPublic());
-        Utils.dumpToFile(pathInitDirectory + "/its/CredEncKey.prv", enrolCredEncKeys.getPrivate());
-        Utils.dumpToFile(pathInitDirectory + "/its/TicketSignKey.pub", authTicketSignKeys.getPublic());
-        Utils.dumpToFile(pathInitDirectory + "/its/TicketSignKey.prv", authTicketSignKeys.getPrivate());
-        Utils.dumpToFile(pathInitDirectory + "/its/TicketEncKey.pub", authTicketEncKeys.getPublic());
-        Utils.dumpToFile(pathInitDirectory + "/its/TicketEncKey.prv", authTicketEncKeys.getPrivate());
-
-
 
     }
 
@@ -202,10 +177,6 @@ public class InitCAHierarchyDemo {
                 BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256,  // encPublicKeyAlgorithm
                 authorityCAEncryptionKeys.getPublic() // encryption public key
         );
-
-        //  System.out.println("-----\n");
-        //  System.out.println("AA CA : " + authorityCACertificate.toString());
-        // System.out.println("Encoded: " + Hex.toHexString(authorityCACertificate.getEncoded()));
     }
 
     private void dumpCertificates() throws Exception {
@@ -226,11 +197,6 @@ public class InitCAHierarchyDemo {
         }
     }
 
-    private void initITS() throws Exception {
-        enrolCredSignKeys = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
-        enrolCredEncKeys = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
-        authTicketSignKeys = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
-        authTicketEncKeys = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
-    }
+
 
 }

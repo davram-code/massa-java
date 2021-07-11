@@ -29,12 +29,12 @@ import java.util.Map;
 
 import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 
-public class AuthorizationAuthorityAppDemo {
+public class AuthorizationAuthority {
 
     private Ieee1609Dot2CryptoManager cryptoManager;
     private ETSITS102941MessagesCaGenerator messagesCaGenerator;
 
-    public AuthorizationAuthorityAppDemo() throws Exception {
+    public AuthorizationAuthority() throws Exception {
         cryptoManager = new DefaultCryptoManager();
         cryptoManager.setupAndConnect(new DefaultCryptoManagerParams("BC"));
 
@@ -86,7 +86,7 @@ public class AuthorizationAuthorityAppDemo {
             String pathPrvSignKeyAA,
             String pathPubSignKeyAA
 
-            ) throws Exception {
+    ) throws Exception {
         EtsiTs103097Certificate authorizationCACert = Utils.readCertFromFile(pathAACert);
         EtsiTs103097Certificate rootCACert = Utils.readCertFromFile(pathRootCert);
         PrivateKey prvEncKeyAA = Utils.readPrivateKey(pathPrvEncKeyAA);
@@ -95,7 +95,7 @@ public class AuthorizationAuthorityAppDemo {
         EtsiTs103097DataEncryptedUnicast authRequestMessage = Utils.readDataEncryptedUnicast(pathAuthRequestMsg);
 
 
-        EtsiTs103097Certificate[] authorizationCAChain = new EtsiTs103097Certificate[]{authorizationCACert,rootCACert};
+        EtsiTs103097Certificate[] authorizationCAChain = new EtsiTs103097Certificate[]{authorizationCACert, rootCACert};
         Map<HashedId8, Receiver> authorizationCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(prvEncKeyAA, authorizationCACert)});
 
         RequestVerifyResult<InnerAtRequest> authRequestResult = messagesCaGenerator.decryptAndVerifyAuthorizationRequestMessage(authRequestMessage,
@@ -133,8 +133,6 @@ public class AuthorizationAuthorityAppDemo {
         );//authTicketEncKeys.getPublic()
 
 
-
-
         // The AuthorizationRequestData contains the innerAtRequest and calculated requestHash
         InnerAtRequest innerAtRequest = authRequestResult.getValue();
         /*
@@ -153,7 +151,7 @@ public class AuthorizationAuthorityAppDemo {
                 SymmAlgorithm.aes128Ccm, // Encryption algorithm used.
                 authRequestResult.getSecretKey()); // The symmetric key generated in the request.
 
-        return  authResponseMessage;
+        return authResponseMessage;
     }
 
 

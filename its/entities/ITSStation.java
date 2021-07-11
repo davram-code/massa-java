@@ -44,7 +44,7 @@ import java.util.Map;
 import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 import static org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.PublicVerificationKey.PublicVerificationKeyChoices.ecdsaNistP256;
 
-public class ITSEntityDemo {
+public class ITSStation {
     // am mutat campurile ce vor fi setate din fisier de configurare aici
     final static int COUNTRY_CODE = 752;
     final static String enrollmentDate = "20181202 12:12:21";
@@ -62,7 +62,7 @@ public class ITSEntityDemo {
 
     private EncryptResult initialEnrolRequestMessageResult;
 
-    public ITSEntityDemo() throws Exception {
+    public ITSStation() throws Exception {
         cryptoManager = new DefaultCryptoManager();
         cryptoManager.setupAndConnect(new DefaultCryptoManagerParams("BC"));
 
@@ -73,17 +73,6 @@ public class ITSEntityDemo {
                 false); // If EC points should be represented as uncompressed.
     }
 
-    private KeyPair getEnrollCredSignKeys() throws Exception {
-        PublicKey publicKeyS = Utils.readPublicKey("certificates/its/CredSignKey.pub");
-        PrivateKey privateKeyS = Utils.readPrivateKey("certificates/its/CredSignKey.prv");
-        return new KeyPair(publicKeyS, privateKeyS);
-    }
-
-    private KeyPair getEnrollCredEncKeys() throws Exception {
-        PublicKey publicKeyE = Utils.readPublicKey("certificates/its/CredEncKey.pub");
-        PrivateKey privateKeyE = Utils.readPrivateKey("certificates/its/CredEncKey.prv");
-        return new KeyPair(publicKeyE, privateKeyE);
-    }
 
     private KeyPair getAuthTicketSignKeys() throws Exception {
         PublicKey publicKeyS = Utils.readPublicKey("certificates/its/TicketSignKey.pub");
@@ -97,14 +86,25 @@ public class ITSEntityDemo {
         return new KeyPair(publicKeyE, privateKeyE);
     }
 
+    private KeyPair loadKeyPairs(String pathPubKey, String pathPrvKey) throws Exception {
+        PublicKey publicKeyE = Utils.readPublicKey(pathPubKey);
+        PrivateKey privateKeyE = Utils.readPrivateKey(pathPrvKey);
+        return new KeyPair(publicKeyE, privateKeyE);
+    }
 
-    public EtsiTs103097DataEncryptedUnicast generateInitialEnrollmentRequest(String pathToEnrollmentCACert) throws Exception {
+    public EtsiTs103097DataEncryptedUnicast generateInitialEnrollmentRequest(
+            String pathToEnrollmentCACert,
+            String pathToEnrollSignPubKey,
+            String pathToEnrollSignPrvKey,
+            String pathToEnrollEncPubKey,
+            String pathToEnrollEncPrvKey
+    ) throws Exception {
 
         EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage;
 
         //Step1 - The ITS Station will generate an ECC private key and the corresponding public key (verificationKey) to be included in the Enrollment Certificate.
-        KeyPair enrolCredSignKeys = getEnrollCredSignKeys();
-        KeyPair enrolCredEncKeys = getEnrollCredEncKeys();
+        KeyPair enrolCredSignKeys = loadKeyPairs(pathToEnrollSignPubKey, pathToEnrollSignPrvKey);
+        KeyPair enrolCredEncKeys = loadKeyPairs(pathToEnrollEncPubKey, pathToEnrollEncPrvKey);//
 
         PublicKeys publicKeys = messagesCaGenerator.genPublicKeys(signAlg, enrolCredSignKeys.getPublic(), SymmAlgorithm.aes128Ccm, encAlg, enrolCredEncKeys.getPublic());
         PsidSsp appPermCertMan = new PsidSsp(SecuredCertificateRequestService, new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("01C0")));
@@ -153,7 +153,8 @@ public class ITSEntityDemo {
                                         String pathEnrollRequestMessage,
                                         String pathCertRootCA,
                                         String pathCertEnrollmentCA,
-                                        String pathSecretKey) throws Exception {
+                                        String pathSecretKey,
+                                        String pathOutputEnrollmentCertificate) throws Exception {
         // To verify EnrolResponseMessage use:
         // Build certstore
         SecretKey itsSecretKey = Utils.readSecretKey(pathSecretKey);
@@ -178,7 +179,7 @@ public class ITSEntityDemo {
 
         System.out.println("ITS-S - EnrolmentResponse:" + enrolmentResponseResult.toString() + "\n");
 
-        Utils.dumpToFile("certificates/its/enrollmentCert.bin", enrolmentResponseResult.getValue().getCertificate());
+        Utils.dumpToFile(pathOutputEnrollmentCertificate, enrolmentResponseResult.getValue().getCertificate());
     }
 
     public EtsiTs103097DataEncryptedUnicast generateAuthorizationRequestMessage(
@@ -186,7 +187,14 @@ public class ITSEntityDemo {
             String pathErnollmentCredentialCert,
             String pathRootCACert,
             String pathAuthorizationCaCert,
-            String pathEnrollResponseMessage
+            String pathEnrollResponseMessage,
+            String pathToEnrollSignPubKey,
+            String pathToEnrollSignPrvKey,
+            String pathStationAuthSignPubKey,
+            String pathStationAuthSignPrvKey,
+            String pathStationAuthEncPubKey,
+            String pathStationAuthEncPrvKey,
+            String pathOutSecretKey
     ) throws Exception {
 
         EtsiTs103097DataEncryptedUnicast enrollResponseMessage = Utils.readDataEncryptedUnicast(pathEnrollResponseMessage);
@@ -195,12 +203,12 @@ public class ITSEntityDemo {
         EtsiTs103097Certificate enrolmentCACert = Utils.readCertFromFile(pathEnrolmentCACert);
         EtsiTs103097Certificate rootCACert = Utils.readCertFromFile(pathRootCACert);
         EtsiTs103097Certificate authorizationCACert = Utils.readCertFromFile(pathAuthorizationCaCert);
-        PublicKey authTicketSignPublic = Utils.readPublicKey("certificates/its/TicketSignKey.pub");
-        PrivateKey authTicketSignPrivate = Utils.readPrivateKey("certificates/its/TicketSignKey.prv");
+        PublicKey authTicketSignPublic = Utils.readPublicKey(pathStationAuthSignPubKey);
+        PrivateKey authTicketSignPrivate = Utils.readPrivateKey(pathStationAuthSignPrvKey);
         KeyPair authTicketSignKeys = new KeyPair(authTicketSignPublic, authTicketSignPrivate);
 
-        PublicKey authTicketEncPublic = Utils.readPublicKey("certificates/its/TicketEncKey.pub");
-        PrivateKey authTicketEncPrivate = Utils.readPrivateKey("certificates/its/TicketEncKey.prv");
+        PublicKey authTicketEncPublic = Utils.readPublicKey(pathStationAuthEncPubKey);
+        PrivateKey authTicketEncPrivate = Utils.readPrivateKey(pathStationAuthEncPrvKey);
         KeyPair authTicketEncKeys = new KeyPair(authTicketEncPublic, authTicketEncPrivate);
 
         EtsiTs103097Certificate[] enrollmentCredCertChain = new EtsiTs103097Certificate[]{enrolmentCredCert, enrolmentCACert, rootCACert};
@@ -211,7 +219,7 @@ public class ITSEntityDemo {
         byte[] hmacKey = genHmacKey();
         SharedAtRequest sharedAtRequest = genDummySharedAtRequest(publicKeys, hmacKey, enrolmentCACert);
 
-        KeyPair enrolCredSignKeys = getEnrollCredSignKeys();
+        KeyPair enrolCredSignKeys = loadKeyPairs(pathToEnrollSignPubKey, pathToEnrollSignPrvKey);
 
         EncryptResult authRequestMessageResult = messagesCaGenerator.genAuthorizationRequestMessage(
                 new Time64(new Date()), // generation Time
@@ -228,16 +236,16 @@ public class ITSEntityDemo {
         );
 
         EtsiTs103097DataEncryptedUnicast authRequestMessage = (EtsiTs103097DataEncryptedUnicast) authRequestMessageResult.getEncryptedData();
-        Utils.dumpToFile("certificates/its/AuthSecretKey.bin", authRequestMessageResult.getSecretKey());
+        Utils.dumpToFile(pathOutSecretKey, authRequestMessageResult.getSecretKey());
         return authRequestMessage;
     }
 
     public EtsiTs103097Certificate verifyAuthorizationResponse(
-        String pathAACert,
-        String pathRootCert,
-        String pahtAuthRespMsg,
-        String pathAuthReqMsg,
-        String pathToSecretKey
+            String pathAACert,
+            String pathRootCert,
+            String pahtAuthRespMsg,
+            String pathAuthReqMsg,
+            String pathToSecretKey
     ) throws Exception {
         EtsiTs103097Certificate authorizationCACert = Utils.readCertFromFile(pathAACert);
         EtsiTs103097Certificate rootCACert = Utils.readCertFromFile(pathRootCert);
@@ -245,11 +253,11 @@ public class ITSEntityDemo {
         EtsiTs103097DataEncryptedUnicast authRequestMessage = Utils.readDataEncryptedUnicast(pathAuthReqMsg);
         SecretKey secretKey = Utils.readSecretKey(pathToSecretKey);
 
-        EtsiTs103097Certificate[] authorizationCAChain = new EtsiTs103097Certificate[]{authorizationCACert,rootCACert};
+        EtsiTs103097Certificate[] authorizationCAChain = new EtsiTs103097Certificate[]{authorizationCACert, rootCACert};
 
 
         Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{rootCACert});
-        Map<HashedId8, Receiver> authTicketSharedKeyReceivers = messagesCaGenerator.buildRecieverStore(new Receiver[] {new PreSharedKeyReceiver(SymmAlgorithm.aes128Ccm, secretKey)});
+        Map<HashedId8, Receiver> authTicketSharedKeyReceivers = messagesCaGenerator.buildRecieverStore(new Receiver[]{new PreSharedKeyReceiver(SymmAlgorithm.aes128Ccm, secretKey)});
         Map<HashedId8, Certificate> authCACertStore = messagesCaGenerator.buildCertStore(authorizationCAChain);
         VerifyResult<InnerAtResponse> authResponseResult = messagesCaGenerator.decryptAndVerifyAuthorizationResponseMessage(authResponseMessage,
                 authCACertStore, // certificate store containing certificates for auth cert.

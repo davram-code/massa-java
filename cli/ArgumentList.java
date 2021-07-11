@@ -7,11 +7,15 @@ public class ArgumentList {
             description = "Verbose")
     public boolean verbose = false;
 
-    @Parameter(names = {"-init"},
+    @Parameter(names = {"--init-station"},
             description = "Initialize Hierarchy")
-    public boolean init = false;
+    public boolean initStation = false;
 
-    @Parameter(names = {"-initDir"},
+    @Parameter(names = {"--init-services"},
+            description = "Initialize Hierarchy")
+    public boolean initServices = false;
+
+    @Parameter(names = {"--initDir"},
             description = "Directory used in Initialize Hierarchy")
     public String pathInitDir = "";
 
@@ -103,5 +107,42 @@ public class ArgumentList {
     @Parameter(names = {"--cred-crt"},
             description = "The Enrollment Credential Certificate of the ITS Message")
     public String pathCredCert = "";
+
+
+    /* ITS Station - Enrollment */
+    @Parameter(names = {"--station-enroll-sign-pub-key"},
+            description = "W")
+    public String pathStationEnrollSignPubKey = "";
+
+    @Parameter(names = {"--station-enroll-sign-prv-key"},
+            description = "W")
+    public String pathStationEnrollSignPrvKey = "";
+
+    @Parameter(names = {"--station-enroll-enc-pub-key"},
+            description = "W")
+    public String pathStationEnrollEncPubKey = "";
+
+    @Parameter(names = {"--station-enroll-enc-prv-key"},
+            description = "W")
+    public String pathStationEnrollEncPrvKey = "";
+
+    /* ITS Station - Authorization */
+    @Parameter(names = {"--station-auth-sign-pub-key"},
+            description = "W")
+    public String pathStationAuthSignPubKey = "";
+
+    @Parameter(names = {"--station-auth-sign-prv-key"},
+            description = "W")
+    public String pathStationAuthSignPrvKey = "";
+
+    @Parameter(names = {"--station-auth-enc-pub-key"},
+            description = "W")
+    public String pathStationAuthEncPubKey = "";
+
+    @Parameter(names = {"--station-auth-enc-prv-key"},
+            description = "W")
+    public String pathStationAuthEncPrvKey = "";
+
+
 
 }
