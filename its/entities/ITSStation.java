@@ -187,7 +187,6 @@ public class ITSStation {
             String pathErnollmentCredentialCert,
             String pathRootCACert,
             String pathAuthorizationCaCert,
-            String pathEnrollResponseMessage,
             String pathToEnrollSignPubKey,
             String pathToEnrollSignPrvKey,
             String pathStationAuthSignPubKey,
@@ -197,7 +196,6 @@ public class ITSStation {
             String pathOutSecretKey
     ) throws Exception {
 
-        EtsiTs103097DataEncryptedUnicast enrollResponseMessage = Utils.readDataEncryptedUnicast(pathEnrollResponseMessage);
 
         EtsiTs103097Certificate enrolmentCredCert = Utils.readCertFromFile(pathErnollmentCredentialCert);
         EtsiTs103097Certificate enrolmentCACert = Utils.readCertFromFile(pathEnrolmentCACert);

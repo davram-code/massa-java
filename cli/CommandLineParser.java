@@ -100,7 +100,6 @@ public class CommandLineParser {
                         arguments.pathCredCert,
                         arguments.pathCertRootCA,
                         arguments.pathCertAuthCA,
-                        arguments.pathEnrollResponse,
                         arguments.pathOutputFile,
                         arguments.pathOutSecretKey,
                         arguments.pathStationEnrollSignPubKey,
@@ -117,7 +116,6 @@ public class CommandLineParser {
                         arguments.pathCredCert,
                         arguments.pathCertRootCA,
                         arguments.pathCertAuthCA,
-                        arguments.pathEnrollResponse,
                         arguments.pathStationEnrollSignPubKey,
                         arguments.pathStationEnrollSignPrvKey,
                         arguments.pathStationAuthSignPubKey,
@@ -174,6 +172,7 @@ public class CommandLineParser {
                 );
 
                 Utils.dumpToFile(arguments.pathOutputFile, cert);
+                System.out.println(cert);
                 return;
             }
             default:

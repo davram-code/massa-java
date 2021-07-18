@@ -56,7 +56,6 @@ java -jar $JAR \
     --root-crt certificates/services/ca/cert.bin \
     --aa-crt certificates/services/aa/cert.bin \
     --ea-crt certificates/services/ea/cert.bin \
-    --enroll-rsp certificates/services/ea/enroll-response.bin \
     --cred-crt certificates/station/enrollmentCert.bin \
     --station-enroll-sign-pub-key certificates/station/CredSignKey.pub \
     --station-enroll-sign-prv-key certificates/station/CredSignKey.prv \
@@ -104,3 +103,15 @@ java -jar $JAR \
     --aa-enc-prv-key certificates/services/aa/EncKey.prv \
     --aa-sign-pub-key certificates/services/aa/SignKey.pub \
     --outfile certificates/services/aa/authorization-response.bin
+
+
+echo "ITSStation is verifying the Authorization Response and extracts the Authorization Token..."
+java -jar $JAR \
+    -e its \
+    -a verify-auth \
+    --root-crt certificates/services/ca/cert.bin \
+    --aa-crt certificates/services/aa/cert.bin \
+    --auth-rsp certificates/services/aa/authorization-response.bin \
+    --auth-req certificates/station/authorization-request.bin \
+    --secret-key certificates/station/AuthSecretKey.bin \
+    --outfile certificates/station/autorizationCert.bin
