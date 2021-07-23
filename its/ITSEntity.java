@@ -1,20 +1,27 @@
-package massa.its.init;
+package massa.its;
 
+import massa.Utils;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
 import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.Signature;
 
-public class Initializer {
-    String pathInitDirectory;
-    Ieee1609Dot2CryptoManager cryptoManager;
+import java.security.KeyPair;
 
-    public Initializer(String pathInitDirectory) throws Exception
+public class ITSEntity {
+    static Ieee1609Dot2CryptoManager cryptoManager;
+
+    public ITSEntity() throws Exception
     {
-        this.pathInitDirectory = pathInitDirectory;
         // Create a crypto manager in charge of communicating with underlying cryptographic components
         cryptoManager = new DefaultCryptoManager();
         // Initialize the crypto manager to use soft keys using the bouncy castle cryptographic provider.
         cryptoManager.setupAndConnect(new DefaultCryptoManagerParams("BC"));
     }
 
+    public void generateKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
+        KeyPair keyPair = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
+        Utils.dumpToFile(pubKeyPath, keyPair.getPublic());
+        Utils.dumpToFile(prvKeyPath, keyPair.getPrivate());
+    }
 }

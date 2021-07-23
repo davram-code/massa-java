@@ -2,11 +2,11 @@ package massa.cli;
 
 import com.beust.jcommander.JCommander;
 import massa.Utils;
-import massa.its.init.ServicesHierarchyInitializer;
+import massa.its.ITSEntity;
+import massa.its.common.ServicesHierarchyInitializer;
 import massa.its.entities.AuthorizationAuthority;
 import massa.its.entities.EnrollmentAuthority;
 import massa.its.entities.ITSStation;
-import massa.its.init.StationInitializer;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 
@@ -41,9 +41,16 @@ public class CommandLineParser {
                     case "aa":
                         parseAAActions(arguments);
                         return;
-                    default:
-                        throw new Exception("Unknown entity: " + arguments.entity);
+//                    default:
+//                        throw new Exception("Unknown entity: " + arguments.entity);
                 }
+            }
+
+            switch (arguments.action){
+                case "gen-key-pair":
+                    ITSEntity e = new ITSEntity();
+                    e.generateKeyPair(arguments.pathGenericPubKey, arguments.pathGenericPrvKey);
+                    return;
             }
 
         } catch (Exception e) {
@@ -59,9 +66,7 @@ public class CommandLineParser {
     }
 
     private static void initializeStation(ArgumentList arguments) throws Exception {
-        checkNeededArguments(new String[]{arguments.pathInitDir});
-        StationInitializer stationInitializer = new StationInitializer(arguments.pathInitDir);
-        stationInitializer.init();
+        System.out.println("This is deprecated!!!");
     }
 
     private static void parseITSActions(ArgumentList arguments) throws Exception {

@@ -9,8 +9,26 @@ mkdir certificates/station
 mkdir certificates/services
 
 JAR="D:/massa5/c2c-common/out/artifacts/c2c_common_main_jar/c2c-common.main.jar"
-java -jar $JAR --init-station --initDir certificates/station
+# java -jar $JAR --init-station --initDir certificates/station
 java -jar $JAR --init-services --initDir certificates/services
+
+echo "ITSStation is generating its key paris..."
+java -jar $JAR --action gen-key-pair \
+    --pub-key certificates/station/CredSignKey.pub \
+    --prv-key certificates/station/CredSignKey.prv
+
+java -jar $JAR --action gen-key-pair \
+    --pub-key certificates/station/CredEncKey.pub \
+    --prv-key certificates/station/CredEncKey.prv
+
+java -jar $JAR --action gen-key-pair \
+    --pub-key certificates/station/TicketSignKey.pub \
+    --prv-key certificates/station/TicketSignKey.prv
+
+java -jar $JAR --action gen-key-pair \
+    --pub-key certificates/station/TicketEncKey.pub \
+    --prv-key certificates/station/TicketEncKey.prv
+
 
 echo "ITSStation is generating the enrollment request..."
 java -jar $JAR \

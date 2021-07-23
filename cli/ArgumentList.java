@@ -39,6 +39,14 @@ public class ArgumentList {
             description = "The certificate of the Authorization Authority")
     public String pathCertAuthCA = "";
 
+    @Parameter(names = {"--pub-key"},
+            description = "The certificate of the Authorization Authority")
+    public String pathGenericPubKey = "";
+
+    @Parameter(names = {"--prv-key"},
+            description = "The certificate of the Authorization Authority")
+    public String pathGenericPrvKey = "";
+
     @Parameter(names = {"--ea-sign-pub-key"},
             description = "The signing public key of the Enrollment Authority")
     public String pathPubKeySignEA = "";

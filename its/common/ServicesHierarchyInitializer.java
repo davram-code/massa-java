@@ -1,12 +1,9 @@
-package massa.its.init;
+package massa.its.common;
 
 import massa.Utils;
 import org.bouncycastle.util.encoders.Hex;
-import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
-import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.certificateservices.custom.c2x.etsits103097.v131.generator.ETSIAuthorityCertGenerator;
-import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 
 import java.io.File;
@@ -15,8 +12,6 @@ import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-
-import static org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.PublicVerificationKey.PublicVerificationKeyChoices.ecdsaNistP256;
 
 public class ServicesHierarchyInitializer extends Initializer {
     final static int SWEDEN = 752;
@@ -124,8 +119,8 @@ public class ServicesHierarchyInitializer extends Initializer {
                 BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256,  // encPublicKeyAlgorithm
                 rootCAEncryptionKeys.getPublic()); // encPublicKey
 
-        // System.out.println("Root CA : " + rootCACertificate.toString());
-        // System.out.println("Encoded: " + Hex.toHexString(rootCACertificate.getEncoded()));
+        Utils.dumpToFile(pathInitDirectory + "/ca/SignKey.pub", rootCASigningKeys.getPublic());
+        Utils.dumpToFile(pathInitDirectory + "/ca/SignKey.prv", rootCASigningKeys.getPrivate());
     }
 
     private void initEnrollmentCA() throws Exception {
