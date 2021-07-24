@@ -47,6 +47,18 @@ public class ArgumentList {
             description = "The certificate of the Authorization Authority")
     public String pathGenericPrvKey = "";
 
+    @Parameter(names = {"--root-sign-pub-key"},
+            description = "")
+    public String pathPubKeySignRoot = "";
+
+    @Parameter (names = {"--root-sign-prv-key"},
+            description = "")
+    public String pathPrvKeySignRoot = "";
+
+    @Parameter (names = {"--root-enc-pub-key"},
+    description = "")
+    public String pathPubKeyEncRoot = "";
+
     @Parameter(names = {"--ea-sign-pub-key"},
             description = "The signing public key of the Enrollment Authority")
     public String pathPubKeySignEA = "";
@@ -64,9 +76,17 @@ public class ArgumentList {
             description = "The encryption private key of the Enrollment Authority")
     public String pathPrvKeyEncEA = "";
 
+    @Parameter(names = {"--ea-enc-pub-key"},
+            description = "The encryption private key of the Enrollment Authority")
+    public String pathPubKeyEncEA = "";
+
     @Parameter(names = {"--aa-enc-prv-key"},
             description = "The encryption private key of the Authorization Authority")
     public String pathPrvKeyEncAA = "";
+
+    @Parameter(names = {"--aa-enc-pub-key"},
+            description = "The encryption private key of the Authorization Authority")
+    public String pathPubKeyEncAA = "";
 
     @Parameter(names = {"--aa-sign-prv-key"},
             description = "The signing private key of the Authorization Authority")

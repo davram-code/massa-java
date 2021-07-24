@@ -1,12 +1,12 @@
 package massa.cli;
 
 import com.beust.jcommander.JCommander;
-import massa.Utils;
+import massa.its.common.Utils;
 import massa.its.ITSEntity;
-import massa.its.common.ServicesHierarchyInitializer;
 import massa.its.entities.AuthorizationAuthority;
 import massa.its.entities.EnrollmentAuthority;
 import massa.its.entities.ITSStation;
+import massa.its.entities.RootCAuthority;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 
@@ -41,6 +41,9 @@ public class CommandLineParser {
                     case "aa":
                         parseAAActions(arguments);
                         return;
+                    case "root":
+                        parseRootCAActions(arguments);
+                        return;
 //                    default:
 //                        throw new Exception("Unknown entity: " + arguments.entity);
                 }
@@ -60,9 +63,7 @@ public class CommandLineParser {
     }
 
     private static void initializeServices(ArgumentList arguments) throws Exception {
-        checkNeededArguments(new String[]{arguments.pathInitDir});
-        ServicesHierarchyInitializer initCAHierarchyDemo = new ServicesHierarchyInitializer(arguments.pathInitDir);
-        initCAHierarchyDemo.init();
+        System.out.println("This is deprecated!!!");
     }
 
     private static void initializeStation(ArgumentList arguments) throws Exception {
@@ -259,6 +260,51 @@ public class CommandLineParser {
                 );
 //                System.out.println(authResponse.toString());
                 Utils.dumpToFile(arguments.pathOutputFile, authResponse);
+                return;
+            }
+        }
+    }
+
+    private static void parseRootCAActions(ArgumentList arguments) throws Exception{
+        switch (arguments.action)
+        {
+            case "gen-self-signed-cert":
+            {
+                RootCAuthority rootCAuthority = new RootCAuthority();
+                rootCAuthority.initRootCA(
+                        arguments.pathPrvKeySignRoot,
+                        arguments.pathPubKeySignRoot,
+                        arguments.pathPubKeyEncRoot,
+                        arguments.pathOutputFile
+                );
+                return;
+            }
+
+            case "gen-ea-cert":
+            {
+                RootCAuthority rootCAuthority = new RootCAuthority();
+                rootCAuthority.initEnrollmentCA(
+                        arguments.pathPubKeySignEA,
+                        arguments.pathPubKeyEncEA,
+                        arguments.pathCertRootCA,
+                        arguments.pathPubKeySignRoot,
+                        arguments.pathPrvKeySignRoot,
+                        arguments.pathOutputFile
+                );
+                return;
+            }
+
+            case "gen-aa-cert":
+            {
+                RootCAuthority rootCAuthority = new RootCAuthority();
+                rootCAuthority.initAuthorizationCA(
+                        arguments.pathPubKeySignRoot,
+                        arguments.pathPrvKeySignRoot,
+                        arguments.pathPubKeySignAA,
+                        arguments.pathPubKeyEncAA,
+                        arguments.pathCertRootCA,
+                        arguments.pathOutputFile
+                );
                 return;
             }
         }

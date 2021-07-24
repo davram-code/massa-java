@@ -1,6 +1,6 @@
 package massa.its.entities;
 
-import massa.Utils;
+import massa.its.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;

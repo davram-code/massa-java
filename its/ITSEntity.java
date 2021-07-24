@@ -1,6 +1,6 @@
 package massa.its;
 
-import massa.Utils;
+import massa.its.common.Utils;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
 import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
@@ -9,7 +9,7 @@ import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.Signatu
 import java.security.KeyPair;
 
 public class ITSEntity {
-    static Ieee1609Dot2CryptoManager cryptoManager;
+    protected Ieee1609Dot2CryptoManager cryptoManager;
 
     public ITSEntity() throws Exception
     {

@@ -1,6 +1,6 @@
 package massa.its.entities;
 
-import massa.Utils;
+import massa.its.common.Utils;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.macs.HMac;
