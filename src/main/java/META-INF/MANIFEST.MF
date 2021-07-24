@@ -1,0 +1,5 @@
+Manifest-Version: 1.0
+Main-Class: massa.Application
+Class-Path: bcprov-debug-jdk15on-1.53.jar c2c-common.main.jar massa-lib.
+ main.jar jcommander-1.81.jar time4j-core-2.0.jar
+

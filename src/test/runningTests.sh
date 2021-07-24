@@ -12,7 +12,7 @@ mkdir certificates/services/ea
 mkdir certificates/services/aa
 
 
-JAR="D:/massa5/c2c-common/out/artifacts/c2c_common_main_jar/c2c-common.main.jar"
+JAR="D:\massa7\massa-cli\out\artifacts\massa_cli_main_jar\massa-cli.main.jar"
 # java -jar $JAR --init-station --initDir certificates/station
 # java -jar $JAR --init-services --initDir certificates/services
 
@@ -66,7 +66,7 @@ java -jar $JAR --action gen-key-pair \
     --prv-key certificates/services/aa/EncKey.prv
 
 
-echo "RootCA is generating AA's certificate"
+echo "RootCA is generating AA's certificate..."
 java -jar $JAR \
     --entity root \
     --action gen-aa-cert \
