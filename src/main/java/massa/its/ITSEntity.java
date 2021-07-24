@@ -1,5 +1,6 @@
-package its;
+package massa.its;
 
+import massa.its.common.Utils;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
 import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
@@ -20,7 +21,7 @@ public class ITSEntity {
 
     public void generateKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
         KeyPair keyPair = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
-//        Utils.dumpToFile(pubKeyPath, keyPair.getPublic());
-//        Utils.dumpToFile(prvKeyPath, keyPair.getPrivate());
+        Utils.dumpToFile(pubKeyPath, keyPair.getPublic());
+        Utils.dumpToFile(prvKeyPath, keyPair.getPrivate());
     }
 }

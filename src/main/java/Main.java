@@ -1,4 +1,4 @@
-import its.ITSEntity;
+import massa.its.ITSEntity;
 
 public class Main {
     static public void main(String[] args) {
