@@ -30,6 +30,10 @@ public class CommandLineParser {
                 return;
             }
 
+            if (!arguments.pathInputFile.isEmpty()) {
+                System.out.println(Utils.view(arguments.pathInputFile));
+            }
+
             if (arguments.entity != "") {
                 switch (arguments.entity) {
                     case "its":
@@ -49,11 +53,18 @@ public class CommandLineParser {
                 }
             }
 
-            switch (arguments.action){
-                case "gen-key-pair":
+            switch (arguments.action) {
+                case "gen-sign-key-pair": {
                     ITSEntity e = new ITSEntity();
-                    e.generateKeyPair(arguments.pathGenericPubKey, arguments.pathGenericPrvKey);
+                    e.generateSignKeyPair(arguments.pathGenericPubKey, arguments.pathGenericPrvKey);
                     return;
+                }
+
+                case "gen-enc-key-pair": {
+                    ITSEntity e = new ITSEntity();
+                    e.generateEncKeyPair(arguments.pathGenericPubKey, arguments.pathGenericPrvKey);
+                    return;
+                }
             }
 
         } catch (Exception e) {
@@ -79,7 +90,6 @@ public class CommandLineParser {
                         arguments.pathOutSecretKey,
                         arguments.pathStationEnrollSignPrvKey,
                         arguments.pathStationEnrollSignPubKey,
-                        arguments.pathStationEnrollEncPrvKey,
                         arguments.pathStationEnrollEncPubKey
                 });
 
@@ -88,12 +98,11 @@ public class CommandLineParser {
                         arguments.pathCertEnrollmentCA,
                         arguments.pathStationEnrollSignPubKey,
                         arguments.pathStationEnrollSignPrvKey,
-                        arguments.pathStationEnrollEncPubKey,
-                        arguments.pathStationEnrollEncPrvKey
+                        arguments.pathStationEnrollEncPubKey
                 );
 
-                Utils.dumpToFile(arguments.pathOutSecretKey, itsStation.getInitialEnrollRequestSecretKey());
-                Utils.dumpToFile(arguments.pathOutEnrollRequest, initialEnrolRequestMessage);
+                Utils.dump(arguments.pathOutSecretKey, itsStation.getInitialEnrollRequestSecretKey());
+                Utils.dump(arguments.pathOutEnrollRequest, initialEnrolRequestMessage);
 
 //                if (arguments.verbose)
 //                    System.out.println("InitialEnrolRequestMessage : " + initialEnrolRequestMessage.toString() + "\n");
@@ -131,7 +140,7 @@ public class CommandLineParser {
                         arguments.pathOutSecretKey
                 );
 
-                Utils.dumpToFile(arguments.pathOutputFile, authRequestMessage);
+                Utils.dump(arguments.pathOutputFile, authRequestMessage);
 
                 return;
             }
@@ -177,7 +186,7 @@ public class CommandLineParser {
                         arguments.pathSecretKey
                 );
 
-                Utils.dumpToFile(arguments.pathOutputFile, cert);
+                Utils.dump(arguments.pathOutputFile, cert);
                 System.out.println(cert);
                 return;
             }
@@ -208,7 +217,7 @@ public class CommandLineParser {
                         arguments.pathPrvKeyEncEA
                 );
 
-                Utils.dumpToFile(arguments.pathOutputFile, enrolResponseMessage);
+                Utils.dump(arguments.pathOutputFile, enrolResponseMessage);
                 return;
             }
 
@@ -223,7 +232,7 @@ public class CommandLineParser {
                         arguments.pathPrvKeySignEA
                 );
 //                System.out.println(validation.toString());
-                Utils.dumpToFile(arguments.pathOutputFile, validation);
+                Utils.dump(arguments.pathOutputFile, validation);
                 return;
             }
         }
@@ -243,7 +252,7 @@ public class CommandLineParser {
                         arguments.pathAuthRequestMessage
                 );
 //                System.out.println(authValReq.toString());
-                Utils.dumpToFile(arguments.pathOutputFile, authValReq);
+                Utils.dump(arguments.pathOutputFile, authValReq);
                 return;
             }
 
@@ -259,17 +268,15 @@ public class CommandLineParser {
                         arguments.pathPubKeySignAA
                 );
 //                System.out.println(authResponse.toString());
-                Utils.dumpToFile(arguments.pathOutputFile, authResponse);
+                Utils.dump(arguments.pathOutputFile, authResponse);
                 return;
             }
         }
     }
 
-    private static void parseRootCAActions(ArgumentList arguments) throws Exception{
-        switch (arguments.action)
-        {
-            case "gen-self-signed-cert":
-            {
+    private static void parseRootCAActions(ArgumentList arguments) throws Exception {
+        switch (arguments.action) {
+            case "gen-self-signed-cert": {
                 RootCAuthority rootCAuthority = new RootCAuthority();
                 rootCAuthority.initRootCA(
                         arguments.pathPrvKeySignRoot,
@@ -280,8 +287,7 @@ public class CommandLineParser {
                 return;
             }
 
-            case "gen-ea-cert":
-            {
+            case "gen-ea-cert": {
                 RootCAuthority rootCAuthority = new RootCAuthority();
                 rootCAuthority.initEnrollmentCA(
                         arguments.pathPubKeySignEA,
@@ -294,8 +300,7 @@ public class CommandLineParser {
                 return;
             }
 
-            case "gen-aa-cert":
-            {
+            case "gen-aa-cert": {
                 RootCAuthority rootCAuthority = new RootCAuthority();
                 rootCAuthority.initAuthorizationCA(
                         arguments.pathPubKeySignRoot,

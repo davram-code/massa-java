@@ -124,6 +124,10 @@ public class ArgumentList {
             description = "The output file") /* Deprecated */
     public String pathOutputFile = "";
 
+    @Parameter(names = {"--infile"},
+            description = "The output file") /* Deprecated */
+    public String pathInputFile = "";
+
     @Parameter(names = {"--out-enroll-req"},
             description = "The Enrollment Request Message")
     public String pathOutEnrollRequest = "";
