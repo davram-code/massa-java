@@ -1,9 +1,8 @@
 package massa.its.entities;
 
+import massa.its.ITSEntity;
 import massa.its.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
-import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
-import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponseCode;
@@ -12,17 +11,14 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetype
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.EnrollmentResponseCode;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.InnerEcRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.InnerEcResponse;
-import org.certificateservices.custom.c2x.etsits102941.v131.generator.ETSITS102941MessagesCaGenerator;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.certificateservices.custom.c2x.etsits103097.v131.generator.ETSIEnrollmentCredentialGenerator;
-import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.Certificate;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.CertificateId;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.PsidGroupPermissions;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.SequenceOfPsidGroupPermissions;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.Ieee1609Dot2Data;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.CertificateReciever;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
 
@@ -32,15 +28,11 @@ import java.util.Date;
 import java.util.Map;
 
 import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
-import static org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.PublicVerificationKey.PublicVerificationKeyChoices.ecdsaNistP256;
 
-public class EnrollmentAuthority {
 
-    static final PublicVerificationKey.PublicVerificationKeyChoices signAlg = ecdsaNistP256;
-    static final BasePublicEncryptionKey.BasePublicEncryptionKeyChoices encAlg = BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256;
+public class EnrollmentAuthority extends ITSEntity {
 
-    private Ieee1609Dot2CryptoManager cryptoManager;
-    private ETSITS102941MessagesCaGenerator messagesCaGenerator;
+
 
     private EtsiTs103097Certificate[] enrollmentCAChain;
 
@@ -48,15 +40,6 @@ public class EnrollmentAuthority {
     private Map<HashedId8, Certificate> trustStore;
 
     public EnrollmentAuthority(String pathToEnrollmentCA, String pathToRootCA) throws Exception {
-        cryptoManager = new DefaultCryptoManager();
-        cryptoManager.setupAndConnect(new DefaultCryptoManagerParams("BC"));
-
-        messagesCaGenerator = new ETSITS102941MessagesCaGenerator(Ieee1609Dot2Data.DEFAULT_VERSION,
-                cryptoManager, // The initialized crypto manager to use.
-                HashAlgorithm.sha256, // digest algorithm to use.
-                Signature.SignatureChoices.ecdsaNistP256Signature,  // define which signature scheme to use.
-                false); // If EC points should be represented as uncompressed.
-
         enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
 
 
@@ -111,13 +94,13 @@ public class EnrollmentAuthority {
                 Hex.decode("0132"), //SSP data set in SecuredCertificateRequestService appPermission, two byte, for example: 0x01C0
                 enrolmentRequestResult.getValue().getRequestedSubjectAttributes().getAssuranceLevel().getAssuranceLevel(),
                 enrolmentRequestResult.getValue().getRequestedSubjectAttributes().getAssuranceLevel().getConfidenceLevel(),
-                Signature.SignatureChoices.ecdsaNistP256Signature, //signingPublicKeyAlgorithm
+                signatureScheme, //signingPublicKeyAlgorithm
                 enrolCredSignKeys_public, // signPublicKey, i.e public key in certificate
                 enrollmentCAChain[1], // signerCertificate
                 Utils.readPublicKey(pathToEaSignPublicKey), // signCertificatePublicKey,
                 Utils.readPrivateKey(pathToEaSignPrivateKey),
-                SymmAlgorithm.aes128Ccm, // symmAlgorithm
-                BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256, // encPublicKeyAlgorithm
+                symmAlg, // symmAlgorithm
+                encryptionScheme, // encPublicKeyAlgorithm
                 enrolCredEncKeys_public // encryption public key
         );
         /*
@@ -131,7 +114,7 @@ public class EnrollmentAuthority {
                 innerEcResponse,
                 enrollmentCAChain, // Chain of EA used to sign message
                 Utils.readPrivateKey(pathToEaSignPrivateKey),
-                SymmAlgorithm.aes128Ccm, // Encryption algorithm used
+                symmAlg, // Encryption algorithm used
                 enrolmentRequestResult.getSecretKey()); // Use symmetric key from the verification result when verifying the request.
 
         return enrolResponseMessage;
@@ -172,7 +155,7 @@ public class EnrollmentAuthority {
                 authorizationValidationResponse,
                 enrollmentCAChain, // EA signing chain
                 enrolCASignPrvKey, // EA signing private key
-                SymmAlgorithm.aes128Ccm, // Encryption algorithm used.
+                symmAlg, // Encryption algorithm used.
                 authorizationValidationRequestVerifyResult.getSecretKey() // The symmetric key generated in the request.
         );
         return authorizationValidationResponseMessage;

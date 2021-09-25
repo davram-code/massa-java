@@ -1,21 +1,17 @@
 package massa.its.entities;
 
+import massa.its.ITSEntity;
 import massa.its.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
-import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
-import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.AuthorizationResponseCode;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.InnerAtRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.InnerAtResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
-import org.certificateservices.custom.c2x.etsits102941.v131.generator.ETSITS102941MessagesCaGenerator;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.certificateservices.custom.c2x.etsits103097.v131.generator.ETSIAuthorizationTicketGenerator;
-import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.Ieee1609Dot2Data;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.CertificateReciever;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
@@ -29,54 +25,11 @@ import java.util.Map;
 
 import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 
-public class AuthorizationAuthority {
-
-    private Ieee1609Dot2CryptoManager cryptoManager;
-    private ETSITS102941MessagesCaGenerator messagesCaGenerator;
+public class AuthorizationAuthority extends ITSEntity {
 
     public AuthorizationAuthority() throws Exception {
-        cryptoManager = new DefaultCryptoManager();
-        cryptoManager.setupAndConnect(new DefaultCryptoManagerParams("BC"));
-
-        messagesCaGenerator = new ETSITS102941MessagesCaGenerator(Ieee1609Dot2Data.DEFAULT_VERSION,
-                cryptoManager, // The initialized crypto manager to use.
-                HashAlgorithm.sha256, // digest algorithm to use.
-                Signature.SignatureChoices.ecdsaNistP256Signature,  // define which signature scheme to use.
-                false); // If EC points should be represented as uncompressed.
 
     }
-
-//    public void generateAuthorizatioValidationRequest(String pathCertRootCA, String pathToAASignPublicKey, String pathToAASignPrivateKey) throws  Exception{
-//        EtsiTs103097Certificate authorityCACertificate = Utils.readCertFromFile(pathCertRootCA);
-//        ETSIAuthorizationTicketGenerator authorizationCertGenerator = new ETSIAuthorizationTicketGenerator(cryptoManager);
-//
-//        // Next we generate keys for an authorization certificate.
-//        KeyPair authorizationTokenSigningKeys = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
-//
-//        // Next we generate keys for an authorization certificate.
-//        KeyPair authorizationTicketEncryptionKeys = cryptoManager.generateKeyPair(Signature.SignatureChoices.ecdsaNistP256Signature);
-//
-//        ValidityPeriod authorizationCertValidityPeriod = new ValidityPeriod(new Date(), Duration.DurationChoices.years, 35);
-//
-//        PsidSsp[] appPermissions = new PsidSsp[1];
-//        appPermissions[0] = new PsidSsp(new Psid(6), null); // Insert proper app permissions here.
-//
-//        // Generate a certificate as an explicit certificate.
-////        EtsiTs103097Certificate authorizationCert = authorizationCertGenerator.genAuthorizationTicket(
-////                authorizationCertValidityPeriod, // Validity Period
-////                region, // region,
-////                new SubjectAssurance(1,3), // Subject Assurance, optional
-////                appPermissions,
-////                Signature.SignatureChoices.ecdsaNistP256Signature, //signingPublicKeyAlgorithm
-////                authorizationTokenSigningKeys.getPublic(), // signPublicKey, i.e public key in certificate
-////                authorityCACertificate, // signerCertificate
-////                Utils.readPublicKey(pathToAASignPublicKey), // signCertificatePublicKey,
-////                Utils.readPrivateKey(pathToAASignPrivateKey),
-////                SymmAlgorithm.aes128Ccm, // symmAlgorithm
-////                BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256, // encPublicKeyAlgorithm
-////                authorizationTicketEncryptionKeys.getPublic() // encryption public key
-////        );
-//    }
 
     public EtsiTs103097DataEncryptedUnicast generateAutorizationResponse(
             String pathAuthRequestMsg,
@@ -127,8 +80,8 @@ public class AuthorizationAuthority {
                 authorizationCACert,
                 pubSignKeyAA, //authorizationCASignKeys.getPublic(),
                 prvSignKeyAA, //authorizationCASignKeys.getPrivate(),
-                SymmAlgorithm.aes128Ccm,
-                BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256, //to chage
+                symmAlg,
+                encryptionScheme, //to chage
                 ticketEncKey_public
         );//authTicketEncKeys.getPublic()
 
@@ -148,7 +101,7 @@ public class AuthorizationAuthority {
                 innerAtResponse,
                 authorizationCAChain, // The AA certificate chain signing the message
                 prvSignKeyAA,
-                SymmAlgorithm.aes128Ccm, // Encryption algorithm used.
+                symmAlg, // Encryption algorithm used.
                 authRequestResult.getSecretKey()); // The symmetric key generated in the request.
 
         return authResponseMessage;

@@ -1,5 +1,6 @@
 package massa.its.entities;
 
+import massa.its.ITSEntity;
 import massa.its.common.Utils;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -7,27 +8,37 @@ import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
+import org.certificateservices.custom.c2x.etsits102941.v131.DecryptionFailedException;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.InnerAtResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.SharedAtRequest;
-import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.CertificateFormat;
-import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.CertificateSubjectAttributes;
-import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
-import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.PublicKeys;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.*;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.InnerEcRequest;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.InnerEcRequestSignedForPop;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.InnerEcResponse;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.messagesca.EtsiTs102941Data;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.messagesca.EtsiTs102941DataContent;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.ETSITS102941MessagesCaGenerator;
+import org.certificateservices.custom.c2x.etsits102941.v131.generator.ETSITS102941SecureDataGenerator;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
+import org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097DataSigned;
 import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.Certificate;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.CertificateId;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.PsidGroupPermissions;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.SequenceOfPsidGroupPermissions;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.HeaderInfo;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.Ieee1609Dot2Data;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.MissingCrlIdentifier;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.SignedData;
+import org.certificateservices.custom.c2x.ieee1609dot2.generator.DecryptResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.PreSharedKeyReceiver;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
+import org.certificateservices.custom.c2x.ieee1609dot2.generator.recipient.CertificateRecipient;
+import org.certificateservices.custom.c2x.ieee1609dot2.generator.recipient.Recipient;
 
 import javax.crypto.SecretKey;
 import java.io.ByteArrayOutputStream;
@@ -44,46 +55,20 @@ import java.util.Map;
 import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 import static org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.PublicVerificationKey.PublicVerificationKeyChoices.ecdsaNistP256;
 
-public class ITSStation {
+public class ITSStation extends ITSEntity {
     // am mutat campurile ce vor fi setate din fisier de configurare aici
-    final static int COUNTRY_CODE = 752;
-    final static String enrollmentDate = "20181202 12:12:21";
-    final static int enrollmentDurationYears = 5;
+    final static int COUNTRY_CODE = 642; //https://www.iso.org/obp/ui/#iso:code:3166:RO
+    final static String enrollmentDate = "20210725 00:20:00";
+    final static int enrollmentDurationYears = 1;
     final static int assuranceLevel = 1;
     final static int confidenceLevel = 3;
-    final static String hostname = "massa.mta.ro";
+    final static String hostname = "MASSA ITS";
     final static String enrollCredCannonicalName = "SomeEnrolCredCanonicalName";
 
-    static final PublicVerificationKey.PublicVerificationKeyChoices signAlg = ecdsaNistP256;
-    static final BasePublicEncryptionKey.BasePublicEncryptionKeyChoices encAlg = BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256;
-
-    private Ieee1609Dot2CryptoManager cryptoManager;
-    private ETSITS102941MessagesCaGenerator messagesCaGenerator;
-
-    private EncryptResult initialEnrolRequestMessageResult;
+    EncryptResult initialEnrolRequestMessageResult;
 
     public ITSStation() throws Exception {
-        cryptoManager = new DefaultCryptoManager();
-        cryptoManager.setupAndConnect(new DefaultCryptoManagerParams("BC"));
 
-        messagesCaGenerator = new ETSITS102941MessagesCaGenerator(Ieee1609Dot2Data.DEFAULT_VERSION,
-                cryptoManager, // The initialized crypto manager to use.
-                HashAlgorithm.sha256, // digest algorithm to use.
-                Signature.SignatureChoices.ecdsaNistP256Signature,  // define which signature scheme to use.
-                false); // If EC points should be represented as uncompressed.
-    }
-
-
-    private KeyPair getAuthTicketSignKeys() throws Exception {
-        PublicKey publicKeyS = Utils.readPublicKey("certificates/its/TicketSignKey.pub");
-        PrivateKey privateKeyS = Utils.readPrivateKey("certificates/its/TicketSignKey.prv");
-        return new KeyPair(publicKeyS, privateKeyS);
-    }
-
-    private KeyPair getAuthTicketEncKeys() throws Exception {
-        PublicKey publicKeyE = Utils.readPublicKey("certificates/its/TicketSignKey.pub");
-        PrivateKey privateKeyE = Utils.readPrivateKey("certificates/its/TicketSignKey.prv");
-        return new KeyPair(publicKeyE, privateKeyE);
     }
 
     private KeyPair loadKeyPairs(String pathPubKey, String pathPrvKey) throws Exception {
@@ -96,18 +81,24 @@ public class ITSStation {
             String pathToEnrollmentCACert,
             String pathToEnrollSignPubKey,
             String pathToEnrollSignPrvKey,
-            String pathToEnrollEncPubKey,
-            String pathToEnrollEncPrvKey
+            String pathToEnrollEncPubKey
     ) throws Exception {
 
-        EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage;
+        PublicKey enrolSignPubKey = Utils.readPublicKey(pathToEnrollSignPubKey);
+        PrivateKey enrolSignPrvKey = Utils.readPrivateKey(pathToEnrollSignPrvKey);
 
-        //Step1 - The ITS Station will generate an ECC private key and the corresponding public key (verificationKey) to be included in the Enrollment Certificate.
-        KeyPair enrolCredSignKeys = loadKeyPairs(pathToEnrollSignPubKey, pathToEnrollSignPrvKey);
-        KeyPair enrolCredEncKeys = loadKeyPairs(pathToEnrollEncPubKey, pathToEnrollEncPrvKey);//
+        PublicKey enrolEncPubKey = Utils.readPublicKey(pathToEnrollEncPubKey);
+//        PrivateKey enrolEncPrvKey = Utils.readPrivateKey(pathToEnrollEncPrvKey);
 
-        PublicKeys publicKeys = messagesCaGenerator.genPublicKeys(signAlg, enrolCredSignKeys.getPublic(), SymmAlgorithm.aes128Ccm, encAlg, enrolCredEncKeys.getPublic());
-        PsidSsp appPermCertMan = new PsidSsp(SecuredCertificateRequestService, new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("01C0")));
+        PublicKeys publicKeys = messagesCaGenerator.genPublicKeys(
+                signatureScheme,
+                enrolSignPubKey,
+                symmAlg,
+                encryptionScheme,
+                enrolEncPubKey
+        );
+
+        PsidSsp appPermCertMan = new PsidSsp(SecuredCertificateRequestService, new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("0132")));
         PsidSsp[] appPermissions = new PsidSsp[]{appPermCertMan};
 
         ValidityPeriod enrolValidityPeriod = new ValidityPeriod(
@@ -131,15 +122,20 @@ public class ITSStation {
                 certificateSubjectAttributes
         );
 
+        EtsiTs103097Certificate certEA = Utils.readCertFromFile(pathToEnrollmentCACert);
+        CertificateRecipient cr = new CertificateRecipient(certEA);
+//        System.out.println();
+//        System.out.println(initialInnerEcRequest);
+
         initialEnrolRequestMessageResult = messagesCaGenerator.genInitialEnrolmentRequestMessage(
                 new Time64(new Date()), // generation Time
                 initialInnerEcRequest,
-                enrolCredSignKeys.getPublic(),
-                enrolCredSignKeys.getPrivate(), // The key pair used in the enrolment credential used for self signed PoP
+                enrolSignPubKey,
+                enrolSignPrvKey, // The key pair used in the enrolment credential used for self signed PoP
                 Utils.readCertFromFile(pathToEnrollmentCACert)
         ); // The EA certificate to encrypt message to.
 
-        initialEnrolRequestMessage = (EtsiTs103097DataEncryptedUnicast) initialEnrolRequestMessageResult.getEncryptedData();
+        EtsiTs103097DataEncryptedUnicast initialEnrolRequestMessage = (EtsiTs103097DataEncryptedUnicast) initialEnrolRequestMessageResult.getEncryptedData();
 
         return initialEnrolRequestMessage;
     }
@@ -162,12 +158,13 @@ public class ITSStation {
         EtsiTs103097Certificate enrollmentCACertificate = Utils.readCertFromFile(pathCertEnrollmentCA);
 
         EtsiTs103097DataEncryptedUnicast enrolResponseMessage = Utils.readDataEncryptedUnicast(pathEnrolResponseMessage);
+
         EtsiTs103097DataEncryptedUnicast enrollRequestMessage = Utils.readDataEncryptedUnicast(pathEnrollRequestMessage);
         EtsiTs103097Certificate[] enrollmentCAChain = new EtsiTs103097Certificate[]{enrollmentCACertificate, rootCACertificate};
         Map<HashedId8, Certificate> enrolCACertStore = messagesCaGenerator.buildCertStore(enrollmentCAChain);
 
         // Build reciever store containing the symmetric key used in the request.
-        Map<HashedId8, Receiver> enrolCredSharedKeyReceivers = messagesCaGenerator.buildRecieverStore(new Receiver[]{new PreSharedKeyReceiver(SymmAlgorithm.aes128Ccm, itsSecretKey)});
+        Map<HashedId8, Receiver> enrolCredSharedKeyReceivers = messagesCaGenerator.buildRecieverStore(new Receiver[]{new PreSharedKeyReceiver(symmAlg, itsSecretKey)});
         Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{rootCACertificate});
 
         VerifyResult<InnerEcResponse> enrolmentResponseResult = messagesCaGenerator.decryptAndVerifyEnrolmentResponseMessage(
@@ -177,9 +174,7 @@ public class ITSStation {
                 enrolCredSharedKeyReceivers
         );
 
-        System.out.println("ITS-S - EnrolmentResponse:" + enrolmentResponseResult.toString() + "\n");
-
-        Utils.dumpToFile(pathOutputEnrollmentCertificate, enrolmentResponseResult.getValue().getCertificate());
+        Utils.dump(pathOutputEnrollmentCertificate, enrolmentResponseResult.getValue().getCertificate());
     }
 
     public EtsiTs103097DataEncryptedUnicast generateAuthorizationRequestMessage(
@@ -213,7 +208,13 @@ public class ITSStation {
 //        KeyPair authTicketSignKeys = getAuthTicketSignKeys();// TO SAVE
 //        KeyPair authTicketEncKeys = getAuthTicketEncKeys(); // TO SAVE
 
-        PublicKeys publicKeys = messagesCaGenerator.genPublicKeys(signAlg, authTicketSignKeys.getPublic(), SymmAlgorithm.aes128Ccm, encAlg, authTicketEncKeys.getPublic());
+        PublicKeys publicKeys = messagesCaGenerator.genPublicKeys(
+                signatureScheme,
+                authTicketSignKeys.getPublic(),
+                SymmAlgorithm.aes128Ccm,
+                encryptionScheme,
+                authTicketEncKeys.getPublic());
+
         byte[] hmacKey = genHmacKey();
         SharedAtRequest sharedAtRequest = genDummySharedAtRequest(publicKeys, hmacKey, enrolmentCACert);
 
@@ -234,7 +235,7 @@ public class ITSStation {
         );
 
         EtsiTs103097DataEncryptedUnicast authRequestMessage = (EtsiTs103097DataEncryptedUnicast) authRequestMessageResult.getEncryptedData();
-        Utils.dumpToFile(pathOutSecretKey, authRequestMessageResult.getSecretKey());
+        Utils.dump(pathOutSecretKey, authRequestMessageResult.getSecretKey());
         return authRequestMessage;
     }
 

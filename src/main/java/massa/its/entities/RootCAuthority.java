@@ -51,14 +51,14 @@ public class RootCAuthority extends ITSEntity {
                 3, // minChainDepth
                 -1, // chainDepthRange
                 Hex.decode("0138"), // cTLServiceSpecificPermissions, 2 octets
-                Signature.SignatureChoices.ecdsaNistP256Signature, //signingPublicKeyAlgorithm
+                signatureScheme, //signingPublicKeyAlgorithm
                 rootCASignPubKey, // signPublicKey
                 rootCASignPrvKey, // signPrivateKey
-                SymmAlgorithm.aes128Ccm, // symmAlgorithm
-                BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256,  // encPublicKeyAlgorithm
+                symmAlg, // symmAlgorithm
+                encryptionScheme,  // encPublicKeyAlgorithm
                 rootCAEncPubKey); // encPublicKey
 
-        Utils.dumpToFile(pathOutputFile, rootCACertificate);
+        Utils.dump(pathOutputFile, rootCACertificate);
     }
 
     public void initEnrollmentCA(
@@ -81,21 +81,22 @@ public class RootCAuthority extends ITSEntity {
         ValidityPeriod enrollmentCAValidityPeriod = new ValidityPeriod(new Date(), Duration.DurationChoices.years, 37);
 
         //Step 2.3.2 - Generate a reference to the Enrollment CA Signing Keys
-        EtsiTs103097Certificate enrollmentCACertificate = authorityCertGenerator.genEnrollmentCA("testea.test.com", // CA Name
+        EtsiTs103097Certificate enrollmentCACertificate = authorityCertGenerator.genEnrollmentCA(
+                "DIMA'S ENROLLMENT AUTHORITY", // CA Name
                 enrollmentCAValidityPeriod,
-                region,  //GeographicRegion
-                new SubjectAssurance(1, 3), // subject assurance (optional)
-                Signature.SignatureChoices.ecdsaNistP256Signature, //signingPublicKeyAlgorithm
+                null,//region,  //GeographicRegion
+                null,//new SubjectAssurance(1, 3), // subject assurance (optional)
+                signatureScheme, //signingPublicKeyAlgorithm
                 pubKeySignEA, // signPublicKey, i.e public key in certificate
                 certRootCA, // signerCertificate
                 pubKeySignRootCA, // signCertificatePublicKey, must be specified separately to support implicit certificates.
                 prvKeySignRootCA,
-                SymmAlgorithm.aes128Ccm, // symmAlgorithm
-                BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256,  // encPublicKeyAlgorithm
+                symmAlg, // symmAlgorithm
+                encryptionScheme,  // encPublicKeyAlgorithm
                 pubKeyEncEA // encryption public key
         );
 
-        Utils.dumpToFile(pathOutputFile, enrollmentCACertificate);
+        Utils.dump(pathOutputFile, enrollmentCACertificate);
     }
 
 
@@ -119,21 +120,21 @@ public class RootCAuthority extends ITSEntity {
 
         // Generate a reference to the Authorization CA Signing Keys
         EtsiTs103097Certificate authorityCACertificate = authorityCertGenerator.genAuthorizationCA(
-                "testaa.test.com", // CA Name
+                "DIMA'S AUTHORIZATION AUTHORITY", // CA Name
                 authorityCAValidityPeriod,
-                region,  //GeographicRegion
-                new SubjectAssurance(1, 3), // subject assurance (optional)
-                Signature.SignatureChoices.ecdsaNistP256Signature, //signingPublicKeyAlgorithm
+                null, //region,  //GeographicRegion
+                null,//new SubjectAssurance(1, 3), // subject assurance (optional)
+                signatureScheme, //signingPublicKeyAlgorithm
                 pubKeySignAA, // signPublicKey, i.e public key in certificate
                 certRootCA, // signerCertificate
                 pubKeySignRoot, // signCertificatePublicKey,
                 prvKeySignRoot,
-                SymmAlgorithm.aes128Ccm, // symmAlgorithm
-                BasePublicEncryptionKey.BasePublicEncryptionKeyChoices.ecdsaNistP256,  // encPublicKeyAlgorithm
+                symmAlg, // symmAlgorithm
+                encryptionScheme,  // encPublicKeyAlgorithm
                 pubKeyEncAA // encryption public key
         );
 
-        Utils.dumpToFile(pathOutputFile, authorityCACertificate);
+        Utils.dump(pathOutputFile, authorityCACertificate);
     }
 
 }
