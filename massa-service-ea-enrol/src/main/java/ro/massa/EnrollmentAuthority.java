@@ -20,6 +20,7 @@ import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.Sequence
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.CertificateReciever;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
 import ro.massa.common.Utils;
+import ro.massa.properties.MassaProperties;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -31,32 +32,40 @@ import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSA
 
 public class EnrollmentAuthority extends ITSEntity {
     private EtsiTs103097Certificate[] enrollmentCAChain;
+    EtsiTs103097Certificate EaCert;
+    EtsiTs103097Certificate RootCaCert;
     private ETSIEnrollmentCredentialGenerator enrollmentCredentialCertGenerator;
     private Map<HashedId8, Certificate> trustStore;
 
-    public EnrollmentAuthority(String pathToEnrollmentCA, String pathToRootCA) throws Exception {
+    PrivateKey signPrivateKey;
+    PublicKey signPublicKey;
+
+    PrivateKey encPrivateKey;
+
+    public EnrollmentAuthority() throws Exception {
         enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
 
+        EaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathEaCert());
+        RootCaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathRootCaCert());
 
-        enrollmentCAChain = new EtsiTs103097Certificate[]{
-                Utils.readCertFromFile(pathToEnrollmentCA),
-                Utils.readCertFromFile(pathToRootCA)
-        };
+        enrollmentCAChain = new EtsiTs103097Certificate[]{EaCert, RootCaCert};
 
         trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{enrollmentCAChain[1]});
+
+        signPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
+        signPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
+
+        encPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathEncPrivateKey());
     }
 
     public EtsiTs103097DataEncryptedUnicast verifyEnrollmentRequestMessage(
-            String pathEnrollRequest,
-            String pathToEaSignPublicKey,
-            String pathToEaSignPrivateKey,
-            String pathToEaEncPrivateKey
+            byte [] encodedEnrollRequest
     ) throws Exception {
         /* TODO: This method should be used also when rekey-ing */
-        EtsiTs103097DataEncryptedUnicast enrolRequestMessage = Utils.readDataEncryptedUnicast(pathEnrollRequest);
+        EtsiTs103097DataEncryptedUnicast enrolRequestMessage = new EtsiTs103097DataEncryptedUnicast(encodedEnrollRequest);
 
         Map<HashedId8, Certificate> enrolCredCertStore = messagesCaGenerator.buildCertStore(enrollmentCAChain);
-        Map<HashedId8, Receiver> enrolCARecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(Utils.readPrivateKey(pathToEaEncPrivateKey), enrollmentCAChain[0])});
+        Map<HashedId8, Receiver> enrolCARecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, enrollmentCAChain[0])});
 
         /** Verify (just) the signature **/
         RequestVerifyResult<InnerEcRequest> enrolmentRequestResult = messagesCaGenerator.decryptAndVerifyEnrolmentRequestMessage(enrolRequestMessage, enrolCredCertStore, trustStore, enrolCARecipients);
@@ -92,8 +101,8 @@ public class EnrollmentAuthority extends ITSEntity {
                 signatureScheme, //signingPublicKeyAlgorithm
                 enrolCredSignKeys_public, // signPublicKey, i.e public key in certificate
                 enrollmentCAChain[1], // signerCertificate
-                Utils.readPublicKey(pathToEaSignPublicKey), // signCertificatePublicKey,
-                Utils.readPrivateKey(pathToEaSignPrivateKey),
+                signPublicKey, // signCertificatePublicKey,
+                signPrivateKey,
                 symmAlg, // symmAlgorithm
                 encryptionScheme, // encPublicKeyAlgorithm
                 enrolCredEncKeys_public // encryption public key
@@ -108,7 +117,7 @@ public class EnrollmentAuthority extends ITSEntity {
                 new Time64(new Date()), // generation Time
                 innerEcResponse,
                 enrollmentCAChain, // Chain of EA used to sign message
-                Utils.readPrivateKey(pathToEaSignPrivateKey),
+                signPrivateKey,
                 symmAlg, // Encryption algorithm used
                 enrolmentRequestResult.getSecretKey()); // Use symmetric key from the verification result when verifying the request.
 
