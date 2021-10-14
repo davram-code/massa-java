@@ -25,9 +25,9 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
 
             AuthorizationAuthority aa_app = new AuthorizationAuthority();
             EtsiTs103097DataEncryptedUnicast authValReq = aa_app.generateAutorizationValidationRequest(
-                    "certificates/services/aa/cert.bin",
-                    "certificates/services/ea/cert.bin",
-                    "certificates/services/ca/cert.bin",
+                    "certificates/services/aa/AAcert.bin",
+                    "certificates/services/aa/EAcert.bin",
+                    "certificates/services/aa/rootCAcert.bin",
                     "certificates/services/aa/EncKey.prv",
                     "certificates/services/aa/SignKey.prv",
                     authorizationRequestPath
@@ -39,8 +39,8 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
 
             EtsiTs103097DataEncryptedUnicast authResponse = aa_app.generateAutorizationResponse(
                     authorizationRequestPath,
-                    "certificates/services/aa/cert.bin",
-                    "certificates/services/ca/cert.bin",
+                    "certificates/services/aa/AAcert.bin",
+                    "certificates/services/aa/rootCAcert.bin",
                     "certificates/services/aa/EncKey.prv",
                     "certificates/services/aa/SignKey.prv",
                     "certificates/services/aa/SignKey.pub"

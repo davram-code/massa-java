@@ -17,27 +17,29 @@ public class MassaValidationServiceImpl implements MassaValidationService {
     public byte[] validateAuthorizationCertificateRequest(byte[] authorizationRequest) {
 
         try {
-            String authorizationValidationRequestPath = "certificates/services/aa/enrollment-validation-request.bin";
-            String authorizationValidationResponsePath = "certificates/services/ea/authentification-validation-response.bin";
+            System.out.println("Validating ITS...");
+            String authorizationValidationRequestPath = "certificates/services/ea/enrollment-validation-request.bin";
 
             FileUtils.writeByteArrayToFile(new File(authorizationValidationRequestPath), authorizationRequest);
 
             EnrollmentAuthority ea_app = new EnrollmentAuthority(
-                    "certificates/services/ea/cert.bin",
-                    "certificates/services/ca/cert.bin");
+                    "certificates/services/ea/EAcert.bin",
+                    "certificates/services/ea/rootCAcert.bin");
 
             EtsiTs103097DataEncryptedUnicast validation = ea_app.genAuthentificationValidationResponse(
                     authorizationValidationRequestPath,
-                    "certificates/services/aa/cert.bin",
-                    "certificates/services/ca/cert.bin",
-                    "certificates/services/ea/cert.bin",
+                    "certificates/services/ea/AAcert.bin",
+                    "certificates/services/ea/rootCAcert.bin",
+                    "certificates/services/ea/EAcert.bin",
                     "certificates/services/ea/EncPrvKey.bin",
                     "certificates/services/ea/SignPrvKey.bin"
             );
 
             byte[] authorizationValidationResponse = validation.getEncoded();
+            System.out.println("ITS Validation ok!");
             return authorizationValidationResponse;
         } catch (Exception e) {
+            System.out.println(e.toString());
             return e.toString().getBytes(StandardCharsets.UTF_8);
         }
     }
