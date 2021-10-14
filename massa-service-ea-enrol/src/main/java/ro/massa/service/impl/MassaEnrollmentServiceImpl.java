@@ -22,8 +22,8 @@ public class MassaEnrollmentServiceImpl implements MassaEnrollmentService {
             FileUtils.writeByteArrayToFile(new File(enrollmentRequestPath), enrollReq);
 
             EnrollmentAuthority ea_app = new EnrollmentAuthority(
-                    "certificates/services/ea/cert.bin",
-                    "certificates/services/ca/cert.bin"
+                    "certificates/services/ea/EAcert.bin",
+                    "certificates/services/ea/rootCAcert.bin"
             );
 
             EtsiTs103097DataEncryptedUnicast enrolResponseMessage = ea_app.verifyEnrollmentRequestMessage(
