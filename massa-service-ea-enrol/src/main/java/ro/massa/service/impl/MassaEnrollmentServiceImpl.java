@@ -18,20 +18,9 @@ public class MassaEnrollmentServiceImpl implements MassaEnrollmentService {
     public byte[] verifyEnrolCertRequest(byte[] enrollReq) {
         /* undeva aici ar trebui pornit un thread care rezolva cererile de certificat*/
         try {
-            String enrollmentRequestPath = "certificates/services/ea/enroll_requests/enroll_request.bin";
-            FileUtils.writeByteArrayToFile(new File(enrollmentRequestPath), enrollReq);
+            EnrollmentAuthority ea_app = new EnrollmentAuthority();
 
-            EnrollmentAuthority ea_app = new EnrollmentAuthority(
-                    "certificates/services/ea/EAcert.bin",
-                    "certificates/services/ea/rootCAcert.bin"
-            );
-
-            EtsiTs103097DataEncryptedUnicast enrolResponseMessage = ea_app.verifyEnrollmentRequestMessage(
-                    enrollmentRequestPath,
-                    "certificates/services/ea/SignPubKey.bin",
-                    "certificates/services/ea/SignPrvKey.bin",
-                    "certificates/services/ea/EncPrvKey.bin"
-            );
+            EtsiTs103097DataEncryptedUnicast enrolResponseMessage = ea_app.verifyEnrollmentRequestMessage(enrollReq);
 
             byte[] encodedEnrollmentRsp = enrolResponseMessage.getEncoded();
             return encodedEnrollmentRsp;
