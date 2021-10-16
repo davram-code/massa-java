@@ -1,4 +1,4 @@
-package ro.massa;
+package ro.massa.its;
 
 import ro.massa.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
@@ -14,40 +14,52 @@ import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.CertificateReciever;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
+import ro.massa.its.ITSEntity;
+import ro.massa.properties.MassaProperties;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
+import java.util.Timer;
 
 import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 
 public class AuthorizationAuthority extends ITSEntity {
 
+    EtsiTs103097Certificate[] authorizationCAChain;
+
+    EtsiTs103097Certificate EaCert;
+    EtsiTs103097Certificate RootCaCert;
+    EtsiTs103097Certificate AaCert;
+
+    PrivateKey signPrivateKey;
+    PublicKey signPublicKey;
+
+    PrivateKey encPrivateKey;
+
     public AuthorizationAuthority() throws Exception {
+
+        EaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathEaCert());
+        RootCaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathRootCaCert());
+        AaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathAaCert());
+
+        authorizationCAChain = new EtsiTs103097Certificate[]{AaCert, RootCaCert};
+
+        signPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
+        signPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
+
+        encPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathEncPrivateKey());
 
     }
 
     public EtsiTs103097DataEncryptedUnicast generateAutorizationResponse(
-            String pathAuthRequestMsg,
-            String pathAACert,
-            String pathRootCert,
-            String pathPrvEncKeyAA,
-            String pathPrvSignKeyAA,
-            String pathPubSignKeyAA
-
+            byte[] authRequest
     ) throws Exception {
-        EtsiTs103097Certificate authorizationCACert = Utils.readCertFromFile(pathAACert);
-        EtsiTs103097Certificate rootCACert = Utils.readCertFromFile(pathRootCert);
-        PrivateKey prvEncKeyAA = Utils.readPrivateKey(pathPrvEncKeyAA);
-        PrivateKey prvSignKeyAA = Utils.readPrivateKey(pathPrvSignKeyAA);
-        PublicKey pubSignKeyAA = Utils.readPublicKey(pathPubSignKeyAA);
-        EtsiTs103097DataEncryptedUnicast authRequestMessage = Utils.readDataEncryptedUnicast(pathAuthRequestMsg);
+        EtsiTs103097DataEncryptedUnicast authRequestMessage = new EtsiTs103097DataEncryptedUnicast(authRequest);
 
-
-        EtsiTs103097Certificate[] authorizationCAChain = new EtsiTs103097Certificate[]{authorizationCACert, rootCACert};
-        Map<HashedId8, Receiver> authorizationCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(prvEncKeyAA, authorizationCACert)});
+        Map<HashedId8, Receiver> authorizationCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, AaCert)});
 
         RequestVerifyResult<InnerAtRequest> authRequestResult = messagesCaGenerator.decryptAndVerifyAuthorizationRequestMessage(authRequestMessage,
                 true, // Expect AuthorizationRequestPOP content
@@ -75,9 +87,9 @@ public class AuthorizationAuthority extends ITSEntity {
                 appPermissions, //  TO SOLVE
                 authRequestResult.getSignAlg(), // signAlg,
                 ticketSignKey_public, //authTicketSignKeys.getPublic(),
-                authorizationCACert,
-                pubSignKeyAA, //authorizationCASignKeys.getPublic(),
-                prvSignKeyAA, //authorizationCASignKeys.getPrivate(),
+                AaCert,
+                signPublicKey, //authorizationCASignKeys.getPublic(),
+                signPrivateKey, //authorizationCASignKeys.getPrivate(),
                 symmAlg,
                 encryptionScheme, //to chage
                 ticketEncKey_public
@@ -94,11 +106,12 @@ public class AuthorizationAuthority extends ITSEntity {
                 AuthorizationResponseCode.ok,
                 authTicketCert);
 
+
         EtsiTs103097DataEncryptedUnicast authResponseMessage = messagesCaGenerator.genAuthorizationResponseMessage(
                 new Time64(new Date()), // generation Time
                 innerAtResponse,
                 authorizationCAChain, // The AA certificate chain signing the message
-                prvSignKeyAA,
+                signPrivateKey,
                 symmAlg, // Encryption algorithm used.
                 authRequestResult.getSecretKey()); // The symmetric key generated in the request.
 
@@ -107,25 +120,11 @@ public class AuthorizationAuthority extends ITSEntity {
 
 
     public EtsiTs103097DataEncryptedUnicast generateAutorizationValidationRequest(
-            String pathAuthorizationCACert,
-            String pathEACert,
-            String pathRootCACert,
-            String pathAAPeivateEncKey,
-            String pathAAPrivateSignKey,
-            String pathAuthRequestMessage
+            byte[] authRequest
     ) throws Exception {
-        EtsiTs103097Certificate authorizationCACert = Utils.readCertFromFile(pathAuthorizationCACert);
-        EtsiTs103097Certificate rootCACert = Utils.readCertFromFile(pathRootCACert);
-        EtsiTs103097Certificate enrolmentCACert = Utils.readCertFromFile(pathEACert);
+        EtsiTs103097DataEncryptedUnicast authRequestMessage = new EtsiTs103097DataEncryptedUnicast(authRequest);
 
-        PrivateKey aaPrivateEncKey = Utils.readPrivateKey(pathAAPeivateEncKey);
-        PrivateKey aaPrivateSignKey = Utils.readPrivateKey(pathAAPrivateSignKey);
-
-        EtsiTs103097DataEncryptedUnicast authRequestMessage = Utils.readDataEncryptedUnicast(pathAuthRequestMessage);
-
-
-        EtsiTs103097Certificate[] authorizationCAChain = new EtsiTs103097Certificate[]{authorizationCACert, rootCACert};
-        Map<HashedId8, Receiver> authorizationCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(aaPrivateEncKey, authorizationCACert)});
+        Map<HashedId8, Receiver> authorizationCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, AaCert)});
 
         // To decrypt the message and verify the external POP signature (not the inner eCSignature signed for EA CA).
         RequestVerifyResult<InnerAtRequest> authRequestResult = messagesCaGenerator.decryptAndVerifyAuthorizationRequestMessage(authRequestMessage,
@@ -141,8 +140,8 @@ public class AuthorizationAuthority extends ITSEntity {
                 new Time64(new Date()), // generation Time
                 authorizationValidationRequest,
                 authorizationCAChain,// The AA certificate chain to generate the signature.
-                aaPrivateSignKey, // The AA signing keys
-                enrolmentCACert); // The EA certificate to encrypt data to.
+                signPrivateKey, // The AA signing keys
+                EaCert); // The EA certificate to encrypt data to.
 
         EtsiTs103097DataEncryptedUnicast authorizationValidationRequestMessage = (EtsiTs103097DataEncryptedUnicast) authorizationValidationRequestMessageResult.getEncryptedData();
         return authorizationValidationRequestMessage;
