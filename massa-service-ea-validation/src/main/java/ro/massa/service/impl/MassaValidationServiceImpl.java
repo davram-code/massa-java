@@ -18,22 +18,9 @@ public class MassaValidationServiceImpl implements MassaValidationService {
 
         try {
             System.out.println("Validating ITS...");
-            String authorizationValidationRequestPath = "certificates/services/ea/enrollment-validation-request.bin";
+            EnrollmentAuthority ea_app = new EnrollmentAuthority();
 
-            FileUtils.writeByteArrayToFile(new File(authorizationValidationRequestPath), authorizationRequest);
-
-            EnrollmentAuthority ea_app = new EnrollmentAuthority(
-                    "certificates/services/ea/EAcert.bin",
-                    "certificates/services/ea/rootCAcert.bin");
-
-            EtsiTs103097DataEncryptedUnicast validation = ea_app.genAuthentificationValidationResponse(
-                    authorizationValidationRequestPath,
-                    "certificates/services/ea/AAcert.bin",
-                    "certificates/services/ea/rootCAcert.bin",
-                    "certificates/services/ea/EAcert.bin",
-                    "certificates/services/ea/EncPrvKey.bin",
-                    "certificates/services/ea/SignPrvKey.bin"
-            );
+            EtsiTs103097DataEncryptedUnicast validation = ea_app.genAuthentificationValidationResponse(authorizationRequest);
 
             byte[] authorizationValidationResponse = validation.getEncoded();
             System.out.println("ITS Validation ok!");
