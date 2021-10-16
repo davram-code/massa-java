@@ -1,4 +1,4 @@
-package ro.massa;
+package ro.massa.its;
 
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
