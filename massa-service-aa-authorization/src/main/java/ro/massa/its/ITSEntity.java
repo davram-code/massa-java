@@ -9,12 +9,15 @@ import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.HashAlg
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.Signature;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.SymmAlgorithm;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.Ieee1609Dot2Data;
+import ro.massa.common.MassaLog;
+import ro.massa.common.MassaLogFactory;
 import ro.massa.common.Utils;
 import ro.massa.properties.MassaProperties;
 
 import java.security.KeyPair;
 
 public class ITSEntity {
+    MassaLog log = MassaLogFactory.getLog(AuthorizationAuthority.class);
     protected static int msgGenVersion;
     protected static HashAlgorithm digestAlgorithm;
     protected static Signature.SignatureChoices signatureScheme;
@@ -26,6 +29,7 @@ public class ITSEntity {
 
     public ITSEntity() throws Exception
     {
+        log.log("Initializing ITS Entity");
         msgGenVersion = MassaProperties.getInstance().getVersion();
         digestAlgorithm = MassaProperties.getInstance().getHashAlgorithm();
         signatureScheme = MassaProperties.getInstance().getSignatureChoice();
@@ -44,15 +48,15 @@ public class ITSEntity {
                 true); // If EC points should be represented as uncompressed.
     }
 
-    public void generateSignKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
-        KeyPair keyPair = cryptoManager.generateKeyPair(signatureScheme);
-        Utils.dump(pubKeyPath, keyPair.getPublic());
-        Utils.dump(prvKeyPath, keyPair.getPrivate());
-    }
-
-    public void generateEncKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
-        KeyPair keyPair = cryptoManager.generateKeyPair(encryptionScheme);
-        Utils.dump(pubKeyPath, keyPair.getPublic());
-        Utils.dump(prvKeyPath, keyPair.getPrivate());
-    }
+//    public void generateSignKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
+//        KeyPair keyPair = cryptoManager.generateKeyPair(signatureScheme);
+//        Utils.dump(pubKeyPath, keyPair.getPublic());
+//        Utils.dump(prvKeyPath, keyPair.getPrivate());
+//    }
+//
+//    public void generateEncKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
+//        KeyPair keyPair = cryptoManager.generateKeyPair(encryptionScheme);
+//        Utils.dump(pubKeyPath, keyPair.getPublic());
+//        Utils.dump(prvKeyPath, keyPair.getPrivate());
+//    }
 }
