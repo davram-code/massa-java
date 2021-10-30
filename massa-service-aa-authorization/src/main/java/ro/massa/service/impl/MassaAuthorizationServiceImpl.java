@@ -26,7 +26,7 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
     }
 
     @Override
-    public byte[] verifyAuthorizationCertificateRequest(byte[] authorizationRequest) {
+    public byte[] resolveAuthorizationCertificateRequest(byte[] authorizationRequest) {
         log.log("Resolving Authorization Certificate Request");
 
         try {
@@ -81,10 +81,5 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
             is.read(data);
             return data;
         }
-    }
-
-    @Override
-    public String resolveAuthorizationCertificateRequest() {
-        return null;
     }
 }
