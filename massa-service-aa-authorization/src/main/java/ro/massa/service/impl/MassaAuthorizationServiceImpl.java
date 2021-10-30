@@ -6,6 +6,7 @@ import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.its.AuthorizationAuthority;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
+import ro.massa.properties.MassaProperties;
 import ro.massa.service.MassaAuthorizationService;
 
 import java.io.*;
@@ -54,10 +55,17 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
         }
     }
 
+    private String getEaURL() throws Exception
+    {
+        String ip = MassaProperties.getInstance().getEaIP();
+        String port = MassaProperties.getInstance().getEaPort();
+        return "http://" + ip + ":" + port + "/massa/validation/";
+    }
+
     private byte[] postValidationRequest(byte[] payload) throws Exception {
         log.log("Posting Validation Request");
 
-        URL url = new URL("http://localhost:8080/massa/validation/"); //TODO: de trecut asta in fisierul de configurare
+        URL url = new URL(getEaURL());
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
         con.setRequestMethod("POST");
         con.setRequestProperty("Content-Type", "application/x-its-request");

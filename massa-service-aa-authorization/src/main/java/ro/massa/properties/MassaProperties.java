@@ -110,4 +110,12 @@ public class MassaProperties {
     public String getPathEncPrivateKey(){
         return properties.getProperty("massa.path-enc-prv-key");
     }
+
+    public String getEaIP(){
+        return properties.getProperty("massa.ea.ip");
+    }
+
+    public String getEaPort(){
+        return properties.getProperty("massa.ea.port");
+    }
 }
