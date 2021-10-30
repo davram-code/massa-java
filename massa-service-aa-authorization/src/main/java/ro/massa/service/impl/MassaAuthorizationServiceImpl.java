@@ -1,11 +1,21 @@
 package ro.massa.service.impl;
 
 
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.InnerAtRequest;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponse;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponseCode;
+import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
+import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
+import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.springframework.stereotype.Component;
+import ro.massa.common.MassaDB;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.its.AuthorizationAuthority;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
+import ro.massa.its.artifacts.AuthRequest;
+import ro.massa.its.artifacts.AuthValidationRequest;
+import ro.massa.its.artifacts.AuthValidationResponse;
 import ro.massa.properties.MassaProperties;
 import ro.massa.service.MassaAuthorizationService;
 
@@ -26,60 +36,30 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
     }
 
     @Override
-    public byte[] resolveAuthorizationCertificateRequest(byte[] authorizationRequest) {
+    public byte[] resolveAuthorizationCertificateRequest(byte[] authorizationRequestMsg) {
         log.log("Resolving Authorization Certificate Request");
 
         try {
-            EtsiTs103097DataEncryptedUnicast authValReq = aa.generateAutorizationValidationRequest(authorizationRequest);
-            log.log("Authorization Validation Request", authValReq);
+            AuthRequest authorizationRequest = aa.decodeRequestMessage(authorizationRequestMsg);
 
-            byte[] validationResponse = postValidationRequest(authValReq.getEncoded());
-            boolean OK = aa.checkValidationResponse(validationResponse);
+            AuthValidationRequest authorizationValidationRequest = aa.generateAuthorizationValidationRequest(authorizationRequest);
 
-            if(OK)
+            AuthValidationResponse validationResponse = aa.getValidationResponse(authorizationValidationRequest);
+
+            if(validationResponse.getValue().getResponseCode() == AuthorizationValidationResponseCode.ok)
             {
-                EtsiTs103097DataEncryptedUnicast authResponse = aa.generateAutorizationResponse(authorizationRequest);
-                log.log("Authorization Response", authResponse);
-                byte[] authorizationRsp = authResponse.getEncoded();
-                return authorizationRsp;
+                EtsiTs103097DataEncryptedUnicast authResponse = aa.generateAuthorizationResponse(authorizationRequest);
+                return authResponse.getEncoded();
             }
             else
             {
-                log.log("Authorization ERROR");
+                log.log("Enrollment Validation Failed with code " + validationResponse.getValue().getResponseCode().toString());
                 return "pam-pam".getBytes(StandardCharsets.UTF_8); //TODO: trebuie sa dai NU ok
             }
 
         } catch (Exception e) {
             log.error(e.toString());
             return e.toString().getBytes(StandardCharsets.UTF_8); //TODO: trebuie sa dai NU ok
-        }
-    }
-
-    private String getEaURL() throws Exception
-    {
-        String ip = MassaProperties.getInstance().getEaIP();
-        String port = MassaProperties.getInstance().getEaPort();
-        return "http://" + ip + ":" + port + "/massa/validation/";
-    }
-
-    private byte[] postValidationRequest(byte[] payload) throws Exception {
-        log.log("Posting Validation Request");
-
-        URL url = new URL(getEaURL());
-        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("POST");
-        con.setRequestProperty("Content-Type", "application/x-its-request");
-        con.setDoOutput(true);
-
-        try (OutputStream os = con.getOutputStream()) {
-            byte[] input = payload;
-            os.write(input, 0, input.length);
-        }
-
-        try (InputStream is = con.getInputStream()) {
-            byte[] data = new byte[is.available()];
-            is.read(data);
-            return data;
         }
     }
 }

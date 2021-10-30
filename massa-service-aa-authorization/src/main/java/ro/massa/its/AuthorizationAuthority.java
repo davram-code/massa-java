@@ -6,6 +6,9 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollme
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.Certificate;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.PreSharedKeyReceiver;
+import org.springframework.beans.support.ArgumentConvertingMethodInvoker;
+import ro.massa.MassaApplication;
+import ro.massa.common.MassaDB;
 import ro.massa.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.AuthorizationResponseCode;
@@ -21,9 +24,16 @@ import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.CertificateReciever;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
 import ro.massa.its.ITSEntity;
+import ro.massa.its.artifacts.AuthRequest;
+import ro.massa.its.artifacts.AuthValidationRequest;
+import ro.massa.its.artifacts.AuthValidationResponse;
 import ro.massa.properties.MassaProperties;
 
 import javax.crypto.SecretKey;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.text.SimpleDateFormat;
@@ -34,6 +44,8 @@ import java.util.Timer;
 import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 
 public class AuthorizationAuthority extends ITSEntity {
+
+    ETSIAuthorizationTicketGenerator eatg;
 
     EtsiTs103097Certificate[] authorizationCAChain;
     EtsiTs103097Certificate[] enrollmentCAChain;
@@ -49,10 +61,11 @@ public class AuthorizationAuthority extends ITSEntity {
 
     PrivateKey encPrivateKey;
 
-    SecretKey validationSessionSecretKey; //TODO: Manage validation session secret key
-
     public AuthorizationAuthority() throws Exception {
         log.log("Initializing the Authorization Service");
+        eatg = new ETSIAuthorizationTicketGenerator(cryptoManager);
+
+
         EaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathEaCert());
         RootCaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathRootCaCert());
         AaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathAaCert());
@@ -69,29 +82,39 @@ public class AuthorizationAuthority extends ITSEntity {
 
     }
 
-    public EtsiTs103097DataEncryptedUnicast generateAutorizationResponse(
-            byte[] authRequest
-    ) throws Exception {
-        log.log("Generating the Authorization Response for Authorization Request");
-        EtsiTs103097DataEncryptedUnicast authRequestMessage = new EtsiTs103097DataEncryptedUnicast(authRequest);
+    public AuthRequest decodeRequestMessage(byte []authRequestMessage) throws Exception
+    {
+        log.log("Decrypting Authorization Request");
+        EtsiTs103097DataEncryptedUnicast authRequest = new EtsiTs103097DataEncryptedUnicast(authRequestMessage);
 
-        RequestVerifyResult<InnerAtRequest> authRequestResult = messagesCaGenerator.decryptAndVerifyAuthorizationRequestMessage(authRequestMessage,
+        RequestVerifyResult<InnerAtRequest> authRequestResult = messagesCaGenerator.decryptAndVerifyAuthorizationRequestMessage(authRequest,
                 true, // Expect AuthorizationRequestPOP content
                 AaRecipients);
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd HH:mm:ss");
-        Date timeStamp = dateFormat.parse("20181202 12:12:21");
-        ETSIAuthorizationTicketGenerator eatg = new ETSIAuthorizationTicketGenerator(cryptoManager);
+        return MassaDB.store(authRequestResult);
+    }
+
+    public EtsiTs103097DataEncryptedUnicast generateAuthorizationResponse(
+            AuthRequest authReq
+    ) throws Exception {
+        log.log("Generating the Authorization Response for Authorization Request");
+        RequestVerifyResult<InnerAtRequest> authRequestResult = authReq.getValue();
+        /* Getting the public keys for sign/enc of the ITS Client*/
         PublicKey ticketSignKey_public = (PublicKey) cryptoManager.decodeEccPoint(
                 authRequestResult.getValue().getPublicKeys().getVerificationKey().getType(),
                 (EccCurvePoint) authRequestResult.getValue().getPublicKeys().getVerificationKey().getValue()
         );
-
         PublicKey ticketEncKey_public = (PublicKey) cryptoManager.decodeEccPoint(
                 authRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
                 (EccCurvePoint) authRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
         );
-        PsidSsp appPermCertMan = new PsidSsp(SecuredCertificateRequestService, new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("0132")));
+
+
+        PsidSsp appPermCertMan = new PsidSsp(
+                SecuredCertificateRequestService,
+                new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("0132"))
+        );
+
         PsidSsp[] appPermissions = new PsidSsp[]{appPermCertMan};
 
         EtsiTs103097Certificate authTicketCert = eatg.genAuthorizationTicket(
@@ -122,25 +145,17 @@ public class AuthorizationAuthority extends ITSEntity {
                 symmAlg, // Encryption algorithm used.
                 authRequestResult.getSecretKey()); // The symmetric key generated in the request.
 
+
+        MassaDB.store(authTicketCert, authReq);
         return authResponseMessage;
     }
 
 
-    public EtsiTs103097DataEncryptedUnicast generateAutorizationValidationRequest(
-            byte[] authRequest
+    public AuthValidationRequest generateAuthorizationValidationRequest(
+            AuthRequest authRequestResult
     ) throws Exception {
         log.log("Generating the Authorization Validation Request for Authorization Request");
-        EtsiTs103097DataEncryptedUnicast authRequestMessage = new EtsiTs103097DataEncryptedUnicast(authRequest);
-
-        // To decrypt the message and verify the external POP signature (not the inner eCSignature signed for EA CA).
-        RequestVerifyResult<InnerAtRequest> authRequestResult = messagesCaGenerator.decryptAndVerifyAuthorizationRequestMessage(authRequestMessage,
-                true, // Expect AuthorizationRequestPOP content
-                AaRecipients); // Receivers able to decrypt the message
-
-        // The AuthorizationRequestData contains the innerAtRequest and calculated requestHash
-        InnerAtRequest innerAtRequest = authRequestResult.getValue();
-
-
+        InnerAtRequest innerAtRequest = authRequestResult.getValue().getValue();
         AuthorizationValidationRequest authorizationValidationRequest = new AuthorizationValidationRequest(
                 innerAtRequest.getSharedAtRequest(), innerAtRequest.getEcSignature());
 
@@ -151,42 +166,35 @@ public class AuthorizationAuthority extends ITSEntity {
                 signPrivateKey, // The AA signing keys
                 EaCert); // The EA certificate to encrypt data to.
 
-        validationSessionSecretKey = authorizationValidationRequestMessageResult.getSecretKey();
-        EtsiTs103097DataEncryptedUnicast authorizationValidationRequestMessage = (EtsiTs103097DataEncryptedUnicast) authorizationValidationRequestMessageResult.getEncryptedData();
-        return authorizationValidationRequestMessage;
+        return MassaDB.store(authorizationValidationRequestMessageResult, authRequestResult);
     }
 
-    public boolean checkValidationResponse(byte[] validationResponseMessage) {
-        try {
-            log.log("Checking the Validation Response");
-            EtsiTs103097DataEncryptedUnicast validationResponse = new EtsiTs103097DataEncryptedUnicast(validationResponseMessage);
+    public AuthValidationResponse getValidationResponse(AuthValidationRequest authValidationRequest) throws Exception {
+        EncryptResult authorizationValidationRequest = authValidationRequest.getValue();
+        byte[] validationResponseMessage = ValidationClient.postBinaryMessageToEA(authorizationValidationRequest.getEncryptedData().getEncoded());
 
-            Map<HashedId8, Receiver> sharedKeyReceivers = messagesCaGenerator.buildRecieverStore(new Receiver[]{new PreSharedKeyReceiver(symmAlg, validationSessionSecretKey)});
-            Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{RootCaCert});
-            Map<HashedId8, Certificate> EaStore = messagesCaGenerator.buildCertStore(enrollmentCAChain);
+        log.log("Checking the Validation Response");
+        EtsiTs103097DataEncryptedUnicast validationResponse = new EtsiTs103097DataEncryptedUnicast(validationResponseMessage);
 
-            VerifyResult<AuthorizationValidationResponse> validationResponseResult = messagesCaGenerator.decryptAndVerifyAuthorizationValidationResponseMessage(
-                    validationResponse,
-                    EaStore, // cert Store
-                    trustStore, //trust Store
-                    sharedKeyReceivers //receiver Store
-            );
-            log.log("Validation Response", validationResponse);
+        Map<HashedId8, Receiver> sharedKeyReceivers = messagesCaGenerator.buildRecieverStore(
+                new Receiver[]{new PreSharedKeyReceiver(symmAlg, authorizationValidationRequest.getSecretKey())}
+        );
+        Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{RootCaCert});
+        Map<HashedId8, Certificate> EaStore = messagesCaGenerator.buildCertStore(enrollmentCAChain);
 
-            if(validationResponseResult.getValue().getResponseCode() == AuthorizationValidationResponseCode.ok)
-            {
-                log.log("Validation Response OK");
-                return true;
-            }
-            else
-            {
-                log.log("Enrollment Validation Failed");
-                return false;
-            }
+        VerifyResult<AuthorizationValidationResponse> validationResponseResult = messagesCaGenerator.decryptAndVerifyAuthorizationValidationResponseMessage(
+                validationResponse,
+                EaStore, // cert Store
+                trustStore, //trust Store
+                sharedKeyReceivers //receiver Store
+        );
 
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return false;
-        }
+        return MassaDB.store(validationResponseResult.getValue(), authValidationRequest);
     }
+
+
+
+
+
+
 }
