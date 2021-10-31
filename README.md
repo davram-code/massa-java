@@ -32,3 +32,19 @@ You have to firstly generate the ITS CA hierarchy using _init.sh_:
 Afterwards, _integration_test1.sh_ runs the ITS enrollment and authorization steps:
 
     $ ./integration_test1.sh 
+
+
+## Documentation
+
+### Logs
+The logging systems uses Apache Commons Logging. For the moment, the logs are displayed on the console. They can be redirected to a desired file when needed.
+
+### Database interface
+We implemented a DB interface that stores the artifacts and the restults of the operations. Our interfaces assumes a DB with one central table per service which contains all operations performed by the service together with FKs to tabels containing the produced/received artifacts. For instance, the DB for the authorization service would be similar to the diagram below.
+
+![DB diagram](https://github.com/davram-code/massa-java/blob/dima-issue-4/doc/auth-database.png?raw=true)
+
+
+
+
+
