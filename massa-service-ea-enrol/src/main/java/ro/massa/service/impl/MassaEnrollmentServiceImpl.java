@@ -14,12 +14,24 @@ import java.nio.file.Files;
 
 @Component
 public class MassaEnrollmentServiceImpl implements MassaEnrollmentService {
+    EnrollmentAuthority ea_app;
+
+    public MassaEnrollmentServiceImpl()
+    {
+        try{
+            ea_app = new EnrollmentAuthority();
+        }
+        catch (Exception e)
+        {
+            //TODO: log error
+        }
+
+    }
+
     @Override
     public byte[] verifyEnrolCertRequest(byte[] enrollReq) {
         /* undeva aici ar trebui pornit un thread care rezolva cererile de certificat*/
         try {
-            EnrollmentAuthority ea_app = new EnrollmentAuthority();
-
             EtsiTs103097DataEncryptedUnicast enrolResponseMessage = ea_app.verifyEnrollmentRequestMessage(enrollReq);
 
             byte[] encodedEnrollmentRsp = enrolResponseMessage.getEncoded();
@@ -31,6 +43,17 @@ public class MassaEnrollmentServiceImpl implements MassaEnrollmentService {
         }
     }
 
+    @Override
+    public void reset()
+    {
+        try{
+            ea_app = new EnrollmentAuthority();
+        }
+        catch (Exception e)
+        {
+            //TODO: log error
+        }
+    }
 
     @Override
     public String resolveEnrolCertRequest() {

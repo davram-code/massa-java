@@ -13,12 +13,24 @@ import java.nio.file.Files;
 
 @Component
 public class MassaValidationServiceImpl implements MassaValidationService {
+    EnrollmentAuthority ea_app;
+    public MassaValidationServiceImpl()
+    {
+        try{
+            ea_app = new EnrollmentAuthority();
+        }
+        catch(Exception e)
+        {
+            //TODO: logg error
+        }
+
+    }
+
     @Override
     public byte[] validateAuthorizationCertificateRequest(byte[] authorizationRequest) {
 
         try {
             System.out.println("Validating ITS...");
-            EnrollmentAuthority ea_app = new EnrollmentAuthority();
 
             EtsiTs103097DataEncryptedUnicast validation = ea_app.genAuthentificationValidationResponse(authorizationRequest);
 
@@ -28,6 +40,17 @@ public class MassaValidationServiceImpl implements MassaValidationService {
         } catch (Exception e) {
             System.out.println(e.toString());
             return e.toString().getBytes(StandardCharsets.UTF_8);
+        }
+    }
+
+    @Override
+    public void reset() {
+        try{
+            ea_app = new EnrollmentAuthority();
+        }
+        catch(Exception e)
+        {
+            //TODO: logg error
         }
     }
 }

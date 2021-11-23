@@ -14,6 +14,8 @@ public interface MassaEnrollmentService {
      */
     byte[] verifyEnrolCertRequest(byte[] enrollReq);
 
+    void reset();
+
     /**
      *
      */

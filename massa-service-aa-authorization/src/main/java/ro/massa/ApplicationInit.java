@@ -14,7 +14,6 @@ import ro.massa.common.MassaLogFactory;
 @EnableScheduling
 public class ApplicationInit implements ApplicationRunner {
     private MassaLog log = MassaLogFactory.getLog(ApplicationInit.class);
-    private static final Logger LOG = LoggerFactory.getLogger(ApplicationInit.class);
 
     @Override
     public void run(ApplicationArguments args) throws Exception {

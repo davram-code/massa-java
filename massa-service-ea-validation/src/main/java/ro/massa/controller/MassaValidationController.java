@@ -19,8 +19,15 @@ public class MassaValidationController {
     MassaValidationService validationService;
 
     @GetMapping(path = "/validation/probe")
-    public String probeEnrollmentController() {
+    public String probeValidationController() {
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        return dateFormat.format(new Date());
+    }
+
+    @GetMapping(path = "/validation/reset")
+    public String resetValidationController() {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        validationService.reset();
         return dateFormat.format(new Date());
     }
 

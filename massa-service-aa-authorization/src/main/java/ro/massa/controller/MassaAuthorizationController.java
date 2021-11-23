@@ -19,9 +19,17 @@ public class MassaAuthorizationController {
     MassaAuthorizationService authorizationService;
 
     @GetMapping(path = "/authorization/probe")
-    public String probeEnrollmentController() {
+    public String probeAuthorizationController() {
         DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
+        return dateFormat.format(new Date());
+    }
+
+    @GetMapping(path = "/authorization/reset")
+    public String resetAuthorizationService() {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+
+        authorizationService.reset();
         return dateFormat.format(new Date());
     }
 
