@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/massa-service-aa-authorization.iml" filepath="$PROJECT_DIR$/.idea/massa-service-aa-authorization.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/massa-service-ea-enrol.iml" filepath="$PROJECT_DIR$/.idea/massa-service-ea-enrol.iml" />
     </modules>
   </component>
 </project>

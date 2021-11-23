@@ -6,4 +6,5 @@ import org.springframework.stereotype.Service;
 public interface MassaValidationService {
 
     byte[] validateAuthorizationCertificateRequest(byte[] authorizationRequest);
+    void reset();
 }

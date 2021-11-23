@@ -27,6 +27,14 @@ public class MassaEnrollmentController {
         return dateFormat.format(new Date());
     }
 
+    @GetMapping(path = "/enrollment/reset")
+    public String resetEnrollmentController() {
+        LOG.debug("Massa Enrollment Controller is alive!");
+        DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        enrollmentService.reset();
+        return dateFormat.format(new Date());
+    }
+
     @PostMapping(path = "/enrollment")
     public ResponseEntity<byte[]> postEnrollmentRequest(@RequestBody byte[] base64Request) {
         LOG.debug("Enrollment request received");

@@ -36,6 +36,20 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
     }
 
     @Override
+    public void reset()
+    {
+        log.log("Reset MASSA Authorization Service");
+        try{
+            aa = new AuthorizationAuthority();
+        }
+        catch (Exception e)
+        {
+            log.error("Reset MASSA Authorization Service Failed");
+        }
+
+    }
+
+    @Override
     public byte[] resolveAuthorizationCertificateRequest(byte[] authorizationRequestMsg) {
         log.log("Resolving Authorization Certificate Request");
 
