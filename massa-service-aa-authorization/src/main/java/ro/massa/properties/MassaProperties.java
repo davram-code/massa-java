@@ -130,4 +130,8 @@ public class MassaProperties {
     public String getEaPort(){
         return properties.getProperty("massa.ea.port");
     }
+
+    public String getLogPrefix() {
+        return  properties.getProperty("massa.log-prefix");
+    }
 }

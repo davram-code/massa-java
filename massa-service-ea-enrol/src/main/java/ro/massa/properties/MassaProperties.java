@@ -106,4 +106,8 @@ public class MassaProperties {
     public String getPathEncPrivateKey(){
         return properties.getProperty("massa.path-enc-prv-key");
     }
+
+    public String getLogPrefix() {
+        return  properties.getProperty("massa.log-prefix");
+    }
 }

@@ -6,7 +6,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.stereotype.Component;
-import ro.massa.ITSEntity;
+import ro.massa.its.ITSEntity;
 
 import java.io.FileInputStream;
 import java.util.Properties;

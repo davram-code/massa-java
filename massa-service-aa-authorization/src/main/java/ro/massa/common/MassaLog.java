@@ -1,18 +1,22 @@
 package ro.massa.common;
 
 import org.apache.commons.logging.Log;
-import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.InnerAtRequest;
-import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
-import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
-import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
+import ro.massa.properties.MassaProperties;
 
 public class MassaLog{
     Log log;
-    String prefix = "[MASSA]\t";
+    String prefix;
 
     public MassaLog(Log log)
     {
         this.log =  log;
+        try{
+            prefix = "[" + MassaProperties.getInstance().getLogPrefix() + "]\t";
+        }
+        catch (Exception e)
+        {
+            prefix = "[MASSA]\t";
+        }
     }
 
     public void log(String msg)
