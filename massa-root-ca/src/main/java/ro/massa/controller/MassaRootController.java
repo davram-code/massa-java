@@ -36,8 +36,8 @@ public class MassaRootController {
 
 
     @PostMapping(path = "/certify/aa")
-    public ResponseEntity<byte[]> postAaCertificateRequest() {
+    public ResponseEntity<byte[]> postAaCertificateRequest(@RequestBody byte[] request) {
 
-        return new ResponseEntity<byte[]>(massaRootService.certifyAuthorizationCA(), HttpStatus.OK);
+        return new ResponseEntity<byte[]>(massaRootService.certifyAuthorizationCA(request), HttpStatus.OK);
     }
 }

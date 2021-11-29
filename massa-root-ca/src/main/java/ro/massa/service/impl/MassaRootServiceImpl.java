@@ -16,10 +16,15 @@ public class MassaRootServiceImpl implements MassaRootService {
     RootCA rootCA;
     MassaLog log = MassaLogFactory.getLog(MassaRootServiceImpl.class);
 
-    public MassaRootServiceImpl() throws Exception
+    public MassaRootServiceImpl()
     {
         log.log("Initializing MASSA Root Service");
-        rootCA = new RootCA();
+        try{
+            rootCA = new RootCA();
+        }
+        catch (Exception e) {
+            log.error(e.getMessage());
+        }
     }
 
     @Override
@@ -31,42 +36,36 @@ public class MassaRootServiceImpl implements MassaRootService {
         }
         catch (Exception e)
         {
-
+            log.error(e.getMessage());
+            return e.getMessage().getBytes(StandardCharsets.UTF_8);
         }
-
-        return "ion".getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
     public byte[] certifyEnrollmentCA() {
         log.log("Resolving EA Certificate Request");
-
         try{
             EtsiTs103097Certificate eaCert = rootCA.initEnrollmentCA();
             return eaCert.getEncoded();
         }
         catch (Exception e)
         {
-
+            log.error(e.getMessage());
+            return e.getMessage().getBytes(StandardCharsets.UTF_8);
         }
-
-        return "ion".getBytes(StandardCharsets.UTF_8);
     }
 
     @Override
-    public byte[] certifyAuthorizationCA() {
+    public byte[] certifyAuthorizationCA(byte [] request) {
         log.log("Resolving AA Certificate Request");
-
         try{
-            EtsiTs103097Certificate aaCert = rootCA.initAuthorizationCA();
+            EtsiTs103097Certificate aaCert = rootCA.initAuthorizationCA(request);
             return aaCert.getEncoded();
         }
         catch (Exception e)
         {
-
+            log.error(e.getMessage());
+            return e.getMessage().getBytes(StandardCharsets.UTF_8);
         }
-
-
-        return "ion".getBytes(StandardCharsets.UTF_8);
     }
 }

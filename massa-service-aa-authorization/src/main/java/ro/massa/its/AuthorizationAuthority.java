@@ -2,9 +2,13 @@ package ro.massa.its;
 
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponseCode;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.CertificateSubjectAttributes;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.PublicKeys;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.camanagement.CaCertificateRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.InnerEcResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.Certificate;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097DataSigned;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.PreSharedKeyReceiver;
 import org.springframework.beans.support.ArgumentConvertingMethodInvoker;
 import ro.massa.MassaApplication;
@@ -37,6 +41,7 @@ import java.net.URL;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import java.util.Timer;
@@ -45,6 +50,7 @@ import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSA
 
 public class AuthorizationAuthority extends ITSEntity {
 
+    private static final Integer SWEDEN = 752;
     ETSIAuthorizationTicketGenerator eatg;
 
     EtsiTs103097Certificate[] authorizationCAChain;
@@ -60,25 +66,38 @@ public class AuthorizationAuthority extends ITSEntity {
     PublicKey signPublicKey;
 
     PrivateKey encPrivateKey;
+    PublicKey encPublicKey;
+
+    GeographicRegion region;
+
 
     public AuthorizationAuthority() throws Exception {
         log.log("Initializing the Authorization Service");
         eatg = new ETSIAuthorizationTicketGenerator(cryptoManager);
 
-
-        EaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathEaCert());
+        log.log("1");
+        EaCert = Utils.readCertFromFile("certificates/services/aa/EAcert.bin");
+        log.log("1");
         RootCaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathRootCaCert());
+        log.log("1");
         AaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathAaCert());
 
+        log.log("1");
         authorizationCAChain = new EtsiTs103097Certificate[]{AaCert, RootCaCert};
+        log.log("1");
         enrollmentCAChain = new EtsiTs103097Certificate[]{EaCert, RootCaCert};
-
+        log.log("1");
         signPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
+        log.log("1");
         signPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
-
+        log.log("1");
         encPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathEncPrivateKey());
-
+        log.log("1");
+        encPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathEncPublicKey());
+        log.log("1");
         AaRecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, AaCert)});
+        log.log("1");
+        region= GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
 
     }
 

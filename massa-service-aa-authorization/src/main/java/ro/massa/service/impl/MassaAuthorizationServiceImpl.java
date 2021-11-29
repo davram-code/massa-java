@@ -6,6 +6,7 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authoriz
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponseCode;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097DataSigned;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.springframework.stereotype.Component;
 import ro.massa.common.MassaDB;
@@ -13,6 +14,7 @@ import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.its.AuthorizationAuthority;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
+import ro.massa.its.SubCA;
 import ro.massa.its.artifacts.AuthRequest;
 import ro.massa.its.artifacts.AuthValidationRequest;
 import ro.massa.its.artifacts.AuthValidationResponse;
@@ -27,12 +29,34 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class MassaAuthorizationServiceImpl implements MassaAuthorizationService {
     AuthorizationAuthority aa;
+    SubCA subCA;
     MassaLog log = MassaLogFactory.getLog(MassaAuthorizationServiceImpl.class);
 
-    public MassaAuthorizationServiceImpl() throws Exception
+    public MassaAuthorizationServiceImpl()
     {
         log.log("Initializing MASSA Authorization Service");
-        aa = new AuthorizationAuthority();
+        try{
+            subCA = new SubCA();
+            aa = new AuthorizationAuthority();
+        }
+        catch (Exception e)
+        {
+            log.error(e.getMessage());
+        }
+    }
+
+    @Override
+    public byte[] getCertificateRequest()
+    {
+        try{
+            EtsiTs103097DataSigned certReq = subCA.getCertificateRequest();
+            return certReq.getEncoded();
+        }
+        catch (Exception e)
+        {
+            log.error("Generating Certificate Request FAILED");
+        }
+        return null;
     }
 
     @Override
@@ -44,7 +68,7 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
         }
         catch (Exception e)
         {
-            log.error("Reset MASSA Authorization Service Failed");
+            log.error("Reset MASSA Authorization Service Failed:" + e.getMessage());
         }
 
     }
