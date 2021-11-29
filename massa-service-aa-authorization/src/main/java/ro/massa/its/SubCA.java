@@ -23,31 +23,22 @@ public class SubCA extends ITSEntity{
     MassaLog log = MassaLogFactory.getLog(SubCA.class);
     private static final Integer SWEDEN = 752;
 
-    PrivateKey signPrivateKey;
-    PublicKey signPublicKey;
-
-    PrivateKey encPrivateKey;
-    PublicKey encPublicKey;
-
     GeographicRegion region;
 
 
     public SubCA() throws Exception {
-        log.log("Initializing the Authorization Service");
-
-        signPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
-        signPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
-
-        encPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathEncPrivateKey());
-        encPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathEncPublicKey());
-
+        log.log("Initializing the SubCA");
         region= GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
     }
 
     public EtsiTs103097DataSigned getCertificateRequest() throws Exception
     {
+        PublicKey signPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
+        PrivateKey signPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
+
+        PublicKey encPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathEncPublicKey());
         // First generate inner CaCertificatRequest
-        CaCertificateRequest caCertificateRequest = genDummyCaCertificateRequest();
+        CaCertificateRequest caCertificateRequest = genDummyCaCertificateRequest(signPublicKey, encPublicKey);
         // The self sign the message to prove possession.
         EtsiTs103097DataSigned caCertificateRequestMessage = messagesCaGenerator.genCaCertificateRequestMessage(
                 new Time64(new Date()), // signing generation time
@@ -59,7 +50,7 @@ public class SubCA extends ITSEntity{
 
     }
 
-    private CaCertificateRequest genDummyCaCertificateRequest() throws Exception {
+    private CaCertificateRequest genDummyCaCertificateRequest(PublicKey signPublicKey, PublicKey encPublicKey) throws Exception {
 
         PublicKeys publicKeys = messagesCaGenerator.genPublicKeys(signatureScheme, signPublicKey, symmAlg,  encryptionScheme, encPublicKey);
 

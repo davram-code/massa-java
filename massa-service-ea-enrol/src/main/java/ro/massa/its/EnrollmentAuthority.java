@@ -63,6 +63,7 @@ public class EnrollmentAuthority extends ITSEntity {
     ) throws Exception {
         /* TODO: This method should be used also when rekey-ing */
         EtsiTs103097DataEncryptedUnicast enrolRequestMessage = new EtsiTs103097DataEncryptedUnicast(encodedEnrollRequest);
+        log.log(enrolRequestMessage.toString());
 
         Map<HashedId8, Certificate> enrolCredCertStore = messagesCaGenerator.buildCertStore(enrollmentCAChain);
         Map<HashedId8, Receiver> enrolCARecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, enrollmentCAChain[0])});
@@ -121,6 +122,7 @@ public class EnrollmentAuthority extends ITSEntity {
                 symmAlg, // Encryption algorithm used
                 enrolmentRequestResult.getSecretKey()); // Use symmetric key from the verification result when verifying the request.
 
+        log.log(enrolResponseMessage.toString());
         return enrolResponseMessage;
     }
 

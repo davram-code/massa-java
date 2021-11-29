@@ -50,6 +50,7 @@ public class MassaRootServiceImpl implements MassaRootService {
         }
         catch (Exception e)
         {
+            log.error("EA Certificate Request Failed!");
             log.error(e.getMessage());
             return e.getMessage().getBytes(StandardCharsets.UTF_8);
         }
@@ -64,6 +65,7 @@ public class MassaRootServiceImpl implements MassaRootService {
         }
         catch (Exception e)
         {
+            log.error("EA Certificate Request Failed!");
             log.error(e.getMessage());
             return e.getMessage().getBytes(StandardCharsets.UTF_8);
         }
