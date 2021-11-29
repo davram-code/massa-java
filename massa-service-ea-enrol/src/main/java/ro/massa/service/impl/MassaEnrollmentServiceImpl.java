@@ -3,7 +3,7 @@ package ro.massa.service.impl;
 
 import org.apache.commons.io.FileUtils;
 import org.springframework.stereotype.Component;
-import ro.massa.EnrollmentAuthority;
+import ro.massa.its.EnrollmentAuthority;
 import ro.massa.service.MassaEnrollmentService;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 

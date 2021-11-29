@@ -1,4 +1,4 @@
-package ro.massa;
+package ro.massa.its;
 
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationRequest;
