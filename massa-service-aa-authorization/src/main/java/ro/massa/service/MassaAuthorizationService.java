@@ -7,5 +7,7 @@ public interface MassaAuthorizationService {
 
     void reset();
 
+    byte[] getCertificateRequest();
+
     byte[] resolveAuthorizationCertificateRequest(byte[] authorizationRequest);
 }

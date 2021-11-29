@@ -111,6 +111,18 @@ public class MassaProperties {
         return properties.getProperty("massa.path-enc-prv-key");
     }
 
+    public String getPathEncPublicKey(){
+        return properties.getProperty("massa.path-enc-pub-key");
+    }
+
+    public String getAaName(){
+        return properties.getProperty("massa.aa-name");
+    }
+
+    public int getAaValidityYears(){
+        return Integer.parseInt(properties.getProperty("massa.aa-validity-years"));
+    }
+
     public String getEaIP(){
         return properties.getProperty("massa.ea.ip");
     }

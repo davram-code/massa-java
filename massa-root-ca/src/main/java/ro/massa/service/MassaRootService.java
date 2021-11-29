@@ -9,5 +9,5 @@ public interface MassaRootService {
 
     byte[] certifyEnrollmentCA();
 
-    byte[] certifyAuthorizationCA();
+    byte[] certifyAuthorizationCA(byte[] request);
 }
