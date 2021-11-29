@@ -1,7 +1,6 @@
 package ro.massa.its;
 
 import massa.its.common.Utils;
-import massa.its.ITSEntity;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.camanagement.CaCertificateRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
@@ -70,9 +69,7 @@ public class RootCA extends ITSEntity {
         return rootCACertificate;
     }
 
-    public EtsiTs103097Certificate initEnrollmentCA(
-    ) throws Exception {
-
+    public EtsiTs103097Certificate initEnrollmentCA() throws Exception {
         PublicKey pubKeySignEA = Utils.readPublicKey("certificates/services/ea/SignPubKey.bin");
         PublicKey pubKeyEncEA = Utils.readPublicKey("certificates/services/ea/EncPubKey.bin");
 
@@ -94,6 +91,7 @@ public class RootCA extends ITSEntity {
                 pubKeyEncEA // encryption public key
         );
 
+        log.log(enrollmentCACertificate.toString());
         return enrollmentCACertificate;
     }
 
@@ -101,6 +99,7 @@ public class RootCA extends ITSEntity {
     public EtsiTs103097Certificate initAuthorizationCA( byte[] request ) throws Exception {
 
         EtsiTs103097DataSigned caCertificateRequestMessage = new EtsiTs103097DataSigned(request);
+        log.log(caCertificateRequestMessage.toString());
         VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult = messagesCaGenerator.verifyCACertificateRequestMessage(caCertificateRequestMessage);
 
 
@@ -108,15 +107,18 @@ public class RootCA extends ITSEntity {
                 caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getType(),
                 (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getValue()
         );
+        log.log(pubKeySignAA.toString());
+
         PublicKey pubKeyEncAA = (PublicKey) cryptoManager.decodeEccPoint(
                 caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
                 (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
         );
-
+        log.log(pubKeyEncAA.toString());
 
         ValidityPeriod authorityCAValidityPeriod = new ValidityPeriod(new Date(), Duration.DurationChoices.years, 15);
 
         // Generate a reference to the Authorization CA Signing Keys
+        log.log("Generating the AA certificate");
         EtsiTs103097Certificate authorityCACertificate = authorityCertGenerator.genAuthorizationCA(
                 caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getId().toString(), // CA Name //TODO: is this the HOSTNAME?
                 caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getValidityPeriod(),
@@ -131,7 +133,7 @@ public class RootCA extends ITSEntity {
                 encryptionScheme,  // encPublicKeyAlgorithm
                 pubKeyEncAA // encryption public key
         );
-
+        log.log(authorityCACertificate.toString());
         return authorityCACertificate;
     }
 

@@ -75,30 +75,24 @@ public class AuthorizationAuthority extends ITSEntity {
         log.log("Initializing the Authorization Service");
         eatg = new ETSIAuthorizationTicketGenerator(cryptoManager);
 
-        log.log("1");
+
         EaCert = Utils.readCertFromFile("certificates/services/aa/EAcert.bin");
-        log.log("1");
         RootCaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathRootCaCert());
-        log.log("1");
         AaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathAaCert());
 
-        log.log("1");
         authorizationCAChain = new EtsiTs103097Certificate[]{AaCert, RootCaCert};
-        log.log("1");
         enrollmentCAChain = new EtsiTs103097Certificate[]{EaCert, RootCaCert};
-        log.log("1");
         signPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
-        log.log("1");
         signPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
-        log.log("1");
         encPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathEncPrivateKey());
-        log.log("1");
         encPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathEncPublicKey());
-        log.log("1");
+
         AaRecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, AaCert)});
-        log.log("1");
         region= GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
 
+        log.log(AaCert.getToBeSigned().getEncryptionKey().toString());
+        log.log(encPrivateKey.toString());
+        log.log(encPublicKey.toString());
     }
 
     public AuthRequest decodeRequestMessage(byte []authRequestMessage) throws Exception
