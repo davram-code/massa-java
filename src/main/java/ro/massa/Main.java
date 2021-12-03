@@ -1,15 +1,12 @@
 package ro.massa;
 
-import java.io.IOException;
 import java.security.*;
-import java.security.cert.CertificateException;
 
 
-import org.apache.http.HttpResponse;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
-
-import javax.net.ssl.SSLContext;
+import ro.massa.crypto.client.CryptoApiClient;
+import ro.massa.crypto.client.CryptoClient;
 
 public class Main {
     private static String endpoint = "https://massa-test.certsign.ro/api/v1";

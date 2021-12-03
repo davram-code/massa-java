@@ -1,12 +1,11 @@
-package ro.massa;
+package ro.massa.crypto.client;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpResponse;
+import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -34,6 +33,13 @@ public class CryptoApiClient {
     SSLSocketFactory socketFactory;
     SSLContext clientContext;
     HttpClient httpClient;
+
+    private static void setDefaultHeaders(HttpRequest request)
+    {
+        if(!request.containsHeader(HttpHeaders.ACCEPT)) {
+            request.setHeader(HttpHeaders.ACCEPT, "application/json");
+        }
+    }
 
     public CryptoApiClient(String endpoint, int port) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException, UnrecoverableKeyException, KeyManagementException
     {
@@ -65,15 +71,9 @@ public class CryptoApiClient {
 
     HttpResponse post(String apiPath, String postData, Header[] headers) throws IOException{
         HttpPost httpPost = new HttpPost(endpoint + "/" + apiPath);
+
         httpPost.setHeaders(headers);
-
-        if (!httpPost.containsHeader(HttpHeaders.CONTENT_TYPE)) {
-            httpPost.setHeader(HttpHeaders.CONTENT_TYPE, "application/json");
-        }
-
-        if(!httpPost.containsHeader(HttpHeaders.ACCEPT)) {
-            httpPost.setHeader(HttpHeaders.ACCEPT, "application/json");
-        }
+        setDefaultHeaders(httpPost);
 
         httpPost.setEntity(new StringEntity(postData));
         return httpClient.execute(httpPost);
@@ -84,5 +84,14 @@ public class CryptoApiClient {
         httpDelete.setHeaders(headers);
 
         return httpClient.execute(httpDelete);
+    }
+
+    HttpResponse get(String apiPath, Header[] headers) throws IOException {
+        HttpGet httpGet = new HttpGet(endpoint + "/apiPath");
+
+        httpGet.setHeaders(headers);
+        setDefaultHeaders(httpGet);
+
+        return httpClient.execute(httpGet);
     }
 }
