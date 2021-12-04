@@ -2,7 +2,9 @@ package ro.massa.its;
 
 import massa.its.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.Version;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.camanagement.CaCertificateRequest;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.trustlist.*;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097DataSigned;
@@ -12,7 +14,11 @@ import ro.massa.properties.MassaProperties;
 
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -28,6 +34,7 @@ public class RootCA extends ITSEntity {
     ValidityPeriod rootCAValidityPeriod;
     EtsiTs103097Certificate rootCACertificate;
 
+    List<CtlCommand> CTL;
 
     public RootCA() throws Exception {
         // Define the region
@@ -48,6 +55,46 @@ public class RootCA extends ITSEntity {
                 new Date(), Duration.DurationChoices.years,
                 MassaProperties.getInstance().getRootCaValidityYears());
 
+        CTL = new ArrayList<>();
+
+    }
+
+    private Date daysFromNow(int days)
+    {
+        Date dt = new Date();
+        Calendar c = Calendar.getInstance();
+        c.setTime(dt);
+        c.add(Calendar.DATE, days);
+        dt = c.getTime();
+        return dt;
+    }
+
+    private static byte ctlSequence = 0;
+    private void generateCTL() throws Exception {
+
+        log.log("Root CA is generating a new RcaCTL");
+        CtlCommand[] ctl = new CtlCommand[CTL.size()];
+        //https://www.etsi.org/deliver/etsi_ts/102900_102999/102941/01.04.01_60/ts_102941v010401p.pdf
+        ToBeSignedRcaCtl toBeSignedRcaCtl = new ToBeSignedRcaCtl(
+                Version.V1, //version indicates the version of the CTL Format. For this version of the Technical Specification the version is set to 1
+                new Time32(daysFromNow(30)), //nextUpdate indicates the time when a next update of the CTL is expected, and consequently the time after which the CTL is to be considered expired;
+                true, //isFullCtl is a flag indicating if the list is a full or delta list;
+                ctlSequence, //ctlSequence indicated the sequence number of the list and is monotonically increased with steps of one unit, and clipped around 255;
+                CTL.toArray(ctl) //ctlCommands contains the CTL commands add or delete, add is of type CtlEntry, and indicates that the entry
+                // shall be trusted; delete is of type CtlDelete, and indicates explicitly that an entry that was previously trusted is
+                // not trustable anymore and shall be removed.
+        );
+
+        EtsiTs103097DataSigned ctlMessage = messagesCaGenerator.genRcaCertificateTrustListMessage(
+                new Time64(new Date()), // signing generation time
+                toBeSignedRcaCtl,
+                new EtsiTs103097Certificate[]{rootCACertificate}, // certificate chain of signer
+                rootCASignPrvKey
+        );
+
+        ctlSequence += 1;
+        log.log(ctlMessage.toString());
+        Utils.dump(MassaProperties.getInstance().getPathCtl(), ctlMessage);
     }
 
     public EtsiTs103097Certificate getSelfSignedCertificate() throws Exception
@@ -66,6 +113,8 @@ public class RootCA extends ITSEntity {
                 encryptionScheme,  // encPublicKeyAlgorithm
                 rootCAEncPubKey); // encPublicKey
 
+        //The CTL issued by a RCA shall not contain the following information: the TLM certificate and associated linked
+        //certificate (optional) and the Root CAs certificates.
         return rootCACertificate;
     }
 
@@ -105,6 +154,14 @@ public class RootCA extends ITSEntity {
         );
 
         log.log(enrollmentCACertificate.toString());
+        CTL.add(new CtlCommand(new CtlEntry(new EaEntry(
+                enrollmentCACertificate,
+                new Url("http://localhost:8081/massa/validation"),
+                new Url("http://localhost:8081/massa/enrollment"))
+        ))); //EaEntry shall contain an EA certificate, the URL for the connection by the AA, and optionally the URL for the
+        // connection by the ITS-Station.
+
+        generateCTL();
         return enrollmentCACertificate;
     }
 
@@ -145,6 +202,12 @@ public class RootCA extends ITSEntity {
                 pubKeyEncAA // encryption public key
         );
         log.log(authorityCACertificate.toString());
+
+        CTL.add(new CtlCommand(new CtlEntry(new AaEntry(
+                authorityCACertificate,
+                new Url("http://localhost:8082/massa/authorization"))
+        )));
+        generateCTL();
         return authorityCACertificate;
     }
 
