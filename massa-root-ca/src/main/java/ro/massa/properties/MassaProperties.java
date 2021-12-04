@@ -135,4 +135,6 @@ public class MassaProperties {
     public String getLogPrefix() {
         return  properties.getProperty("massa.log-prefix");
     }
+
+    public String getPathCtl() {return properties.getProperty("massa.path-ctl");}
 }
