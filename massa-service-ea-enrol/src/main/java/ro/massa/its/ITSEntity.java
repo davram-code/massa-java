@@ -17,7 +17,7 @@ import ro.massa.properties.MassaProperties;
 import java.security.KeyPair;
 
 public class ITSEntity {
-    MassaLog log = MassaLogFactory.getLog(ITSEntity.class);
+    protected MassaLog log = MassaLogFactory.getLog(ITSEntity.class);
     protected static int msgGenVersion;
     protected static HashAlgorithm digestAlgorithm;
     protected static Signature.SignatureChoices signatureScheme;

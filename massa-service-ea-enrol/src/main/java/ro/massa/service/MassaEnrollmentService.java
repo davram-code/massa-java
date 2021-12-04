@@ -5,6 +5,10 @@ import org.springframework.stereotype.Service;
 @Service
 public interface MassaEnrollmentService {
 
+    void reset();
+
+    byte[] getCertificateRequest();
+
     /**
      * Verifies the incoming Enrollment Request and generates
      * the Enrollment Response
@@ -14,10 +18,4 @@ public interface MassaEnrollmentService {
      */
     byte[] verifyEnrolCertRequest(byte[] enrollReq);
 
-    void reset();
-
-    /**
-     *
-     */
-    String resolveEnrolCertRequest();
 }

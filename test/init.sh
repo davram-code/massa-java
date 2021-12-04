@@ -17,6 +17,7 @@ fi
 mkdir certificates
 mkdir certificates/services
 mkdir certificates/services/ca
+mkdir certificates/services/ea
 
 echo "RootCA is generating its key pairs..."
 java -jar $JAR --action gen-sign-key-pair \
@@ -61,12 +62,18 @@ java -jar $JAR --action gen-enc-key-pair \
     --pub-key certificates/services/ea/EncPubKey.bin \
     --prv-key certificates/services/ea/EncPrvKey.bin
 
-cp ../massa-service-ea-enrol/certificates/services/ea/EncPubKey.bin ../massa-root-ca/certificates/services/ea
-cp ../massa-service-ea-enrol/certificates/services/ea/SignPubKey.bin ../massa-root-ca/certificates/services/ea
+
+echo "GETing EA Certificate Request ..."
+curl -X GET \
+	-H "Content-Type: application/x-its-request" \
+	-o "certificates/services/ea/EAcertRequest.bin" \
+	http://localhost:8081/massa/ea/request
+
 
 echo "GETing EA Certificate ..."
 curl -X POST \
-	-H "Content-Type: application/x-its-request" \
+    -H "Content-Type: application/x-its-request" \
+    --data-binary "@certificates/services/ea/EAcertRequest.bin" \
 	-o "certificates/services/ea/EAcert.bin" \
 	http://localhost:8085/massa/certify/ea
 
@@ -126,6 +133,3 @@ cp ../massa-service-aa-authorization/certificates/services/aa/AAcert.bin ../mass
 cp ../massa-root-ca/certificates/services/ca/rootCAcert.bin                 ../test/certificates/station
 cp ../massa-service-ea-enrol/certificates/services/ea/EAcert.bin            ../test/certificates/station
 cp ../massa-service-aa-authorization/certificates/services/aa/AAcert.bin    ../test/certificates/station
-
-### vom face de aici cheile pt fiecare aplicatie.
-### aplicatia doar le va utiliza

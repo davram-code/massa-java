@@ -42,10 +42,10 @@ public class MassaRootServiceImpl implements MassaRootService {
     }
 
     @Override
-    public byte[] certifyEnrollmentCA() {
+    public byte[] certifyEnrollmentCA(byte[] request) {
         log.log("Resolving EA Certificate Request");
         try{
-            EtsiTs103097Certificate eaCert = rootCA.initEnrollmentCA();
+            EtsiTs103097Certificate eaCert = rootCA.initEnrollmentCA(request);
             return eaCert.getEncoded();
         }
         catch (Exception e)

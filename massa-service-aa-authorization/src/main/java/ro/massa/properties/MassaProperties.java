@@ -115,12 +115,12 @@ public class MassaProperties {
         return properties.getProperty("massa.path-enc-pub-key");
     }
 
-    public String getAaName(){
-        return properties.getProperty("massa.aa-name");
+    public String getCaName(){
+        return properties.getProperty("massa.ca-name");
     }
 
-    public int getAaValidityYears(){
-        return Integer.parseInt(properties.getProperty("massa.aa-validity-years"));
+    public int getValidityYears(){
+        return Integer.parseInt(properties.getProperty("massa.validity-years"));
     }
 
     public String getEaIP(){

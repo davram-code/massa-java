@@ -110,4 +110,19 @@ public class MassaProperties {
     public String getLogPrefix() {
         return  properties.getProperty("massa.log-prefix");
     }
+
+    public String getPathEncPublicKey(){
+        return properties.getProperty("massa.path-enc-pub-key");
+    }
+
+    public int getValidityYears(){
+        return Integer.parseInt(properties.getProperty("massa.validity-years"));
+    }
+
+
+    public String getCaName(){
+        return properties.getProperty("massa.ca-name");
+    }
+
+
 }
