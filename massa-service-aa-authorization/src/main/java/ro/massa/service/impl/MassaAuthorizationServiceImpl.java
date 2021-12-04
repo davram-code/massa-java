@@ -1,15 +1,9 @@
 package ro.massa.service.impl;
 
-
-import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.InnerAtRequest;
-import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponseCode;
-import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
-import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097DataSigned;
-import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.springframework.stereotype.Component;
-import ro.massa.common.MassaDB;
+
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.its.AuthorizationAuthority;
@@ -18,12 +12,9 @@ import ro.massa.its.SubCA;
 import ro.massa.its.artifacts.AuthRequest;
 import ro.massa.its.artifacts.AuthValidationRequest;
 import ro.massa.its.artifacts.AuthValidationResponse;
-import ro.massa.properties.MassaProperties;
+
 import ro.massa.service.MassaAuthorizationService;
 
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
 @Component

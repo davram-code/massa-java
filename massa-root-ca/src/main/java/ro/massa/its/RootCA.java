@@ -69,18 +69,31 @@ public class RootCA extends ITSEntity {
         return rootCACertificate;
     }
 
-    public EtsiTs103097Certificate initEnrollmentCA() throws Exception {
-        PublicKey pubKeySignEA = Utils.readPublicKey("certificates/services/ea/SignPubKey.bin");
-        PublicKey pubKeyEncEA = Utils.readPublicKey("certificates/services/ea/EncPubKey.bin");
+    public EtsiTs103097Certificate initEnrollmentCA(byte[] request ) throws Exception {
 
-        ValidityPeriod enrollmentCAValidityPeriod = new ValidityPeriod(new Date(), Duration.DurationChoices.years, 37);
+        EtsiTs103097DataSigned caCertificateRequestMessage = new EtsiTs103097DataSigned(request);
+        log.log(caCertificateRequestMessage.toString());
+        VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult = messagesCaGenerator.verifyCACertificateRequestMessage(caCertificateRequestMessage);
+
+
+        PublicKey pubKeySignEA = (PublicKey) cryptoManager.decodeEccPoint(
+                caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getType(),
+                (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getValue()
+        );
+        log.log(pubKeySignEA.toString());
+
+        PublicKey pubKeyEncEA = (PublicKey) cryptoManager.decodeEccPoint(
+                caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
+                (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
+        );
+        log.log(pubKeyEncEA.toString());
 
         //Step 2.3.2 - Generate a reference to the Enrollment CA Signing Keys
         EtsiTs103097Certificate enrollmentCACertificate = authorityCertGenerator.genEnrollmentCA(
-                "testea.test.com", // CA Name
-                enrollmentCAValidityPeriod,
-                region,  //GeographicRegion
-                new SubjectAssurance(1, 3), // subject assurance (optional)
+                caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getId().toString(), // CA Name
+                caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getValidityPeriod(),
+                caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getRegion(),  //GeographicRegion
+                caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getAssuranceLevel(), // subject assurance (optional)
                 signatureScheme, //signingPublicKeyAlgorithm
                 pubKeySignEA, // signPublicKey, i.e public key in certificate
                 rootCACertificate, // signerCertificate
@@ -114,8 +127,6 @@ public class RootCA extends ITSEntity {
                 (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
         );
         log.log(pubKeyEncAA.toString());
-
-        ValidityPeriod authorityCAValidityPeriod = new ValidityPeriod(new Date(), Duration.DurationChoices.years, 15);
 
         // Generate a reference to the Authorization CA Signing Keys
         log.log("Generating the AA certificate");

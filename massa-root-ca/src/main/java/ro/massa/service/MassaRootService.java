@@ -7,7 +7,7 @@ public interface MassaRootService {
 
     byte[] getSelfSignedCertificate();
 
-    byte[] certifyEnrollmentCA();
+    byte[] certifyEnrollmentCA(byte[] request);
 
     byte[] certifyAuthorizationCA(byte[] request);
 }

@@ -36,16 +36,19 @@ public class SubCA extends ITSEntity{
         PublicKey signPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
         PrivateKey signPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
 
+        log.log("Aici 00");
         PublicKey encPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathEncPublicKey());
         // First generate inner CaCertificatRequest
+        log.log("Aici gg");
         CaCertificateRequest caCertificateRequest = genDummyCaCertificateRequest(signPublicKey, encPublicKey);
         // The self sign the message to prove possession.
+        log.log("Aici");
         EtsiTs103097DataSigned caCertificateRequestMessage = messagesCaGenerator.genCaCertificateRequestMessage(
                 new Time64(new Date()), // signing generation time
                 caCertificateRequest,
                 signPublicKey, // The CAs signing keys
                 signPrivateKey);
-
+        log.log("Aici");
         return caCertificateRequestMessage;
 
     }
