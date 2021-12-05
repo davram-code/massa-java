@@ -61,6 +61,8 @@ public class RootCA extends ITSEntity {
         CTL = new ArrayList<>();
         CRL = new ArrayList<>();
 
+        testCRL_addToBeRevokedCert(); /* TODO: delete in production */
+
     }
 
     private Date daysFromNow(int days)
@@ -74,16 +76,85 @@ public class RootCA extends ITSEntity {
     }
 
     /* this is a mock method - TODO: delete in production */
-    private void testCRL() throws Exception
+    private void testCRL_addToBeRevokedCert() throws Exception
     {
-        log.log("TESTing the CRL functionality!");
+        log.log("Adding Mock EA certificate to test revoke functionality!");
         EtsiTs103097Certificate mockCert = Utils.readCertFromFile("toBeRevokedEaCert.bin");
         log.log(mockCert.toString());
+        log.log(computeHashedId8(mockCert).toString());
 
-        AlgorithmIndicator alg = mockCert.getSignature() != null ? mockCert.getSignature().getType() : HashAlgorithm.sha256;
-        CRL.add(new CrlEntry(this.cryptoManager.digest(mockCert.getEncoded(), (AlgorithmIndicator)alg)));
-        generateCRL();
+        CTL.add(new CtlCommand(new CtlEntry(new EaEntry(
+                mockCert,
+                new Url("http://localhost:8081/massa/validation"),
+                new Url("http://localhost:8081/massa/enrollment"))
+        )));
     }
+
+    private byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception{
+        AlgorithmIndicator alg = certificate.getSignature() != null ? certificate.getSignature().getType() : HashAlgorithm.sha256;
+        byte []certHash = this.cryptoManager.digest(certificate.getEncoded(), (AlgorithmIndicator)alg);
+        return certHash;
+    }
+
+    private HashedId8 computeHashedId8(EtsiTs103097Certificate certificate) throws Exception{
+        byte[] hash = computeHash(certificate);
+        return new HashedId8(hash);
+    }
+
+    private String computeHashedId8String(EtsiTs103097Certificate certificate) throws Exception{
+        HashedId8 hashedId8 = computeHashedId8(certificate);
+        return new String(Hex.encode(hashedId8.getData()));
+    }
+
+    public boolean revokeCertificate(String hash) throws Exception
+    {
+        log.log("Revoking certificate " + hash);
+        boolean done = false;
+        CtlCommand toBeRemoved = null;
+        for (CtlCommand ctlCommand : CTL)
+        {
+            CtlCommand.CtlCommandChoices cmdType = ctlCommand.getType();
+            if(cmdType == CtlCommand.CtlCommandChoices.add)
+            {
+                EtsiTs103097Certificate cert;
+                CtlEntry cltEntry = ctlCommand.getCtlEntry();
+                CtlEntry.CtlEntryChoices entryType = cltEntry.getType();
+                if(entryType == CtlEntry.CtlEntryChoices.ea)
+                {
+                    cert = cltEntry.getEaEntry().getEaCertificate();
+                }
+                else
+                {
+                    cert = cltEntry.getAaEntry().getAaCertificate();
+                }
+                log.log(computeHashedId8String(cert));
+                if (computeHashedId8String(cert).equals(hash))
+                {
+                    log.log(cert.toString());
+                    CRL.add(new CrlEntry(computeHash(cert)));
+                    //CTL.add(new CtlCommand(new CtlDelete(computeHashedId8(cert)))); --- Illegal CtlFormat, fullCtl cannot have delete ctl commands.
+                    toBeRemoved = ctlCommand;
+                    done = true;
+                    break;
+                }
+
+            }
+            else
+            {
+                // type is delete
+            }
+        }
+        if(toBeRemoved != null)
+        {
+            CTL.remove(toBeRemoved);
+        }
+
+        generateCRL();
+        generateCTL();
+
+        testCRL_addToBeRevokedCert(); /* TODO: delete in production */
+        return done;
+    };
 
     private void generateCRL() throws Exception{
         log.log("Root CA is generating a new CRL");
@@ -94,7 +165,6 @@ public class RootCA extends ITSEntity {
                 new Time32(new Date()), // this update
                 new Time32(daysFromNow(30)), //new update
                 CRL.toArray(crl)
-                //new CrlEntry[] {new CrlEntry(Hex.decode("001122334455667788")), new CrlEntry(Hex.decode("001122334455667799"))}
         );
 
         EtsiTs103097DataSigned crlMessage = messagesCaGenerator.genCertificateRevocationListMessage(
@@ -153,8 +223,6 @@ public class RootCA extends ITSEntity {
 
         //The CTL issued by a RCA shall not contain the following information: the TLM certificate and associated linked
         //certificate (optional) and the Root CAs certificates.
-        testCRL(); //TODO: delete this
-        
         return rootCACertificate;
     }
 
