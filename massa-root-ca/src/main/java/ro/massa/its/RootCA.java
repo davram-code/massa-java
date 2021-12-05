@@ -1,7 +1,9 @@
 package ro.massa.its;
 
+import jdk.jshell.execution.Util;
 import massa.its.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
+import org.certificateservices.custom.c2x.common.crypto.AlgorithmIndicator;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.Version;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.camanagement.CaCertificateRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.trustlist.*;
@@ -35,6 +37,7 @@ public class RootCA extends ITSEntity {
     EtsiTs103097Certificate rootCACertificate;
 
     List<CtlCommand> CTL;
+    List<CrlEntry> CRL;
 
     public RootCA() throws Exception {
         // Define the region
@@ -56,6 +59,7 @@ public class RootCA extends ITSEntity {
                 MassaProperties.getInstance().getRootCaValidityYears());
 
         CTL = new ArrayList<>();
+        CRL = new ArrayList<>();
 
     }
 
@@ -67,6 +71,40 @@ public class RootCA extends ITSEntity {
         c.add(Calendar.DATE, days);
         dt = c.getTime();
         return dt;
+    }
+
+    /* this is a mock method - TODO: delete in production */
+    private void testCRL() throws Exception
+    {
+        log.log("TESTing the CRL functionality!");
+        EtsiTs103097Certificate mockCert = Utils.readCertFromFile("toBeRevokedEaCert.bin");
+        log.log(mockCert.toString());
+
+        AlgorithmIndicator alg = mockCert.getSignature() != null ? mockCert.getSignature().getType() : HashAlgorithm.sha256;
+        CRL.add(new CrlEntry(this.cryptoManager.digest(mockCert.getEncoded(), (AlgorithmIndicator)alg)));
+        generateCRL();
+    }
+
+    private void generateCRL() throws Exception{
+        log.log("Root CA is generating a new CRL");
+        CrlEntry[] crl = new CrlEntry[CRL.size()];
+        // First generate to be signed data
+        ToBeSignedCrl toBeSignedCrl = new ToBeSignedCrl(
+                Version.V1,
+                new Time32(new Date()), // this update
+                new Time32(daysFromNow(30)), //new update
+                CRL.toArray(crl)
+                //new CrlEntry[] {new CrlEntry(Hex.decode("001122334455667788")), new CrlEntry(Hex.decode("001122334455667799"))}
+        );
+
+        EtsiTs103097DataSigned crlMessage = messagesCaGenerator.genCertificateRevocationListMessage(
+                new Time64(new Date()), // signing generation time
+                toBeSignedCrl,
+                new EtsiTs103097Certificate[]{rootCACertificate}, // certificate chain of signer
+                rootCASignPrvKey); // Private key of signer
+
+        log.log(crlMessage.toString());
+        Utils.dump(MassaProperties.getInstance().getPathCrl(), crlMessage);
     }
 
     private static byte ctlSequence = 0;
@@ -115,6 +153,8 @@ public class RootCA extends ITSEntity {
 
         //The CTL issued by a RCA shall not contain the following information: the TLM certificate and associated linked
         //certificate (optional) and the Root CAs certificates.
+        testCRL(); //TODO: delete this
+        
         return rootCACertificate;
     }
 
