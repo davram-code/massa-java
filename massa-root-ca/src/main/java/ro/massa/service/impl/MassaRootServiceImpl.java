@@ -70,4 +70,24 @@ public class MassaRootServiceImpl implements MassaRootService {
             return e.getMessage().getBytes(StandardCharsets.UTF_8);
         }
     }
+
+    @Override
+    public String revokeCertificate(String hash)
+    {
+        log.log("Revoking Certificate");
+        try{
+            boolean done = rootCA.revokeCertificate(hash);
+            if (done)
+                return "OK";
+            else
+                return "FAILED";
+
+        }
+        catch (Exception e)
+        {
+            log.error("Certificate Revocation Failed!");
+            log.error(e.getMessage());
+            return e.getMessage();
+        }
+    }
 }

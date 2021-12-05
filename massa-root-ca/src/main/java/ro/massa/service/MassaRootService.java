@@ -10,4 +10,6 @@ public interface MassaRootService {
     byte[] certifyEnrollmentCA(byte[] request);
 
     byte[] certifyAuthorizationCA(byte[] request);
+
+    String revokeCertificate(String hash);
 }
