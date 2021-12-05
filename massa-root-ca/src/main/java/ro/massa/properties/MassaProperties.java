@@ -137,4 +137,6 @@ public class MassaProperties {
     }
 
     public String getPathCtl() {return properties.getProperty("massa.path-ctl");}
+
+    public String getPathCrl() { return  properties.getProperty("massa.path-crl");}
 }
