@@ -36,6 +36,11 @@ public class MassaAuthorizationController {
         return new ResponseEntity<byte[]>(authorizationService.getCertificateRequest(), HttpStatus.OK);
     }
 
+    @GetMapping(path = "/aa/rekey")
+    public ResponseEntity<byte[]> getRekeyCertificateRequest() {
+        return new ResponseEntity<byte[]>(authorizationService.getRekeyCertificateRequest(), HttpStatus.OK);
+    }
+
     @PostMapping(path = "/authorization")
     public ResponseEntity<byte[]> postAuthorizationRequest(@RequestBody byte[] base64Request) {
 

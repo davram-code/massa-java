@@ -16,26 +16,22 @@ public class MassaRootServiceImpl implements MassaRootService {
     RootCA rootCA;
     MassaLog log = MassaLogFactory.getLog(MassaRootServiceImpl.class);
 
-    public MassaRootServiceImpl()
-    {
+    public MassaRootServiceImpl() {
         log.log("Initializing MASSA Root Service");
-        try{
+        try {
             rootCA = new RootCA();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             log.error(e.getMessage());
         }
     }
 
     @Override
-    public byte[] getSelfSignedCertificate(){
+    public byte[] getSelfSignedCertificate() {
         log.log("Getting the Self Signed certificate of the Root CA");
-        try{
+        try {
             EtsiTs103097Certificate rootCert = rootCA.getSelfSignedCertificate();
             return rootCert.getEncoded();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error(e.getMessage());
             return e.getMessage().getBytes(StandardCharsets.UTF_8);
         }
@@ -44,12 +40,10 @@ public class MassaRootServiceImpl implements MassaRootService {
     @Override
     public byte[] certifyEnrollmentCA(byte[] request) {
         log.log("Resolving EA Certificate Request");
-        try{
+        try {
             EtsiTs103097Certificate eaCert = rootCA.initEnrollmentCA(request);
             return eaCert.getEncoded();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error("EA Certificate Request Failed!");
             log.error(e.getMessage());
             return e.getMessage().getBytes(StandardCharsets.UTF_8);
@@ -57,14 +51,12 @@ public class MassaRootServiceImpl implements MassaRootService {
     }
 
     @Override
-    public byte[] certifyAuthorizationCA(byte [] request) {
+    public byte[] certifyAuthorizationCA(byte[] request) {
         log.log("Resolving AA Certificate Request");
-        try{
+        try {
             EtsiTs103097Certificate aaCert = rootCA.initAuthorizationCA(request);
             return aaCert.getEncoded();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error("EA Certificate Request Failed!");
             log.error(e.getMessage());
             return e.getMessage().getBytes(StandardCharsets.UTF_8);
@@ -72,19 +64,29 @@ public class MassaRootServiceImpl implements MassaRootService {
     }
 
     @Override
-    public String revokeCertificate(String hash)
-    {
+    public byte[] rekeyAuthorizationCA(byte[] request) {
+        log.log("Resolving AA Rekey Certificate Request");
+        try {
+            EtsiTs103097Certificate aaCert = rootCA.rekeyAuthorizationCA(request);
+            return aaCert.getEncoded();
+        } catch (Exception e) {
+            log.error("AA Rekey Certificate Request Failed!");
+            log.error(e.getMessage());
+            return e.getMessage().getBytes(StandardCharsets.UTF_8);
+        }
+    }
+
+    @Override
+    public String revokeCertificate(String hash) {
         log.log("Revoking Certificate");
-        try{
+        try {
             boolean done = rootCA.revokeCertificate(hash);
             if (done)
                 return "OK";
             else
                 return "FAILED";
 
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.error("Certificate Revocation Failed!");
             log.error(e.getMessage());
             return e.getMessage();

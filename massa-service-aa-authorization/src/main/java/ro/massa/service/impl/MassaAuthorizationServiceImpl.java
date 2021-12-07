@@ -8,7 +8,7 @@ import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.its.AuthorizationAuthority;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
-import ro.massa.its.SubCA;
+import ro.massa.its.InitialCA;
 import ro.massa.its.artifacts.AuthRequest;
 import ro.massa.its.artifacts.AuthValidationRequest;
 import ro.massa.its.artifacts.AuthValidationResponse;
@@ -20,14 +20,14 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class MassaAuthorizationServiceImpl implements MassaAuthorizationService {
     AuthorizationAuthority aa;
-    SubCA subCA;
+    InitialCA initialCA;
     MassaLog log = MassaLogFactory.getLog(MassaAuthorizationServiceImpl.class);
 
     public MassaAuthorizationServiceImpl()
     {
         log.log("Initializing MASSA Authorization Service");
         try{
-            subCA = new SubCA();
+            initialCA = new InitialCA();
             aa = new AuthorizationAuthority();
         }
         catch (Exception e)
@@ -40,12 +40,27 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
     public byte[] getCertificateRequest()
     {
         try{
-            EtsiTs103097DataSigned certReq = subCA.getCertificateRequest();
+            EtsiTs103097DataSigned certReq = initialCA.getCertificateRequest();
             return certReq.getEncoded();
         }
         catch (Exception e)
         {
             log.error("Generating Certificate Request FAILED");
+        }
+        return null;
+    }
+
+    @Override
+    public byte[] getRekeyCertificateRequest()
+    {
+        try{
+            EtsiTs103097DataSigned certReq = aa.getRekeyRequest();
+            return certReq.getEncoded();
+        }
+        catch (Exception e)
+        {
+            log.log(e.getMessage());
+            log.error("Generating Rekey Certificate Request FAILED");
         }
         return null;
     }

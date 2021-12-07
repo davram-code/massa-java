@@ -99,6 +99,10 @@ public class MassaProperties {
         return properties.getProperty("massa.path-aa-cert");
     }
 
+    public String getPathSelfCert(){
+        return properties.getProperty("massa.path-self-cert");
+    }
+
     public String getPathSignPrivateKey(){
         return properties.getProperty("massa.path-sign-prv-key");
     }
