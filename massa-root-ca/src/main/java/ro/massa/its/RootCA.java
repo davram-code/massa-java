@@ -3,15 +3,20 @@ package ro.massa.its;
 import jdk.jshell.execution.Util;
 import massa.its.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
+import org.certificateservices.custom.c2x.common.crypto.Algorithm;
 import org.certificateservices.custom.c2x.common.crypto.AlgorithmIndicator;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.Version;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.camanagement.CaCertificateRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.trustlist.*;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097Data;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097DataSigned;
 import org.certificateservices.custom.c2x.etsits103097.v131.generator.ETSIAuthorityCertGenerator;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.Certificate;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.SignedData;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.SignerIdentifier;
 import ro.massa.properties.MassaProperties;
 
 import java.security.PrivateKey;
@@ -19,10 +24,7 @@ import java.security.PublicKey;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class RootCA extends ITSEntity {
     final static int SWEDEN = 752;
@@ -65,8 +67,7 @@ public class RootCA extends ITSEntity {
 
     }
 
-    private Date daysFromNow(int days)
-    {
+    private Date daysFromNow(int days) {
         Date dt = new Date();
         Calendar c = Calendar.getInstance();
         c.setTime(dt);
@@ -76,8 +77,7 @@ public class RootCA extends ITSEntity {
     }
 
     /* this is a mock method - TODO: delete in production */
-    private void testCRL_addToBeRevokedCert() throws Exception
-    {
+    private void testCRL_addToBeRevokedCert() throws Exception {
         log.log("Adding Mock EA certificate to test revoke functionality!");
         EtsiTs103097Certificate mockCert = Utils.readCertFromFile("toBeRevokedEaCert.bin");
         log.log(mockCert.toString());
@@ -90,46 +90,40 @@ public class RootCA extends ITSEntity {
         )));
     }
 
-    private byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception{
+    private byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception {
         AlgorithmIndicator alg = certificate.getSignature() != null ? certificate.getSignature().getType() : HashAlgorithm.sha256;
-        byte []certHash = this.cryptoManager.digest(certificate.getEncoded(), (AlgorithmIndicator)alg);
+        byte[] certHash = this.cryptoManager.digest(certificate.getEncoded(), (AlgorithmIndicator) alg);
         return certHash;
     }
 
-    private HashedId8 computeHashedId8(EtsiTs103097Certificate certificate) throws Exception{
+    private HashedId8 computeHashedId8(EtsiTs103097Certificate certificate) throws Exception {
         byte[] hash = computeHash(certificate);
         return new HashedId8(hash);
     }
 
-    private String computeHashedId8String(EtsiTs103097Certificate certificate) throws Exception{
+    private String computeHashedId8String(EtsiTs103097Certificate certificate) throws Exception {
         HashedId8 hashedId8 = computeHashedId8(certificate);
         return new String(Hex.encode(hashedId8.getData()));
     }
 
-    public boolean revokeCertificate(String hash) throws Exception
-    {
+
+    public boolean revokeCertificate(String hash) throws Exception {
         log.log("Revoking certificate " + hash);
         boolean done = false;
         CtlCommand toBeRemoved = null;
-        for (CtlCommand ctlCommand : CTL)
-        {
+        for (CtlCommand ctlCommand : CTL) {
             CtlCommand.CtlCommandChoices cmdType = ctlCommand.getType();
-            if(cmdType == CtlCommand.CtlCommandChoices.add)
-            {
+            if (cmdType == CtlCommand.CtlCommandChoices.add) {
                 EtsiTs103097Certificate cert;
                 CtlEntry cltEntry = ctlCommand.getCtlEntry();
                 CtlEntry.CtlEntryChoices entryType = cltEntry.getType();
-                if(entryType == CtlEntry.CtlEntryChoices.ea)
-                {
+                if (entryType == CtlEntry.CtlEntryChoices.ea) {
                     cert = cltEntry.getEaEntry().getEaCertificate();
-                }
-                else
-                {
+                } else {
                     cert = cltEntry.getAaEntry().getAaCertificate();
                 }
                 log.log(computeHashedId8String(cert));
-                if (computeHashedId8String(cert).equals(hash))
-                {
+                if (computeHashedId8String(cert).equals(hash)) {
                     log.log(cert.toString());
                     CRL.add(new CrlEntry(computeHash(cert)));
                     //CTL.add(new CtlCommand(new CtlDelete(computeHashedId8(cert)))); --- Illegal CtlFormat, fullCtl cannot have delete ctl commands.
@@ -138,14 +132,11 @@ public class RootCA extends ITSEntity {
                     break;
                 }
 
-            }
-            else
-            {
+            } else {
                 // type is delete
             }
         }
-        if(toBeRemoved != null)
-        {
+        if (toBeRemoved != null) {
             CTL.remove(toBeRemoved);
         }
 
@@ -154,9 +145,9 @@ public class RootCA extends ITSEntity {
 
         testCRL_addToBeRevokedCert(); /* TODO: delete in production */
         return done;
-    };
+    }
 
-    private void generateCRL() throws Exception{
+    private void generateCRL() throws Exception {
         log.log("Root CA is generating a new CRL");
         CrlEntry[] crl = new CrlEntry[CRL.size()];
         // First generate to be signed data
@@ -178,6 +169,7 @@ public class RootCA extends ITSEntity {
     }
 
     private static byte ctlSequence = 0;
+
     private void generateCTL() throws Exception {
 
         log.log("Root CA is generating a new RcaCTL");
@@ -205,8 +197,7 @@ public class RootCA extends ITSEntity {
         Utils.dump(MassaProperties.getInstance().getPathCtl(), ctlMessage);
     }
 
-    public EtsiTs103097Certificate getSelfSignedCertificate() throws Exception
-    {
+    public EtsiTs103097Certificate getSelfSignedCertificate() throws Exception {
         rootCACertificate = authorityCertGenerator.genRootCA(
                 MassaProperties.getInstance().getRootCaName(), // caName
                 rootCAValidityPeriod, //ValidityPeriod
@@ -226,7 +217,7 @@ public class RootCA extends ITSEntity {
         return rootCACertificate;
     }
 
-    public EtsiTs103097Certificate initEnrollmentCA(byte[] request ) throws Exception {
+    public EtsiTs103097Certificate initEnrollmentCA(byte[] request) throws Exception {
 
         EtsiTs103097DataSigned caCertificateRequestMessage = new EtsiTs103097DataSigned(request);
         log.log(caCertificateRequestMessage.toString());
@@ -274,7 +265,7 @@ public class RootCA extends ITSEntity {
     }
 
 
-    public EtsiTs103097Certificate initAuthorizationCA( byte[] request ) throws Exception {
+    public EtsiTs103097Certificate initAuthorizationCA(byte[] request) throws Exception {
 
         EtsiTs103097DataSigned caCertificateRequestMessage = new EtsiTs103097DataSigned(request);
         log.log(caCertificateRequestMessage.toString());
@@ -317,6 +308,85 @@ public class RootCA extends ITSEntity {
         )));
         generateCTL();
         return authorityCACertificate;
+    }
+
+    private EtsiTs103097Certificate getCertFromCTL(HashedId8 h8, CtlEntry.CtlEntryChoices caType) throws Exception {
+        for (CtlCommand ctlCommand : CTL) {
+            CtlCommand.CtlCommandChoices cmdType = ctlCommand.getType();
+            if (cmdType == CtlCommand.CtlCommandChoices.add) {
+                EtsiTs103097Certificate cert;
+                CtlEntry cltEntry = ctlCommand.getCtlEntry();
+                CtlEntry.CtlEntryChoices entryType = cltEntry.getType();
+                if (entryType == caType) {
+                    if (caType == CtlEntry.CtlEntryChoices.ea) {
+                        cert = cltEntry.getEaEntry().getEaCertificate();
+                    } else {
+                        cert = cltEntry.getAaEntry().getAaCertificate();
+                    }
+                    log.log(computeHashedId8String(cert));
+                    if (computeHashedId8String(cert).equals(new String(Hex.encode(h8.getData())))) {
+                        return cert;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+
+    public EtsiTs103097Certificate rekeyAuthorizationCA(byte[] request) throws Exception {
+        EtsiTs103097DataSigned caCertificateRequestMessage = new EtsiTs103097DataSigned(request);
+        log.log(caCertificateRequestMessage.toString());
+        SignedData signedData = (SignedData) caCertificateRequestMessage.getContent().getValue();
+        HashedId8 h8 = (HashedId8) signedData.getSigner().getValue();
+        log.log(h8.toString());
+        EtsiTs103097Certificate AaCert = getCertFromCTL(h8, CtlEntry.CtlEntryChoices.aa);
+        log.log(AaCert.toString());
+        if(AaCert != null){
+
+            Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{rootCACertificate});
+            Map<HashedId8, Certificate> authCACertStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{AaCert, rootCACertificate});
+            VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult = messagesCaGenerator.verifyCACertificateRekeyingMessage(caCertificateRequestMessage, authCACertStore, trustStore);
+
+            PublicKey pubKeySignAA = (PublicKey) cryptoManager.decodeEccPoint(
+                    caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getType(),
+                    (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getValue()
+            );
+            log.log(pubKeySignAA.toString());
+
+            PublicKey pubKeyEncAA = (PublicKey) cryptoManager.decodeEccPoint(
+                    caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
+                    (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
+            );
+            log.log(pubKeyEncAA.toString());
+
+            // Generate a reference to the Authorization CA Signing Keys
+            log.log("Generating the AA certificate");
+            EtsiTs103097Certificate authorityCACertificate = authorityCertGenerator.genAuthorizationCA(
+                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getId().toString(), // CA Name //TODO: is this the HOSTNAME?
+                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getValidityPeriod(),
+                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getRegion(),  //GeographicRegion
+                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getAssuranceLevel(), // subject assurance (optional)
+                    signatureScheme, //signingPublicKeyAlgorithm
+                    pubKeySignAA, // signPublicKey, i.e public key in certificate
+                    rootCACertificate, // signerCertificate
+                    rootCASignPubKey, // signCertificatePublicKey,
+                    rootCASignPrvKey,
+                    symmAlg, // symmAlgorithm
+                    encryptionScheme,  // encPublicKeyAlgorithm
+                    pubKeyEncAA // encryption public key
+            );
+            log.log(authorityCACertificate.toString());
+
+            CTL.add(new CtlCommand(new CtlEntry(new AaEntry(
+                    authorityCACertificate,
+                    new Url("http://localhost:8082/massa/authorization"))
+            )));
+            generateCTL();
+            return authorityCACertificate;
+        }
+
+        return null;
     }
 
 }

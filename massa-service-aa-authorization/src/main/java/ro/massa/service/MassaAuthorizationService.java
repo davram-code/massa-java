@@ -9,5 +9,7 @@ public interface MassaAuthorizationService {
 
     byte[] getCertificateRequest();
 
+    byte[] getRekeyCertificateRequest();
+
     byte[] resolveAuthorizationCertificateRequest(byte[] authorizationRequest);
 }

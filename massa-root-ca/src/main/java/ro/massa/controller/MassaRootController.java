@@ -41,6 +41,12 @@ public class MassaRootController {
         return new ResponseEntity<byte[]>(massaRootService.certifyAuthorizationCA(request), HttpStatus.OK);
     }
 
+    @PostMapping(path = "/rekey/aa")
+    public ResponseEntity<byte[]> postAaRekeyCertificateRequest(@RequestBody byte[] request) {
+
+        return new ResponseEntity<byte[]>(massaRootService.rekeyAuthorizationCA(request), HttpStatus.OK);
+    }
+
     @GetMapping(path = "/revoke/{hash}")
     public String revokeCertificate(@PathVariable("hash") String hash) {
         return massaRootService.revokeCertificate(hash);

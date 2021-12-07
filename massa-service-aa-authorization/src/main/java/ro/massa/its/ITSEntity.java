@@ -14,6 +14,7 @@ import ro.massa.common.MassaLogFactory;
 import ro.massa.common.Utils;
 import ro.massa.properties.MassaProperties;
 
+import java.security.Key;
 import java.security.KeyPair;
 
 public class ITSEntity {
@@ -48,15 +49,13 @@ public class ITSEntity {
                 true); // If EC points should be represented as uncompressed.
     }
 
-//    public void generateSignKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
-//        KeyPair keyPair = cryptoManager.generateKeyPair(signatureScheme);
-//        Utils.dump(pubKeyPath, keyPair.getPublic());
-//        Utils.dump(prvKeyPath, keyPair.getPrivate());
-//    }
-//
-//    public void generateEncKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
-//        KeyPair keyPair = cryptoManager.generateKeyPair(encryptionScheme);
-//        Utils.dump(pubKeyPath, keyPair.getPublic());
-//        Utils.dump(prvKeyPath, keyPair.getPrivate());
-//    }
+    public KeyPair generateSignKeyPair() throws Exception{
+        KeyPair keyPair = cryptoManager.generateKeyPair(signatureScheme);
+        return keyPair;
+    }
+
+    public KeyPair generateEncKeyPair() throws Exception{
+        KeyPair keyPair = cryptoManager.generateKeyPair(encryptionScheme);
+        return keyPair;
+    }
 }
