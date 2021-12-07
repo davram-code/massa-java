@@ -1,31 +1,76 @@
-package ro.massa;
+package ro.massa.crypto.provider;
 
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.KeyPairGeneratorSpi;
-import java.security.SecureRandom;
+import jdk.jshell.spi.ExecutionControl;
+import org.apache.commons.codec.DecoderException;
+import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
+import ro.massa.crypto.client.CryptoApiClient;
+import ro.massa.crypto.client.CryptoClient;
+
+import java.io.IOException;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.spec.AlgorithmParameterSpec;
+import java.util.UUID;
 
 public class RemoteKeyPairGenerator extends KeyPairGeneratorSpi {
-    public RemoteKeyPairGenerator(String algorithm) {
-        System.out.println("RemoteKeyPairGenerator constructor");
-    }
+        private static String endpoint = "https://massa-test.certsign.ro/api/v1";
+        CryptoClient cryptoClient;
+        ProviderConfiguration configuration;
+        RemoteECParameterSpec params;
+        String algorithm;
+        String curveName;
+        boolean initialised = false;
 
-    public RemoteKeyPairGenerator() {
-        System.out.println("RemoteKeyPairGenerator constructor no params");
-    }
-
-    @Override
-    public void initialize(int i, SecureRandom secureRandom) {
-        System.out.println("RemoteKeyPairGenerator initializer");
-    }
-
-    public void initialize() {
-        System.out.println("RemoteKeyPairGenerator initializer no params");
-    }
+        public RemoteKeyPairGenerator() throws Exception {
+            cryptoClient = new CryptoClient(new CryptoApiClient(endpoint, 6325), "the-organization", "the-user");
+        }
 
     @Override
-    public KeyPair generateKeyPair() {
-        System.out.println("Remote key pair generator generateKeyPair");
-        return new KeyPair(new RemoteECPublicKey(), new RemoteECPrivateKey());
+    public void initialize(int keysize, SecureRandom random) {
+
     }
+
+    public RemoteKeyPairGenerator(String algorithm, ProviderConfiguration configuration) throws Exception
+        {
+            this.configuration = configuration;
+            cryptoClient = new CryptoClient(new CryptoApiClient(endpoint, 6325), "the-organization", "the-user");
+            algorithm = "EC";
+        }
+
+        public void initialize(AlgorithmParameterSpec params, SecureRandom random) {
+            if (params == null) {
+                System.out.println("params is null");
+                return;
+            }
+
+            if (params instanceof RemoteECParameterSpec)
+            {
+                this.params = (RemoteECParameterSpec) params;
+                initialised = true;
+            }
+        }
+
+        public KeyPair generateKeyPair()
+        {
+            if (!initialised) {
+                System.out.println("Not initialized");
+                return null;
+            }
+
+            String uuid = UUID.randomUUID().toString();
+
+            String type = "Ec";
+            String name = "brainpool256r1";
+            byte[] publicPointUncompressed = new byte[0];
+            try {
+                publicPointUncompressed = cryptoClient.generateKeyPair(uuid, type, name);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            PublicKey pubkey = new RemoteECPublicKey(uuid, type, name, publicPointUncompressed);
+            PrivateKey privKey = new RemoteECPrivateKey(uuid);
+
+            return new KeyPair(pubkey,privKey);
+        }
 }

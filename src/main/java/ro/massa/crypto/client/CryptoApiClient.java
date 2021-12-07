@@ -72,8 +72,9 @@ public class CryptoApiClient {
     HttpResponse post(String apiPath, String postData, Header[] headers) throws IOException{
         HttpPost httpPost = new HttpPost(endpoint + "/" + apiPath);
 
-        httpPost.setHeaders(headers);
-        setDefaultHeaders(httpPost);
+        //httpPost.setHeaders(headers);
+        httpPost.setHeader("Content-Type", "application/json");
+        //setDefaultHeaders(httpPost);
 
         httpPost.setEntity(new StringEntity(postData));
         return httpClient.execute(httpPost);
@@ -87,7 +88,7 @@ public class CryptoApiClient {
     }
 
     HttpResponse get(String apiPath, Header[] headers) throws IOException {
-        HttpGet httpGet = new HttpGet(endpoint + "/apiPath");
+        HttpGet httpGet = new HttpGet(endpoint + "/" + apiPath);
 
         httpGet.setHeaders(headers);
         setDefaultHeaders(httpGet);

@@ -1,11 +1,23 @@
-package ro.massa;
+package ro.massa.crypto.provider;
 
 import java.security.PublicKey;
 
-public class RemoteECPublicKey implements PublicKey {
+public class RemoteECPublicKey extends ro.massa.crypto.client.models.RemoteEcPublicKey implements PublicKey  {
+    String label;
+    String type;
+    String curveNameOrOid;
+    byte[] publicPointUncompressed;
+
+    public RemoteECPublicKey(String label, String type, String curveNameOrOid, byte[] publicPointUncompressed) {
+        this.label = label;
+        this.type = type;
+        this.curveNameOrOid = curveNameOrOid;
+        this.publicPointUncompressed = publicPointUncompressed;
+    }
+
     @Override
     public String getAlgorithm() {
-        return null;
+        return "Ec";
     }
 
     @Override
@@ -15,6 +27,6 @@ public class RemoteECPublicKey implements PublicKey {
 
     @Override
     public byte[] getEncoded() {
-        return new byte[0];
+        return publicPointUncompressed;
     }
 }

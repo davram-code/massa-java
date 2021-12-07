@@ -1,6 +1,6 @@
 package ro.massa.crypto.client.models;
 
-public class RemoteEcPublicKey extends RemotePublicKey {
+public class RemoteEcPublicKey {
     String curveNameOrOid;
     String publicPointUncompressed;
 }
