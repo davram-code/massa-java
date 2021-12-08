@@ -124,5 +124,8 @@ public class MassaProperties {
         return properties.getProperty("massa.ca-name");
     }
 
+    public String getPathSelfCert(){
+        return properties.getProperty("massa.path-self-cert");
+    }
 
 }

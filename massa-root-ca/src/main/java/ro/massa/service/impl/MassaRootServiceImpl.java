@@ -77,6 +77,19 @@ public class MassaRootServiceImpl implements MassaRootService {
     }
 
     @Override
+    public byte[] rekeyEnrollmentCA(byte[] request) {
+        log.log("Resolving EA Rekey Certificate Request");
+        try {
+            EtsiTs103097Certificate eaCert = rootCA.rekeyEnrollmentCA(request);
+            return eaCert.getEncoded();
+        } catch (Exception e) {
+            log.error("EA Rekey Certificate Request Failed!");
+            log.error(e.getMessage());
+            return e.getMessage().getBytes(StandardCharsets.UTF_8);
+        }
+    }
+
+    @Override
     public String revokeCertificate(String hash) {
         log.log("Revoking Certificate");
         try {

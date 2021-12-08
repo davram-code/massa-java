@@ -12,6 +12,7 @@ import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 
 import ro.massa.its.SubCA;
+import ro.massa.its.InitialCA;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -20,13 +21,13 @@ import java.nio.file.Files;
 @Component
 public class MassaEnrollmentServiceImpl implements MassaEnrollmentService {
     EnrollmentAuthority ea_app;
-    SubCA subCA;
+    InitialCA initialCA;
     MassaLog log = MassaLogFactory.getLog(MassaEnrollmentServiceImpl.class);
 
     public MassaEnrollmentServiceImpl()
     {
         try{
-            subCA = new SubCA();
+            initialCA = new InitialCA();
             ea_app = new EnrollmentAuthority();
         }
         catch (Exception e)
@@ -40,12 +41,27 @@ public class MassaEnrollmentServiceImpl implements MassaEnrollmentService {
     public byte[] getCertificateRequest()
     {
         try{
-            EtsiTs103097DataSigned certReq = subCA.getCertificateRequest();
+            EtsiTs103097DataSigned certReq = initialCA.getCertificateRequest();
             return certReq.getEncoded();
         }
         catch (Exception e)
         {
             log.error("Generating Certificate Request FAILED: " + e.getMessage());
+        }
+        return null;
+    }
+
+    @Override
+    public byte[] getRekeyCertificateRequest()
+    {
+        try{
+            EtsiTs103097DataSigned certReq = ea_app.getRekeyRequest();
+            return certReq.getEncoded();
+        }
+        catch (Exception e)
+        {
+            log.log(e.getMessage());
+            log.error("Generating Rekey Certificate Request FAILED");
         }
         return null;
     }

@@ -30,32 +30,15 @@ import java.util.Map;
 import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 
 
-public class EnrollmentAuthority extends ITSEntity {
-    private EtsiTs103097Certificate[] enrollmentCAChain;
-    EtsiTs103097Certificate EaCert;
-    EtsiTs103097Certificate RootCaCert;
+public class EnrollmentAuthority extends SubCA {
+
     private ETSIEnrollmentCredentialGenerator enrollmentCredentialCertGenerator;
     private Map<HashedId8, Certificate> trustStore;
 
-    PrivateKey signPrivateKey;
-    PublicKey signPublicKey;
-
-    PrivateKey encPrivateKey;
 
     public EnrollmentAuthority() throws Exception {
         enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
-
-        EaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathEaCert());
-        RootCaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathRootCaCert());
-
-        enrollmentCAChain = new EtsiTs103097Certificate[]{EaCert, RootCaCert};
-
-        trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{enrollmentCAChain[1]});
-
-        signPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
-        signPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
-
-        encPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathEncPrivateKey());
+        trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{selfCaChain[1]});
     }
 
     public EtsiTs103097DataEncryptedUnicast verifyEnrollmentRequestMessage(
@@ -65,8 +48,8 @@ public class EnrollmentAuthority extends ITSEntity {
         EtsiTs103097DataEncryptedUnicast enrolRequestMessage = new EtsiTs103097DataEncryptedUnicast(encodedEnrollRequest);
         log.log(enrolRequestMessage.toString());
 
-        Map<HashedId8, Certificate> enrolCredCertStore = messagesCaGenerator.buildCertStore(enrollmentCAChain);
-        Map<HashedId8, Receiver> enrolCARecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, enrollmentCAChain[0])});
+        Map<HashedId8, Certificate> enrolCredCertStore = messagesCaGenerator.buildCertStore(selfCaChain);
+        Map<HashedId8, Receiver> enrolCARecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, selfCaChain[0])});
 
         /** Verify (just) the signature **/
         RequestVerifyResult<InnerEcRequest> enrolmentRequestResult = messagesCaGenerator.decryptAndVerifyEnrolmentRequestMessage(enrolRequestMessage, enrolCredCertStore, trustStore, enrolCARecipients);
@@ -101,7 +84,7 @@ public class EnrollmentAuthority extends ITSEntity {
                 enrolmentRequestResult.getValue().getRequestedSubjectAttributes().getAssuranceLevel().getConfidenceLevel(),
                 signatureScheme, //signingPublicKeyAlgorithm
                 enrolCredSignKeys_public, // signPublicKey, i.e public key in certificate
-                enrollmentCAChain[1], // signerCertificate
+                selfCaChain[1], // signerCertificate
                 signPublicKey, // signCertificatePublicKey,
                 signPrivateKey,
                 symmAlg, // symmAlgorithm
@@ -117,7 +100,7 @@ public class EnrollmentAuthority extends ITSEntity {
         EtsiTs103097DataEncryptedUnicast enrolResponseMessage = messagesCaGenerator.genEnrolmentResponseMessage(
                 new Time64(new Date()), // generation Time
                 innerEcResponse,
-                enrollmentCAChain, // Chain of EA used to sign message
+                selfCaChain, // Chain of EA used to sign message
                 signPrivateKey,
                 symmAlg, // Encryption algorithm used
                 enrolmentRequestResult.getSecretKey()); // Use symmetric key from the verification result when verifying the request.
@@ -159,7 +142,7 @@ public class EnrollmentAuthority extends ITSEntity {
         EtsiTs103097DataEncryptedUnicast authorizationValidationResponseMessage = messagesCaGenerator.genAuthorizationValidationResponseMessage(
                 new Time64(new Date()), // generation Time
                 authorizationValidationResponse,
-                enrollmentCAChain, // EA signing chain
+                selfCaChain, // EA signing chain
                 enrolCASignPrvKey, // EA signing private key
                 symmAlg, // Encryption algorithm used.
                 authorizationValidationRequestVerifyResult.getSecretKey() // The symmetric key generated in the request.
