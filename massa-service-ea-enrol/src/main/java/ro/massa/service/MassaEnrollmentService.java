@@ -9,6 +9,8 @@ public interface MassaEnrollmentService {
 
     byte[] getCertificateRequest();
 
+    byte[] getRekeyCertificateRequest();
+
     /**
      * Verifies the incoming Enrollment Request and generates
      * the Enrollment Response

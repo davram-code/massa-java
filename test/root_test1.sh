@@ -26,6 +26,32 @@ curl -X POST \
 	http://localhost:8085/massa/rekey/aa
 
 
+echo "Rekey-ing EA Authorization Service..."
+cd ../massa-service-ea-enrol
+
+echo "GETing EA Certificate Request ..."
+curl -X GET \
+	-H "Content-Type: application/x-its-request" \
+	-o "certificates/services/ea/EAcertRequest.bin" \
+	http://localhost:8081/massa/ea/rekey
+
+
+echo "GETing EA Certificate ..."
+curl -X POST \
+	-H "Content-Type: application/x-its-request" \
+    --data-binary "@certificates/services/ea/EAcertRequest.bin" \
+	-o "certificates/services/ea/EAcert.bin" \
+	http://localhost:8085/massa/rekey/ea
+
+echo "Copying certificates folder from EA Enrollment Service to EA Validation Service..."
+cd ../massa-service-ea-validation
+
+if [ -d "certificates" ]; then
+    rm -r certificates
+fi
+
+cp -r ../massa-service-ea-enrol/certificates .
+
 echo "Exchanging certificates between participants"
 cp ../massa-root-ca/certificates/services/ca/rootCAcert.bin ../massa-service-aa-authorization/certificates/services/aa
 cp ../massa-root-ca/certificates/services/ca/rootCAcert.bin ../massa-service-ea-enrol/certificates/services/ea

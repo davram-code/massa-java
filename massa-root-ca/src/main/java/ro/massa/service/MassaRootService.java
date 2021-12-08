@@ -14,4 +14,6 @@ public interface MassaRootService {
     String revokeCertificate(String hash);
 
     byte[] rekeyAuthorizationCA(byte[] request);
+
+    byte[] rekeyEnrollmentCA(byte[] request);
 }

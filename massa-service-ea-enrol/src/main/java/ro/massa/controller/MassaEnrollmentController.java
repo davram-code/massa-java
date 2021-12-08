@@ -41,6 +41,11 @@ public class MassaEnrollmentController {
         return new ResponseEntity<byte[]>(enrollmentService.getCertificateRequest(), HttpStatus.OK);
     }
 
+    @GetMapping(path = "/ea/rekey")
+    public ResponseEntity<byte[]> getRekeyCertificateRequest() {
+        return new ResponseEntity<byte[]>(enrollmentService.getRekeyCertificateRequest(), HttpStatus.OK);
+    }
+
     @PostMapping(path = "/enrollment")
     public ResponseEntity<byte[]> postEnrollmentRequest(@RequestBody byte[] base64Request) {
         log.log("Enrollment request received");
