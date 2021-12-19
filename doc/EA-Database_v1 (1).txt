@@ -1,0 +1,102 @@
+///////////////////////////////////////////////////////////////////////    Nomenclatoare  ///////////////////////////////////////////////////////////////////////////////////////////
+		ct_request_type
+Columns: ID (number), Type (varchar 64)
+Values: 
+0 initial
+1 rekey
+	
+	ct_request_status
+Columns: ID (number), Type (varchar 64)
+Values: 
+-1 unprocessed
+0 malformed
+1 certified
+2 internal_error
+
+	ct_curve_type 
+Columns: ID (number), Type (varchar 64)
+Values: 
+0 secp256r1
+1 brainpoolP256r1
+2 brainpoolP384r1
+
+	ct_ea_status
+Columns: ID (number), Type (varchar 64)
+Values: 
+-1 pending 
+0 inactive
+1 active
+
+	ct_engine_status
+Columns: ID (number), Type (varchar 64)
+Values: 
+0 inactive
+1 active
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+	operator
+Columuns:
+- ID (number) : id of the operator 
+- Name (varchar 100) : full name of the operator
+- Certificate (varchar 2731 bytes): x509 certificate of the operator, base64 encoded 
+
+
+
+	engine
+Columuns:
+- ID (number) : id of the engine 
+- Name (varchar 100) : name of the cryptoserver engine 
+- Description (varchar 1000) : description of the engine
+- Status (number): see ct_engine_status table
+- Adress (varchar 64) : ip address of the cryptoserver
+- Port (number) : port of the cryptoserver 
+- Keychain (varchar 5462 bytes) : pkcs#12 to authenticate toward the cryptoserver(p11webproxy), base64 encoded
+- Pin (optional, varchar 64) : pin of the pkcs12 in keychain 
+
+
+	ea
+Columns:
+	- ID (number) : id of the CA
+	- Name (varchar 100): name of the CA
+	- Description (varchar 1000): description of the CA
+	- KeyName (varchar 200): name of the public/private key (label)
+	- PP (varchar 342 bytes) : public point of the public key (uncompressed format, base64 code)
+	- Curve (number): id of the curve form ct_curve_type 
+	- Certificate (varchar 2731 bytes) : certificate, base64 encoded
+	- EAStatus (number): see ct_ea_status Table 
+	- EngineId (number):   the id of the engine, see Engine table
+	- RegisterDate (date) : date when the EA was registered
+	- EndDate (date) : date when the EA expires 
+	- OperatorId (number) : number from Operator table
+	
+	registration
+Columns:
+	- ID (number) : id of the request
+	- RequestDate (date) : date of the received request 
+	- RequestStatus (number) : status, see Request_Status : default processed 
+	- CanonicalId (varchar 2731 bytes) : certficateId as in IEEE STd 1609.2 - clause 6.4.8  - to be extracted for request, base64 encoded
+	- ReceivedDate (date): received date of the request
+	- PubKey (varchar 342 bytes)  : base64 encoded
+	- appPermissions (varchar 342 bytes) : base64 encoded
+	- certIssuePermissions (varchar 342 bytes) : base64 encoded
+	- certRequestPermissions (optional,varchar 342 bytes) :base64 encoded
+	
+	
+	enrolment
+Columns:
+	- ID (number) : id of the request
+	- RequestDate (date) : date of the received request 
+	- RequestType (number): request type, see ct_request_type 
+	- RequestStatus (number) : status, see Request_Status
+	- CertificateId (varchar 2731 bytes) : canonical id if it's first request or EnrolmentCertificate ID if second+ request (aleatoriu), base64 encoded
+	- EOV (date) : end of validity 
+	- ReceivedDate (date): received date of the request
+	- ProcessedDate (date) : date when the request was processed
+	- VerificationPubKey (varchar 342 bytes)  : TBD/extracted from certificate request,base64 encoded
+	- EncryptionPubKey (varchar 342 bytes)  : TBD/extracted from certificate request,base64 encoded
+	- appPermissions (varchar 342 bytes) : TBD/extracted from certificate request,base64 encoded
+	- certIssuePermissions (varchar 342 bytes) : TBD/extracted from certificate request, base64 encoded
+	- certRequestPermissions (optional,varchar 342 bytes) : TBD/i think is not used for Root CA,base64 encoded
+	- Certificate (varchar 2731 bytes) : the certificate issued , base64 encoded
+	- EAId (number): the id of the CA which issues the cerficate (see EA table)
+
