@@ -4,7 +4,6 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authoriz
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.PreSharedKeyReceiver;
-import ro.massa.common.MassaDB;
 import ro.massa.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.AuthorizationResponseCode;
@@ -19,12 +18,7 @@ import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.CertificateReciever;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
-import ro.massa.its.artifacts.AuthRequest;
-import ro.massa.its.artifacts.AuthValidationRequest;
-import ro.massa.its.artifacts.AuthValidationResponse;
-import ro.massa.properties.MassaProperties;
 
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.Arrays;
 import java.util.Date;
@@ -53,11 +47,10 @@ public class AuthorizationAuthority extends SubCA {
         enrollmentCAChain = new EtsiTs103097Certificate[]{EaCert, RootCaCert};
 
         AaRecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, SelfCert)});
-        region= GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
+        region = GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
     }
 
-    public AuthRequest decodeRequestMessage(byte []authRequestMessage) throws Exception
-    {
+    public RequestVerifyResult<InnerAtRequest> decodeRequestMessage(byte[] authRequestMessage) throws Exception {
         log.log("Decrypting Authorization Request");
         EtsiTs103097DataEncryptedUnicast authRequest = new EtsiTs103097DataEncryptedUnicast(authRequestMessage);
 
@@ -65,14 +58,13 @@ public class AuthorizationAuthority extends SubCA {
                 true, // Expect AuthorizationRequestPOP content
                 AaRecipients);
 
-        return MassaDB.store(authRequestResult);
+        return authRequestResult;
     }
 
-    public EtsiTs103097DataEncryptedUnicast generateAuthorizationResponse(
-            AuthRequest authReq
+    public EtsiTs103097Certificate generateAuthorizationTicket(
+            RequestVerifyResult<InnerAtRequest> authRequestResult
     ) throws Exception {
-        log.log("Generating the Authorization Response for Authorization Request");
-        RequestVerifyResult<InnerAtRequest> authRequestResult = authReq.getValue();
+        log.log("Generating the Authorization Ticket");
         /* Getting the public keys for sign/enc of the ITS Client*/
         PublicKey ticketSignKey_public = (PublicKey) cryptoManager.decodeEccPoint(
                 authRequestResult.getValue().getPublicKeys().getVerificationKey().getType(),
@@ -105,6 +97,13 @@ public class AuthorizationAuthority extends SubCA {
                 encryptionScheme, //to chage
                 ticketEncKey_public
         );
+        return authTicketCert;
+    }
+
+    public EtsiTs103097DataEncryptedUnicast generateAuthorizationResponse(
+            EtsiTs103097Certificate authTicketCert, RequestVerifyResult<InnerAtRequest> authRequestResult
+    ) throws Exception {
+        log.log("Generating the Authorization Response for Authorization Request");
 
         InnerAtResponse innerAtResponse = new InnerAtResponse(authRequestResult.getRequestHash(),
                 AuthorizationResponseCode.ok,
@@ -119,17 +118,15 @@ public class AuthorizationAuthority extends SubCA {
                 symmAlg, // Encryption algorithm used.
                 authRequestResult.getSecretKey()); // The symmetric key generated in the request.
 
-
-        MassaDB.store(authTicketCert, authReq);
         return authResponseMessage;
     }
 
 
-    public AuthValidationRequest generateAuthorizationValidationRequest(
-            AuthRequest authRequestResult
+    public EncryptResult generateAuthorizationValidationRequest(
+            RequestVerifyResult<InnerAtRequest> authRequestResult
     ) throws Exception {
         log.log("Generating the Authorization Validation Request for Authorization Request");
-        InnerAtRequest innerAtRequest = authRequestResult.getValue().getValue();
+        InnerAtRequest innerAtRequest = authRequestResult.getValue();
         AuthorizationValidationRequest authorizationValidationRequest = new AuthorizationValidationRequest(
                 innerAtRequest.getSharedAtRequest(), innerAtRequest.getEcSignature());
 
@@ -140,11 +137,12 @@ public class AuthorizationAuthority extends SubCA {
                 signPrivateKey, // The AA signing keys
                 EaCert); // The EA certificate to encrypt data to.
 
-        return MassaDB.store(authorizationValidationRequestMessageResult, authRequestResult);
+        //return MassaDB.store(authorizationValidationRequestMessageResult, authRequestResult);
+        return authorizationValidationRequestMessageResult;
     }
 
-    public AuthValidationResponse getValidationResponse(AuthValidationRequest authValidationRequest) throws Exception {
-        EncryptResult authorizationValidationRequest = authValidationRequest.getValue();
+    public VerifyResult<AuthorizationValidationResponse> getValidationResponse(EncryptResult authorizationValidationRequest) throws Exception {
+
         byte[] validationResponseMessage = ValidationClient.postBinaryMessageToEA(authorizationValidationRequest.getEncryptedData().getEncoded());
 
         log.log("Checking the Validation Response");
@@ -163,12 +161,8 @@ public class AuthorizationAuthority extends SubCA {
                 sharedKeyReceivers //receiver Store
         );
 
-        return MassaDB.store(validationResponseResult.getValue(), authValidationRequest);
+        return validationResponseResult;
     }
-
-
-
-
 
 
 }

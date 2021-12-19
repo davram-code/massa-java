@@ -1,18 +1,22 @@
 package ro.massa.service.impl;
 
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.InnerAtRequest;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponseCode;
+import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
+import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097DataSigned;
+import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.springframework.stereotype.Component;
 
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
+import ro.massa.db.impl.AuthorizationRequestDaoImpl;
+import ro.massa.db.IAuthorizationRequestDao;
 import ro.massa.its.AuthorizationAuthority;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 import ro.massa.its.InitialCA;
-import ro.massa.its.artifacts.AuthRequest;
-import ro.massa.its.artifacts.AuthValidationRequest;
-import ro.massa.its.artifacts.AuthValidationResponse;
-
 import ro.massa.service.MassaAuthorizationService;
 
 import java.nio.charset.StandardCharsets;
@@ -83,16 +87,22 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
     public byte[] resolveAuthorizationCertificateRequest(byte[] authorizationRequestMsg) {
         log.log("Resolving Authorization Certificate Request");
 
+        IAuthorizationRequestDao authorizationRequestDao = new AuthorizationRequestDaoImpl();
+
         try {
-            AuthRequest authorizationRequest = aa.decodeRequestMessage(authorizationRequestMsg);
+            RequestVerifyResult<InnerAtRequest> authorizationRequest = aa.decodeRequestMessage(authorizationRequestMsg);
+            String id = authorizationRequestDao.insert(authorizationRequest);
 
-            AuthValidationRequest authorizationValidationRequest = aa.generateAuthorizationValidationRequest(authorizationRequest);
+            EncryptResult authorizationValidationRequest = aa.generateAuthorizationValidationRequest(authorizationRequest);
 
-            AuthValidationResponse validationResponse = aa.getValidationResponse(authorizationValidationRequest);
+            VerifyResult<AuthorizationValidationResponse> validationResponse = aa.getValidationResponse(authorizationValidationRequest);
 
             if(validationResponse.getValue().getResponseCode() == AuthorizationValidationResponseCode.ok)
             {
-                EtsiTs103097DataEncryptedUnicast authResponse = aa.generateAuthorizationResponse(authorizationRequest);
+                EtsiTs103097Certificate authorizationTicket = aa.generateAuthorizationTicket(authorizationRequest);
+                authorizationRequestDao.update(id, authorizationTicket);
+
+                EtsiTs103097DataEncryptedUnicast authResponse = aa.generateAuthorizationResponse(authorizationTicket, authorizationRequest);
                 return authResponse.getEncoded();
             }
             else
