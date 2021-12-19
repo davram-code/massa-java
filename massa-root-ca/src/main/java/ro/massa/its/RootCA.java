@@ -1,7 +1,6 @@
 package ro.massa.its;
 
 import jdk.jshell.execution.Util;
-import massa.its.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.common.crypto.Algorithm;
 import org.certificateservices.custom.c2x.common.crypto.AlgorithmIndicator;
@@ -17,6 +16,7 @@ import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.Certificate;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.SignedData;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.SignerIdentifier;
+import ro.massa.common.Utils;
 import ro.massa.properties.MassaProperties;
 
 import java.security.PrivateKey;
