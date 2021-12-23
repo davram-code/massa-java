@@ -18,8 +18,12 @@ import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.CertificateReciever;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
+import ro.massa.exception.ATException;
+import ro.massa.exception.DecodeException;
 
 import java.security.PublicKey;
+import java.security.SignatureException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
@@ -50,54 +54,76 @@ public class AuthorizationAuthority extends SubCA {
         region = GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
     }
 
-    public RequestVerifyResult<InnerAtRequest> decodeRequestMessage(byte[] authRequestMessage) throws Exception {
+    public RequestVerifyResult<InnerAtRequest> decodeRequestMessage(byte[] authRequestMessage) throws DecodeException {
         log.log("Decrypting Authorization Request");
-        EtsiTs103097DataEncryptedUnicast authRequest = new EtsiTs103097DataEncryptedUnicast(authRequestMessage);
+        try{
+            EtsiTs103097DataEncryptedUnicast authRequest = new EtsiTs103097DataEncryptedUnicast(authRequestMessage);
 
-        RequestVerifyResult<InnerAtRequest> authRequestResult = messagesCaGenerator.decryptAndVerifyAuthorizationRequestMessage(authRequest,
-                true, // Expect AuthorizationRequestPOP content
-                AaRecipients);
+            RequestVerifyResult<InnerAtRequest> authRequestResult = messagesCaGenerator.decryptAndVerifyAuthorizationRequestMessage(authRequest,
+                    true, // Expect AuthorizationRequestPOP content
+                    AaRecipients);
 
-        return authRequestResult;
+            return authRequestResult;
+        }
+        catch (Exception e)
+        {
+            throw new DecodeException("Error decoding Auth Request Msg", e);
+        }
+
     }
 
     public EtsiTs103097Certificate generateAuthorizationTicket(
             RequestVerifyResult<InnerAtRequest> authRequestResult
-    ) throws Exception {
+    ) throws ATException {
         log.log("Generating the Authorization Ticket");
-        /* Getting the public keys for sign/enc of the ITS Client*/
-        PublicKey ticketSignKey_public = (PublicKey) cryptoManager.decodeEccPoint(
-                authRequestResult.getValue().getPublicKeys().getVerificationKey().getType(),
-                (EccCurvePoint) authRequestResult.getValue().getPublicKeys().getVerificationKey().getValue()
-        );
-        PublicKey ticketEncKey_public = (PublicKey) cryptoManager.decodeEccPoint(
-                authRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
-                (EccCurvePoint) authRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
-        );
+
+        try{
+            /* Getting the public keys for sign/enc of the ITS Client*/
+            PublicKey ticketSignKey_public = (PublicKey) cryptoManager.decodeEccPoint(
+                    authRequestResult.getValue().getPublicKeys().getVerificationKey().getType(),
+                    (EccCurvePoint) authRequestResult.getValue().getPublicKeys().getVerificationKey().getValue()
+            );
+            PublicKey ticketEncKey_public = (PublicKey) cryptoManager.decodeEccPoint(
+                    authRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
+                    (EccCurvePoint) authRequestResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
+            );
 
 
-        PsidSsp appPermCertMan = new PsidSsp(
-                SecuredCertificateRequestService,
-                new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("0132"))
-        );
+            PsidSsp appPermCertMan = new PsidSsp(
+                    SecuredCertificateRequestService,
+                    new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("0132"))
+            );
 
-        PsidSsp[] appPermissions = new PsidSsp[]{appPermCertMan};
+            PsidSsp[] appPermissions = new PsidSsp[]{appPermCertMan};
 
-        EtsiTs103097Certificate authTicketCert = eatg.genAuthorizationTicket(
-                authRequestResult.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getValidityPeriod(),
-                authRequestResult.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getRegion(),
-                authRequestResult.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getAssuranceLevel(),
-                appPermissions, //  TO SOLVE
-                authRequestResult.getSignAlg(), // signAlg,
-                ticketSignKey_public, //authTicketSignKeys.getPublic(),
-                SelfCert,
-                signPublicKey, //authorizationCASignKeys.getPublic(),
-                signPrivateKey, //authorizationCASignKeys.getPrivate(),
-                symmAlg,
-                encryptionScheme, //to chage
-                ticketEncKey_public
-        );
-        return authTicketCert;
+            EtsiTs103097Certificate authTicketCert = eatg.genAuthorizationTicket(
+                    authRequestResult.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getValidityPeriod(),
+                    authRequestResult.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getRegion(),
+                    authRequestResult.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getAssuranceLevel(),
+                    appPermissions, //  TO SOLVE
+                    authRequestResult.getSignAlg(), // signAlg,
+                    ticketSignKey_public, //authTicketSignKeys.getPublic(),
+                    SelfCert,
+                    signPublicKey, //authorizationCASignKeys.getPublic(),
+                    signPrivateKey, //authorizationCASignKeys.getPrivate(),
+                    symmAlg,
+                    encryptionScheme, //to chage
+                    ticketEncKey_public
+            );
+            return authTicketCert;
+        }
+        catch (InvalidKeySpecException e)
+        {
+            throw new ATException("Error when getting the public keys of the ITS", e);
+        }
+        catch (SignatureException e)
+        {
+            throw new ATException("Error when signing the AT", e);
+        }
+        catch (Exception e)
+        {
+            throw new ATException("AT Generation Exception", e);
+        }
     }
 
     public EtsiTs103097DataEncryptedUnicast generateAuthorizationResponse(
@@ -117,6 +143,21 @@ public class AuthorizationAuthority extends SubCA {
                 signPrivateKey,
                 symmAlg, // Encryption algorithm used.
                 authRequestResult.getSecretKey()); // The symmetric key generated in the request.
+
+        return authResponseMessage;
+    }
+
+    public EtsiTs103097DataEncryptedUnicast generateFailedAuthorizationResponse( RequestVerifyResult<InnerAtRequest> authRequestResult, AuthorizationResponseCode code) throws Exception
+    {
+        InnerAtResponse innerAtResponse = new InnerAtResponse(authRequestResult.getRequestHash(), code,null);
+
+        EtsiTs103097DataEncryptedUnicast authResponseMessage = messagesCaGenerator.genAuthorizationResponseMessage(
+                new Time64(new Date()),
+                innerAtResponse,
+                selfCaChain,
+                signPrivateKey,
+                symmAlg,
+                authRequestResult.getSecretKey());
 
         return authResponseMessage;
     }

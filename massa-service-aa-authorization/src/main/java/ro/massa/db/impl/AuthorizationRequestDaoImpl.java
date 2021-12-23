@@ -10,69 +10,66 @@ import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.db.DatabaseClient;
 import ro.massa.db.IAuthorizationRequestDao;
+import ro.massa.db.types.RequestStatus;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.util.Date;
 
-public class AuthorizationRequestDaoImpl implements IAuthorizationRequestDao {
-    static private MassaLog log = MassaLogFactory.getLog(AuthorizationRequestDaoImpl.class);
-    private byte[] getBytes(Encodable encodable)
-    {
-        try{
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream dos = new DataOutputStream(baos);
-            encodable.encode(dos);
-            byte[] data = baos.toByteArray();
-            return data;
-        }
-        catch (Exception e)
-        {
-            log.log(e.toString());
-            return new byte[]{};
-        }
-    }
-    private String base64(Encodable encodable)
-    {
-        return base64(getBytes(encodable));
-    }
+public class AuthorizationRequestDaoImpl extends MassaDaoImpl implements IAuthorizationRequestDao {
 
-    private String base64(byte [] data)
-    {
-        if(data.length > 0)
-            return new String(Base64Utils.encode(data));
-        else
-            return "null"; //TODO
-    }
 
-    public String insert(RequestVerifyResult<InnerAtRequest> ar)  {
-            JSONObject jsonPayload = new JSONObject()
-                    .put("requestdate", new Date().toString())
-                    .put("requeststatus_id", "TODO")
-                    .put("ea_id", base64(ar.getValue().getSharedAtRequest().getEaId()))
-                    .put("keytag", base64(ar.getValue().getSharedAtRequest().getKeyTag()))
-                    .put("certificateformat", base64(ar.getValue().getSharedAtRequest().getCertificateFormat()))
-                    .put("requestedsubjectattreibute", base64(ar.getValue().getSharedAtRequest().getRequestedSubjectAttributes()))
-                    .put("eov", "X")
-                    .put("receiveddate", "X")
-                    .put("processeddate", "X")
-                    .put("verificationpubkey", base64(ar.getValue().getPublicKeys().getVerificationKey().getValue()))
-                    .put("encryptionpubkey", base64(ar.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()))
-                    .put("apppermissions", base64(ar.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getAppPermissions()))
-                    .put("certissuepermissions", base64(ar.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getCertIssuePermissions()))
-                    .put("certrequestpermissions", "TODO")
+    public String insert(RequestVerifyResult<InnerAtRequest> ar) {
+        JSONObject jsonPayload = new JSONObject()
+                .put("requestdate", new Date().toString())
+                .put("requeststatus_id", RequestStatus.unprocessed)
+                .put("ea_id", base64(ar.getValue().getSharedAtRequest().getEaId()))
+                .put("keytag", base64(ar.getValue().getSharedAtRequest().getKeyTag()))
+                .put("certificateformat", base64(ar.getValue().getSharedAtRequest().getCertificateFormat()))
+                .put("requestedsubjectattreibute", base64(ar.getValue().getSharedAtRequest().getRequestedSubjectAttributes()))
+                .put("eov", "X")
+                .put("receiveddate", "X")
+                .put("processeddate", "X")
+                .put("verificationpubkey", base64(ar.getValue().getPublicKeys().getVerificationKey().getValue()))
+                .put("encryptionpubkey", base64(ar.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()))
+                .put("apppermissions", base64(ar.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getAppPermissions()))
+                .put("certissuepermissions", base64(ar.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getCertIssuePermissions()))
+                .put("certrequestpermissions", "TODO")
 //                    .put("certificate", "TODO")
-                    .put("aa_id", "TODO");
+                .put("aa_id", "TODO");
 
-            DatabaseClient.sendDatabaseMessage("POST", "/aa/authorization_requests", jsonPayload);
+        DatabaseClient.sendDatabaseMessage("POST", "/aa/authorization_requests", jsonPayload);
 
-            return "UniqueID";
+        return "UniqueID";
     }
 
-    public void update(String id, EtsiTs103097Certificate at) {
+    @Override
+    public String insertMalformed(byte[] ar) {
+        JSONObject jsonPayload = new JSONObject()
+                .put("requestdate", new Date().toString())
+                .put("requeststatus_id", RequestStatus.malformed)
+                .put("request", base64(ar)); //TODO: ce facem cu request-urile malformed?
+
+        DatabaseClient.sendDatabaseMessage("POST", "/aa/authorization_requests", jsonPayload);
+
+        return "UniqueID";
+    }
+
+    @Override
+    public void updateCert(String id, EtsiTs103097Certificate at) {
         JSONObject jsonPayload = new JSONObject()
                 .put("id", id)
-                .put("certificate", base64(at));
+                .put("certificate", base64(at))
+                .put("requeststatus_id", RequestStatus.certified);;
+
+        DatabaseClient.sendDatabaseMessage("PUT", "/aa/authorization_requests", jsonPayload);
+    }
+
+    @Override
+    public void updateStatus(String id, RequestStatus status) {
+        JSONObject jsonPayload = new JSONObject()
+                .put("id", id)
+                .put("requeststatus_id", status);
 
         DatabaseClient.sendDatabaseMessage("PUT", "/aa/authorization_requests", jsonPayload);
     }

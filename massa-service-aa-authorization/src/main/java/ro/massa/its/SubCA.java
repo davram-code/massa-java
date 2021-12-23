@@ -53,7 +53,6 @@ public class SubCA extends InitialCA {
         return new HashedId8(hash);
     }
 
-
     public EtsiTs103097DataSigned getRekeyRequest() throws Exception
     {
         log.log("Generating Rekey Request");
@@ -90,4 +89,9 @@ public class SubCA extends InitialCA {
         Utils.dump(MassaProperties.getInstance().getPathEncPublicKey(), selfCaReEncKeys.getPublic());
     }
 
+
+    public byte[] getPP()
+    {
+        return signPrivateKey.getEncoded(); //TODO: nu stiu daca asta e, dar sssper :))
+    }
 }
