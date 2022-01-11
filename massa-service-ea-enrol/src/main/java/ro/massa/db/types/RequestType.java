@@ -1,13 +1,12 @@
 package ro.massa.db.types;
 
-public enum AaStatus implements IMassaType{
-    pending(-1),
-    inactive(0),
-    active(1);
+public enum RequestType implements IMassaType {
+    initial(0),
+    rekey(1);
 
     private int value;
 
-    private AaStatus(int value) {
+    private RequestType(int value) {
         this.value = value;
     }
 
@@ -15,5 +14,4 @@ public enum AaStatus implements IMassaType{
     public int getValue() {
         return value;
     }
-
 }
