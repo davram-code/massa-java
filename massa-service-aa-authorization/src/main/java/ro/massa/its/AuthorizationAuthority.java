@@ -19,7 +19,7 @@ import org.certificateservices.custom.c2x.ieee1609dot2.generator.EncryptResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.CertificateReciever;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
 import ro.massa.exception.ATException;
-import ro.massa.exception.DecodeException;
+import ro.massa.exception.DecodeEncodeException;
 
 import java.security.PublicKey;
 import java.security.SignatureException;
@@ -54,7 +54,7 @@ public class AuthorizationAuthority extends SubCA {
         region = GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
     }
 
-    public RequestVerifyResult<InnerAtRequest> decodeRequestMessage(byte[] authRequestMessage) throws DecodeException {
+    public RequestVerifyResult<InnerAtRequest> decodeRequestMessage(byte[] authRequestMessage) throws DecodeEncodeException {
         log.log("Decrypting Authorization Request");
         try{
             EtsiTs103097DataEncryptedUnicast authRequest = new EtsiTs103097DataEncryptedUnicast(authRequestMessage);
@@ -67,7 +67,7 @@ public class AuthorizationAuthority extends SubCA {
         }
         catch (Exception e)
         {
-            throw new DecodeException("Error decoding Auth Request Msg", e);
+            throw new DecodeEncodeException("Error decoding Auth Request Msg", e);
         }
 
     }

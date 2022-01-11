@@ -12,6 +12,14 @@ public class MassaException extends Exception{
 
     @Override
     public String getMessage() {
-        return this.msg + "[" + ex.getMessage() + "]";
+        if(ex != null)
+        {
+            return this.msg + "[" + ex.getMessage() + "]";
+        }
+        else
+        {
+            return this.msg;
+        }
+
     }
 }

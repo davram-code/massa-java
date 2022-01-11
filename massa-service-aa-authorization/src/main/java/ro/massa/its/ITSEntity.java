@@ -72,4 +72,8 @@ public class ITSEntity {
     public String getDescription() {
         return this.description;
     }
+
+    public Signature.SignatureChoices getSignatureScheme(){
+        return this.signatureScheme;
+    }
 }

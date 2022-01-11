@@ -18,7 +18,7 @@ import ro.massa.controller.MassaResponse;
 import ro.massa.db.impl.AuthorizationRequestDaoImpl;
 import ro.massa.db.IAuthorizationRequestDao;
 import ro.massa.exception.ATException;
-import ro.massa.exception.DecodeException;
+import ro.massa.exception.DecodeEncodeException;
 import ro.massa.its.AuthorizationAuthority;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 import ro.massa.its.InitialCA;
@@ -117,7 +117,7 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
             }
 
 
-        } catch (DecodeException e) {
+        } catch (DecodeEncodeException e) {
             /* Eroare la parsare */
             authorizationRequestDao.insertMalformed(authorizationRequestMsg);
             return new MassaResponse(null, HttpStatus.BAD_REQUEST);

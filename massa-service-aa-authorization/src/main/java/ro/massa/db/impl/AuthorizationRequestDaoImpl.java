@@ -1,19 +1,13 @@
 package ro.massa.db.impl;
 
-import org.certificateservices.custom.c2x.common.Encodable;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorization.InnerAtRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.json.JSONObject;
-import org.springframework.util.Base64Utils;
-import ro.massa.common.MassaLog;
-import ro.massa.common.MassaLogFactory;
 import ro.massa.db.DatabaseClient;
 import ro.massa.db.IAuthorizationRequestDao;
 import ro.massa.db.types.RequestStatus;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.util.Date;
 
 public class AuthorizationRequestDaoImpl extends MassaDaoImpl implements IAuthorizationRequestDao {

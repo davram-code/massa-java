@@ -8,6 +8,7 @@ import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.HashAlg
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.HashedId8;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.Time64;
 import ro.massa.common.Utils;
+import ro.massa.exception.DecodeEncodeException;
 import ro.massa.properties.MassaProperties;
 
 import java.security.KeyPair;
@@ -92,6 +93,17 @@ public class SubCA extends InitialCA {
 
     public byte[] getPP()
     {
-        return signPrivateKey.getEncoded(); //TODO: nu stiu daca asta e, dar sssper :))
+        return signPublicKey.getEncoded(); //TODO: nu stiu daca asta e, dar sssper :))
+    }
+
+    public byte[] getSelfCertificate() throws DecodeEncodeException
+    {
+        try{
+            return SelfCert.getEncoded();
+        }
+        catch(Exception e)
+        {
+            throw new DecodeEncodeException("Error encoding SubCA Self Certificate", e);
+        }
     }
 }
