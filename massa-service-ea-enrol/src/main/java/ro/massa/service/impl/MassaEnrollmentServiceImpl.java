@@ -4,6 +4,7 @@ package ro.massa.service.impl;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.enrollment.InnerEcRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.SignerIdentifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import ro.massa.controller.MassaResponse;
