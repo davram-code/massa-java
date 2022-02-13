@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.common.Utils;
+import ro.massa.db.DatabaseClient;
 import ro.massa.its.RootCA;
 import ro.massa.service.MassaRootService;
 
@@ -30,6 +31,7 @@ public class MassaRootServiceImpl implements MassaRootService {
         log.log("Getting the Self Signed certificate of the Root CA");
         try {
             EtsiTs103097Certificate rootCert = rootCA.getSelfSignedCertificate();
+            DatabaseClient.database_test(); //TODO: remove this from here
             return rootCert.getEncoded();
         } catch (Exception e) {
             log.error(e.getMessage());
