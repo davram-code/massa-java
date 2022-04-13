@@ -9,5 +9,7 @@ final public class CryptoServerProvider extends Provider {
         // TODO: Correct this
          put("Signature.RemoteECDSA", "ro.massa.crypto.provider.ECDSARemoteSignature");
          put("KeyPairGenerator.RemoteECDSA", "ro.massa.crypto.provider.RemoteKeyPairGenerator");
+         put("KeyGenerator.RemoteAES", "ro.massa.crypto.provider.RemoteKeyGenerator"); // RemoteAES/CCM
+         put("Cipher.RemoteAES", "ro.massa.crypto.provider.RemoteAes");
     }
 }

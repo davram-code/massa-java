@@ -73,9 +73,7 @@ public class ECDSARemoteSignature extends SignatureSpi {
         byte[] signature = null;
         try {
             signature = cryptoClient.sign(privKey.getLabel(), mechanism, byteBuffer.array());
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (DecoderException e) {
+        } catch (IOException | DecoderException e) {
             e.printStackTrace();
         }
 

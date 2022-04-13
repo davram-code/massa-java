@@ -2,6 +2,7 @@ package ro.massa.crypto.provider;
 
 import jdk.jshell.spi.ExecutionControl;
 import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import ro.massa.crypto.client.CryptoApiClient;
 import ro.massa.crypto.client.CryptoClient;
@@ -70,6 +71,9 @@ public class RemoteKeyPairGenerator extends KeyPairGeneratorSpi {
 
             PublicKey pubkey = new RemoteECPublicKey(uuid, type, name, publicPointUncompressed);
             PrivateKey privKey = new RemoteECPrivateKey(uuid);
+
+            System.out.println("Public Key: " + Hex.encodeHexString(pubkey.getEncoded()));
+            System.out.println("Private Key: " + uuid);
 
             return new KeyPair(pubkey,privKey);
         }

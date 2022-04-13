@@ -2,7 +2,7 @@ package ro.massa.crypto.provider;
 
 import java.security.PublicKey;
 
-public class RemoteECPublicKey extends ro.massa.crypto.client.models.RemoteEcPublicKey implements PublicKey  {
+public class RemoteECPublicKey implements PublicKey {
     String label;
     String type;
     String curveNameOrOid;

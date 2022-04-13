@@ -37,7 +37,7 @@ public class CryptoApiPaths {
     }
 
     String getApiCreateSymmetricKey() {
-        return API_BASE_PATH + "/keys/symmetric-keys";
+        return API_BASE_PATH + "/symmetric-keys";
     }
 
     String getApiDestroySymmetricKey(String keyLabel) {
@@ -47,6 +47,8 @@ public class CryptoApiPaths {
     String getApiWrapSymmetricKey(String keyLabel) {
         return API_BASE_PATH + "/symmetric-keys/" + keyLabel;
     }
+
+    String getApiUnwrapSymmetricKey() {return API_BASE_PATH + "/symmetric-keys";}
 
     String getApiWrapSymmetricKeyEncrypt(String keyLabel) {
         return API_BASE_PATH + "/symmetric-keys/" + keyLabel + "/encryptions";

@@ -10,9 +10,12 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import javax.net.ssl.*;
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.*;
 import java.security.cert.CertificateException;
 import org.bouncycastle.jsse.provider.BouncyCastleJsseProvider;
@@ -72,7 +75,7 @@ public class CryptoApiClient {
     HttpResponse post(String apiPath, String postData, Header[] headers) throws IOException{
         HttpPost httpPost = new HttpPost(endpoint + "/" + apiPath);
 
-        //httpPost.setHeaders(headers);
+        httpPost.setHeaders(headers);
         httpPost.setHeader("Content-Type", "application/json");
         //setDefaultHeaders(httpPost);
 
@@ -90,9 +93,28 @@ public class CryptoApiClient {
     HttpResponse get(String apiPath, Header[] headers) throws IOException {
         HttpGet httpGet = new HttpGet(endpoint + "/" + apiPath);
 
-        httpGet.setHeaders(headers);
-        setDefaultHeaders(httpGet);
+        if (headers != null)
+            httpGet.setHeaders(headers);
+        // setDefaultHeaders(httpGet);
 
         return httpClient.execute(httpGet);
+    }
+
+
+    // TODO: CHECK IF CORRECT
+    HttpResponse get(String apiPath, String postData, Header[] headers) throws IOException {
+        System.out.println("api: " + apiPath + "\npostdata: " + postData);
+
+        HttpGetWithEntity e = new HttpGetWithEntity();
+        try {
+            e.setURI(new URI(endpoint + "/" + apiPath));
+        } catch (URISyntaxException ex) {
+            ex.printStackTrace();
+        }
+        e.setHeaders(headers);
+
+        e.setEntity(new StringEntity(postData));
+        return httpClient.execute(e);
+
     }
 }
