@@ -24,8 +24,6 @@ public class RemoteAes extends CipherSpi {
     @Override
     protected void engineSetMode(String s) throws NoSuchAlgorithmException {
         System.err.println("NOT IMPLEMENTED RemoteAES");
-
-
     }
 
     @Override
