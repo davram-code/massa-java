@@ -4,6 +4,8 @@ import jdk.jshell.spi.ExecutionControl;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECParameterSpec;
 import ro.massa.crypto.client.CryptoApiClient;
 import ro.massa.crypto.client.CryptoClient;
 
@@ -17,7 +19,7 @@ public class RemoteKeyPairGenerator extends KeyPairGeneratorSpi {
         private static String endpoint = "https://massa-test.certsign.ro/api/v1";
         CryptoClient cryptoClient;
         ProviderConfiguration configuration;
-        RemoteECParameterSpec params;
+        ECNamedCurveParameterSpec params;
         String algorithm;
         String curveName;
         boolean initialised = false;
@@ -44,9 +46,9 @@ public class RemoteKeyPairGenerator extends KeyPairGeneratorSpi {
                 return;
             }
 
-            if (params instanceof RemoteECParameterSpec)
+            if (params instanceof ECNamedCurveParameterSpec)
             {
-                this.params = (RemoteECParameterSpec) params;
+                this.params = (ECNamedCurveParameterSpec) params;
                 initialised = true;
             }
         }
@@ -61,7 +63,25 @@ public class RemoteKeyPairGenerator extends KeyPairGeneratorSpi {
             String uuid = UUID.randomUUID().toString();
 
             String type = "Ec";
-            String name = "brainpool256r1";
+            String name = "";
+
+            switch (params.getName()) {
+                case "brainpoolp256r1":
+                    name ="brainpool256r1";
+                    break;
+                case "brainpoolp384r1":
+                    name = "brainpool384r1";
+                    break;
+                case "P-256":
+                    name ="secp256r1";
+                    break;
+                default:
+                    name = "brainpool256r1";
+                    break;
+            }
+
+
+            // String name = "brainpool256r1";
             byte[] publicPointUncompressed = new byte[0];
             try {
                 publicPointUncompressed = cryptoClient.generateKeyPair(uuid, type, name);
