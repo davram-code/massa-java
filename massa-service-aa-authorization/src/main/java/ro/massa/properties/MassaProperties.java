@@ -123,6 +123,10 @@ public class MassaProperties {
         return properties.getProperty("massa.ca-name");
     }
 
+    public String getDescription(){
+        return properties.getProperty("massa.ca-description");
+    }
+
     public int getValidityYears(){
         return Integer.parseInt(properties.getProperty("massa.validity-years"));
     }

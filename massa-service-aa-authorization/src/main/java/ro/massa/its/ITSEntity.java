@@ -28,9 +28,15 @@ public class ITSEntity {
     protected Ieee1609Dot2CryptoManager cryptoManager;
     protected ETSITS102941MessagesCaGenerator messagesCaGenerator;
 
-    public ITSEntity() throws Exception
-    {
+    private String name;
+    private String description;
+
+    public ITSEntity() throws Exception {
         log.log("Initializing ITS Entity");
+        name = MassaProperties.getInstance().getCaName();
+        description = MassaProperties.getInstance().getDescription();
+
+
         msgGenVersion = MassaProperties.getInstance().getVersion();
         digestAlgorithm = MassaProperties.getInstance().getHashAlgorithm();
         signatureScheme = MassaProperties.getInstance().getSignatureChoice();
@@ -49,13 +55,25 @@ public class ITSEntity {
                 true); // If EC points should be represented as uncompressed.
     }
 
-    public KeyPair generateSignKeyPair() throws Exception{
+    public KeyPair generateSignKeyPair() throws Exception {
         KeyPair keyPair = cryptoManager.generateKeyPair(signatureScheme);
         return keyPair;
     }
 
-    public KeyPair generateEncKeyPair() throws Exception{
+    public KeyPair generateEncKeyPair() throws Exception {
         KeyPair keyPair = cryptoManager.generateKeyPair(encryptionScheme);
         return keyPair;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public String getDescription() {
+        return this.description;
+    }
+
+    public Signature.SignatureChoices getSignatureScheme(){
+        return this.signatureScheme;
     }
 }

@@ -1,0 +1,117 @@
+///////////////////////////////////////////////////////////////////////    Nomenclatoare  ///////////////////////////////////////////////////////////////////////////////////////////
+	ct_request_type
+Columns: ID (number), Type (varchar 64)
+Values: 
+0 initial
+1 rekey
+
+	ct_entity_type
+Columns: ID (number), Type (varchar 64)
+Values: 
+0 ea
+1 aa
+
+	ct_request_status
+Columns: ID (number), Type (varchar 64)
+Values: 
+-1 unprocessed
+0 malformed
+1 certified
+2 internal_error
+
+	ct_curve_type 
+Columns: ID (number), Type (varchar 64)
+Values: 
+0 secp256r1
+1 brainpoolP256r1
+2 brainpoolP384r1
+
+	ct_ca_status
+Columns: ID (number), Type (varchar 64)
+Values: 
+-1 pending 
+0 inactive
+1 active
+
+	ct_engine_status
+Columns: ID (number), Type (varchar 64)
+Values: 
+0 inactive
+1 active
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////// 
+	operator
+Columuns:
+- ID (number) : id of the operator 
+- Name (varchar 100) : full name of the operator
+- Certificate (varchar 2731 bytes): x509 certificate of the operator in base64
+
+
+
+	engine
+Columuns:
+- ID (number) : id of the engine 
+- Name (varchar 100) : name of the cryptoserver engine 
+- Description (varchar 1000) : description of the engine
+- Status (number): see ct_engine_status table
+- Adress (varchar 64) : ip address of the cryptoserver
+- Port (number) : port of the cryptoserver 
+- Keychain (varchar 5662 bytes) : pkcs#12 to authenticate toward the cryptoserver(p11webproxy), base64 encoded
+- Pin (optional, varchar 64) : pin of the pkcs12 in keychain 
+
+
+	ca
+Columns:
+	- ID (number) : id of the CA
+	- Name (varchar 100): name of the CA
+	- Description (varchar 1000): description of the CA
+	- KeyName (varchar 200): name of the public/private key (label)
+	- PP (varchar 342 bytes) : public point of the public key (uncompressed format, base64 encoded)
+	- Curve (number): id of the curve form ct_curve_type 
+	- Certificate (varchar 2731 bytes) : certificate , base64 encoded
+	- CAStatus (number): see ct_cA_status Table 
+	- EngineId (number):   the id of the engine, see Engine table
+	- RegisterDate (date) : date when the CA was registered
+	- EndDate (date) : date when the CA expires 
+	- OperatorId (number) : number from Operator table
+	
+	request
+Columns:
+	- ID (number) : id of the request
+	- RequestDate (date) : date of the received request 
+	- RequestType (number): request type, ct_request_type 
+	- EntityType (number): type of entity,see ct_entity_type table 
+	- RequestStatus (number) : status, see Request_Status
+	- CertificateId (varchar 2731 bytes) : certficateId as in IEEE STd 1609.2 - clause 6.4.8  - to be extracted for request , base64 encoded
+	- EOV (date) : end of validity 
+	- ReceivedDate (date): received date of the request
+	- ProcessedDate (date) : date when the request was processed
+	- VerificationPubKey (varchar 341 bytes)  : TBD/extracted from certificate request,base64 encoded
+	- EncryptionPubKey (varchar 341 bytes)  : TBD/extracted from certificate request,base64 encoded
+	- appPermissions (varchar 341 bytes) : TBD/extracted from certificate request,base64 encoded
+	- certIssuePermissions (varchar 342 bytes) : TBD/extracted from certificate request,base64 encoded
+	- certRequestPermissions (optional,varchar 342 bytes) : TBD/i think is not used for Root CA, base64 encoded
+	- Certificate (varchar 2731 bytes) : the certificate issued , base64 encoded
+	- CAId (number): the id of the CA which issues the cerficate (see CA table)
+	
+	ctl
+Columuns:
+	- ID (number) : id of the CTL
+	- IssueDate(date) : issuance date 
+	- Value (varchar indefinite bytes) : value of the CTL,base64 encoded
+	
+	revoked_certificates
+Columns:
+	- ID (number) : id of the CTL
+	- RevokeDate(date) : revoked date
+	- Id of certifcate (varchar 341 bytes): canonical id , base64 encoded
+	- Reason (string 1024 chars) : reason 
+	- IncludedInCRL (boolean) : if included in any CRL
+	- CRLID (number, optional) : if included in CRL , the number of CRL from CRL table
+	
+	crl
+Columns:
+	- ID (number) : id of the request
+	- IssueDate(date) : issuance date 
+	- Value (var char 10GB size) : value of the CRL, base64 encoded
+

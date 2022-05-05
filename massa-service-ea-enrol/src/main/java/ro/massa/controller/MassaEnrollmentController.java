@@ -48,8 +48,7 @@ public class MassaEnrollmentController {
 
     @PostMapping(path = "/enrollment")
     public ResponseEntity<byte[]> postEnrollmentRequest(@RequestBody byte[] base64Request) {
-        log.log("Enrollment request received");
-
-        return new ResponseEntity<byte[]>(enrollmentService.verifyEnrolCertRequest(base64Request), HttpStatus.OK);
+        MassaResponse massaResponse = enrollmentService.resolveEnrollmentCredentialRequest(base64Request);
+        return new ResponseEntity<byte[]>(massaResponse.getContent(), massaResponse.getHttpStatus());
     }
 }

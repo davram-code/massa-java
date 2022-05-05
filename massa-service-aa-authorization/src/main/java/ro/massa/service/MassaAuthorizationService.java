@@ -1,6 +1,7 @@
 package ro.massa.service;
 
 import org.springframework.stereotype.Service;
+import ro.massa.controller.MassaResponse;
 
 @Service
 public interface MassaAuthorizationService {
@@ -11,5 +12,5 @@ public interface MassaAuthorizationService {
 
     byte[] getRekeyCertificateRequest();
 
-    byte[] resolveAuthorizationCertificateRequest(byte[] authorizationRequest);
+    MassaResponse resolveAuthorizationCertificateRequest(byte[] authorizationRequest);
 }

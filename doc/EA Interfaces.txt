@@ -1,0 +1,144 @@
+1. Operator
+
+1.1. Insert Operator 
+POST /ea/operator
+
+JSON input:  {"name": "Name", "certificate": "base64 encoded x509 certificate" } 
+JSON output: {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+1.2. Update Operator
+PUT /ea/operator
+
+JSON input:  { "id" : id, "name": null/"NAME", certificate" : null//"base64 value"}
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+1.3 Select
+GET /ea/operator?id=x&name=name&certificate=base64value
+
+parameters to be used in GET : { "id" : null/id, "name": null/"NAME", certificate" : null//"base64 value"}
+JSON output:{"succes":"true"/"false" , "error_details": null/{"error_code": id, ","error_message": "error message"},
+              array of { "id": id, "name": "Name", "certificate": "base64 encoded x509 certificate"  }
+			}
+
+1.4 Delete Operator
+DELETE /ea/operator
+
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+2. Engine 
+
+2.1. Insert Engine 
+POST /ea/engine
+
+JSON input:  { "name": "name", "description" : "description", "status": 1/0 according to ct_engine_status, "adress": "172.16.101.180", "port": 25125, "keychain" : "base64 val", "pin": "12515523"}
+JSON output:  {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+2.2 Update Engine 
+PUT  /ea/engine
+
+JSON input:  { "id": id, "name": null/"name", "description" : null/"description", "status": null/ 1 or 0 according to ct_engine_status, "adress": null/"172.16.101.180", "port": null/25125, "keychain" : null/"base64 val", "pin": null/"12515523"}
+JSON output: {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+2.3 Select Engine 
+GET /ea/engine?id=x&name=name&.....
+
+parameters to be used in GET  { "id": null/id, "name": null/"name", "description" : null/"description", "status": null/ 1 or 0 according to ct_engine_status, "adress": null/"172.16.101.180", "port": null/25125, "keychain" : null/"base64 val", "pin": null/"12515523"}
+
+JSON output  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"},
+			   array of {"id": 1, "name": "name", "description" : "description", "status": 1/0 according to ct_engine_status, "adress": "172.16.101.180", "port": 25125, "keychain" : "base64 val", "pin": "12515523"}
+ }
+
+2.4. Delete Engine
+DELETE /ea/engine 
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+3. EA
+
+3.1 Insert EA
+POST /ea/ea
+JSON Input: { "name": "name", "description":"description", "keyname": "keyname", "pp": "pp in base64", "curve_id" : id from ct_curve_tyoe, "certificate": null/ "base64 value", "ea_status_id": id from ct_ea_status, "engine_id": id from  Engine table, "registerdate": "date", "enddate": null/"endate", "operator_id": id from operator table }
+JSON output: {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+3.2 Update EA: 
+PUT /ea/ea
+JSON input: { "id": id, "name": null/"name", "description": null/ "description", "keyname": null/"keyname", "pp": null/"pp in base64", "curve_id" : null/id from ct_curve_tyoe, "certificate": null/ "base64 value", "ea_status_id": null/id from ct_ea_status, "engine_id": null/id from  Engine table, "registerdate": null/"date", "enddate": null/"endate", "operator_id": null/id from operator table }  
+JSON output: {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+3.3. Select Ea
+GET /ea/ea?id=id&name=name...
+JSON input:  { "id": null/id, "name": null/"name", "description": null/ "description", "keyname": null/"keyname", "pp": null/"pp in base64", "curve_id" : null/id from ct_curve_tyoe, "certificate": null/ "base64 value", "ea_status_id": null/id from ct_ea_status, "engine_id": null/id from  Engine table, "registerdate": null/"date", "enddate": null/"endate", "operator_id": null/id from operator table }
+  
+JSON output:{"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"},
+array of { "id": id,  "name": "name", "description":"description", "keyname": "keyname", "pp": "pp in base64", "curve_id" : id from ct_curve_tyoe, "certificate": null/ "base64 value", "ea_status_id": id from ct_ea_status, "engine_id": id from  Engine table, "registerdate": "date", "enddate": null/"endate", "operator_id": id from operator table }  
+}
+
+3.4 Delete EA
+DELETE /ea/ea
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+4. Registration
+
+4.1 Insert Registration
+POST /ea/registration
+JSON input:  { "requestdate": "date", "requeststatus": id from request_stats, "canonicalid": "base64 value", "receiveddate": "date", "pubkey": "base64 value", "apppermissions" : "base64 value", "certissuepermissions": "base64 value", "certrequestpermissions: "base64 value"}
+JSON output: {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+4.2 Update Registration
+PUT /ea/registration
+JSON input:   { "id" : id,  "requestdate": null/"date", "requeststatus": null/id from request_stats, "canonicalid": null/"base64 value", "receiveddate": null/"date", "pubkey": null/"base64 value", "apppermissions" : null/"base64 value", "certissuepermissions": null/"base64 value", "certrequestpermissions: null/"base64 value"}
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+4.3 Select Registration
+GET /ea/registration?id=id&requestdate=....
+paramters for GET : { "id": null/id, "requestdate": null/"date", "requeststatus": null/id from request_stats, "canonicalid": null/"base64 value", "receiveddate": null/"date", "pubkey": null/"base64 value", "apppermissions" : null/"base64 value", "certissuepermissions": null/"base64 value", "certrequestpermissions: null/"base64 value"}
+
+JSON output: {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"},
+
+array of { "id": id, "requestdate": "date", "requeststatus": id from request_stats, "canonicalid": "base64 value", "receiveddate": "date", "pubkey": "base64 value", "apppermissions" : "base64 value", "certissuepermissions": "base64 value", "certrequestpermissions: "base64 value"}
+
+}
+
+4.4. Delete Registration
+DELETE /ea/registration
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+5. Enrolment
+
+5.1 Insert Enrolment
+POST /ea/enrolment
+JSON input:  { "requestdate" : "date", "request_type"_id" : id from ct_request type, "requeststatus_id": id from ct_request_status, "certificateid": "base64 value", "eov": "date", "receiveddate": "date", "processeddate": "date", "verificationpubkey": "base64 value", "encryptionpubkey": "base64 value", "apppermissions": "base64 value", "certissuepermissions": "base64 valye", "certrequestpermissions": "base64 value", "certificate": null/"base64 value", "ea_id": id from EA table}
+JSON output: {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+5.2 Update Enrolment
+PUT /ea/enrolment
+JSON input:   { "id": id, "requestdate" : null/"date", "request_type"_id" : null/id from ct_request type, "requeststatus_id": null/id from ct_request_status, "certificateid": null/"base64 value", "eov": null/"date", "receiveddate": null/"date", "processeddate": null/"date", "verificationpubkey": null/"base64 value", "encryptionpubkey": null/"base64 value", "apppermissions": null/"base64 value", "certissuepermissions": "base64 valye", "certrequestpermissions": "base64 value", "certificate": null/"base64 value", "ea_id": id from EA table}
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+5.3 Select Enrolment
+GET /ea/enrolment?id=id&requestdate...
+
+Get paramters  { "id": null/id, "requestdate" : null/"date", "request_type"_id" : null/id from ct_request type, "requeststatus_id": null/id from ct_request_status, "certificateid": null/"base64 value", "eov": null/"date", "receiveddate": null/"date", "processeddate": null/"date", "verificationpubkey": null/"base64 value", "encryptionpubkey": null/"base64 value", "apppermissions": null/"base64 value", "certissuepermissions": "base64 valye", "certrequestpermissions": "base64 value", "certificate": null/"base64 value", "ea_id": id from EA table}
+
+JSON output: {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"},
+
+array of  {"id": id,  "requestdate" : "date", "request_type"_id" : id from ct_request type, "requeststatus_id": id from ct_request_status, "certificateid": "base64 value", "eov": "date", "receiveddate": "date", "processeddate": "date", "verificationpubkey": "base64 value", "encryptionpubkey": "base64 value", "apppermissions": "base64 value", "certissuepermissions": "base64 valye", "certrequestpermissions": "base64 value", "certificate": null/"base64 value", "ea_id": id from EA table}
+}
+
+5.4 Delete Enrolment
+DELETE /ea/enrolment
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+

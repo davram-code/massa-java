@@ -1,15 +1,27 @@
 package ro.massa.service.impl;
 
 
+import org.certificateservices.custom.c2x.common.Encodable;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.camanagement.CaCertificateRequest;
+import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.springframework.stereotype.Component;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.common.Utils;
+import ro.massa.db.DatabaseClient;
+import ro.massa.db.ICaRequestDao;
+import ro.massa.db.impl.CaRequestDaoImpl;
+import ro.massa.db.types.EntityType;
+import ro.massa.db.types.RequestType;
+import ro.massa.exception.MassaException;
+import ro.massa.its.CertificationAction;
+import ro.massa.its.DecodingAction;
 import ro.massa.its.RootCA;
 import ro.massa.service.MassaRootService;
 
 import java.nio.charset.StandardCharsets;
+import java.security.PublicKey;
 
 @Component
 public class MassaRootServiceImpl implements MassaRootService {
@@ -37,56 +49,88 @@ public class MassaRootServiceImpl implements MassaRootService {
         }
     }
 
-    @Override
-    public byte[] certifyEnrollmentCA(byte[] request) {
-        log.log("Resolving EA Certificate Request");
+
+    private byte[] certifyCA(byte[] request, DecodingAction decodingAction, CertificationAction certificationAction, ICaRequestDao caRequestDao) {
         try {
-            EtsiTs103097Certificate eaCert = rootCA.initEnrollmentCA(request);
-            return eaCert.getEncoded();
+            VerifyResult<CaCertificateRequest> certRequest = decodingAction.operate(request);
+            int id = caRequestDao.insert(certRequest);
+
+            EtsiTs103097Certificate caCert = certificationAction.operate(certRequest);
+            caRequestDao.updateCert(id, caCert);
+            return caCert.getEncoded();
+
+        } catch (MassaException me) {
+            log.error(me.getMessage());
+            return me.getMessage().getBytes(StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log.error("EA Certificate Request Failed!");
+            log.error("Certificate Request Failed!");
             log.error(e.getMessage());
             return e.getMessage().getBytes(StandardCharsets.UTF_8);
         }
+    }
+
+    @Override
+    public byte[] certifyEnrollmentCA(byte[] request) {
+        log.log("Resolving EA Certificate Request");
+        ICaRequestDao caRequestDao = new CaRequestDaoImpl(RequestType.initial, EntityType.ea);
+        return certifyCA(
+                request,
+                (req) -> {
+                    return rootCA.decodeRequestMessage(req);
+                },
+                (req) -> {
+                    return rootCA.initEnrollmentCA(req);
+                },
+                caRequestDao
+        );
     }
 
     @Override
     public byte[] certifyAuthorizationCA(byte[] request) {
         log.log("Resolving AA Certificate Request");
-        try {
-            EtsiTs103097Certificate aaCert = rootCA.initAuthorizationCA(request);
-            return aaCert.getEncoded();
-        } catch (Exception e) {
-            log.error("EA Certificate Request Failed!");
-            log.error(e.getMessage());
-            return e.getMessage().getBytes(StandardCharsets.UTF_8);
-        }
+        ICaRequestDao caRequestDao = new CaRequestDaoImpl(RequestType.initial, EntityType.aa);
+        return certifyCA(
+                request,
+                (req) -> {
+                    return rootCA.decodeRequestMessage(req);
+                },
+                (req) -> {
+                    return rootCA.initAuthorizationCA(req);
+                },
+                caRequestDao
+        );
     }
 
     @Override
     public byte[] rekeyAuthorizationCA(byte[] request) {
         log.log("Resolving AA Rekey Certificate Request");
-        try {
-            EtsiTs103097Certificate aaCert = rootCA.rekeyAuthorizationCA(request);
-            return aaCert.getEncoded();
-        } catch (Exception e) {
-            log.error("AA Rekey Certificate Request Failed!");
-            log.error(e.getMessage());
-            return e.getMessage().getBytes(StandardCharsets.UTF_8);
-        }
+        ICaRequestDao caRequestDao = new CaRequestDaoImpl(RequestType.rekey, EntityType.aa);
+        return certifyCA(
+                request,
+                (req) -> {
+                    return rootCA.decodeRekeyRequestMessage(req, EntityType.aa);
+                },
+                (req) -> {
+                    return rootCA.initAuthorizationCA(req);
+                },
+                caRequestDao
+        );
     }
 
     @Override
     public byte[] rekeyEnrollmentCA(byte[] request) {
         log.log("Resolving EA Rekey Certificate Request");
-        try {
-            EtsiTs103097Certificate eaCert = rootCA.rekeyEnrollmentCA(request);
-            return eaCert.getEncoded();
-        } catch (Exception e) {
-            log.error("EA Rekey Certificate Request Failed!");
-            log.error(e.getMessage());
-            return e.getMessage().getBytes(StandardCharsets.UTF_8);
-        }
+        ICaRequestDao caRequestDao = new CaRequestDaoImpl(RequestType.rekey, EntityType.ea);
+        return certifyCA(
+                request,
+                (req) -> {
+                    return rootCA.decodeRekeyRequestMessage(req, EntityType.ea);
+                },
+                (req) -> {
+                    return rootCA.initAuthorizationCA(req);
+                },
+                caRequestDao
+        );
     }
 
     @Override

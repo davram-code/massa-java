@@ -1,6 +1,7 @@
 package ro.massa.service;
 
 import org.springframework.stereotype.Service;
+import ro.massa.controller.MassaResponse;
 
 @Service
 public interface MassaEnrollmentService {
@@ -18,6 +19,6 @@ public interface MassaEnrollmentService {
      * @param enrollReq base64 codification of the enrollment request
      * @return Base64 codification of the enrollment response
      */
-    byte[] verifyEnrolCertRequest(byte[] enrollReq);
+    MassaResponse resolveEnrollmentCredentialRequest(byte[] enrollReq);
 
 }

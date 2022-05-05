@@ -67,7 +67,7 @@ public class InitialCA extends ITSEntity {
 
         CertificateSubjectAttributes certificateSubjectAttributes =
                 genCertificateSubjectAttributes(
-                        MassaProperties.getInstance().getCaName(),
+                        this.getName(),
                         aaValidityPeriod,
                         region, new SubjectAssurance(1,3),
                         appPermissions, certIssuePermissions);

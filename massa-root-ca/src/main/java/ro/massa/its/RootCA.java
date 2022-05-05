@@ -1,7 +1,6 @@
 package ro.massa.its;
 
 import jdk.jshell.execution.Util;
-import massa.its.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
 import org.certificateservices.custom.c2x.common.crypto.Algorithm;
 import org.certificateservices.custom.c2x.common.crypto.AlgorithmIndicator;
@@ -17,6 +16,9 @@ import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.Certificate;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.SignedData;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.SignerIdentifier;
+import ro.massa.common.Utils;
+import ro.massa.db.types.EntityType;
+import ro.massa.exception.MassaException;
 import ro.massa.properties.MassaProperties;
 
 import java.security.PrivateKey;
@@ -217,26 +219,36 @@ public class RootCA extends ITSEntity {
         return rootCACertificate;
     }
 
-    public EtsiTs103097Certificate initEnrollmentCA(byte[] request) throws Exception {
-
+    public VerifyResult<CaCertificateRequest> decodeRequestMessage(byte[] request) throws Exception { //TODO: remove useless entityType here
         EtsiTs103097DataSigned caCertificateRequestMessage = new EtsiTs103097DataSigned(request);
         log.log(caCertificateRequestMessage.toString());
         VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult = messagesCaGenerator.verifyCACertificateRequestMessage(caCertificateRequestMessage);
 
+        return caCertificateRequestVerifyResult;
+    }
 
-        PublicKey pubKeySignEA = (PublicKey) cryptoManager.decodeEccPoint(
+    public PublicKey getPubSignKeyFromCaCertificateRequest(VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult) throws Exception {
+        PublicKey pubKeySign = (PublicKey) cryptoManager.decodeEccPoint(
                 caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getType(),
                 (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getValue()
         );
-        log.log(pubKeySignEA.toString());
+        return pubKeySign;
+    }
 
-        PublicKey pubKeyEncEA = (PublicKey) cryptoManager.decodeEccPoint(
+    public PublicKey getPubEncKeyFromCaCertificateRequest(VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult) throws Exception {
+        PublicKey pubKeyEnc = (PublicKey) cryptoManager.decodeEccPoint(
                 caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
                 (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
         );
-        log.log(pubKeyEncEA.toString());
 
-        //Step 2.3.2 - Generate a reference to the Enrollment CA Signing Keys
+        return pubKeyEnc;
+    }
+
+    public EtsiTs103097Certificate initEnrollmentCA(VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult) throws Exception {
+
+        PublicKey pubKeySignEA = getPubSignKeyFromCaCertificateRequest(caCertificateRequestVerifyResult);
+        PublicKey pubKeyEncEA = getPubEncKeyFromCaCertificateRequest(caCertificateRequestVerifyResult);
+
         EtsiTs103097Certificate enrollmentCACertificate = authorityCertGenerator.genEnrollmentCA(
                 caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getId().toString(), // CA Name
                 caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getValidityPeriod(),
@@ -265,24 +277,10 @@ public class RootCA extends ITSEntity {
     }
 
 
-    public EtsiTs103097Certificate initAuthorizationCA(byte[] request) throws Exception {
+    public EtsiTs103097Certificate initAuthorizationCA(VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult) throws Exception {
 
-        EtsiTs103097DataSigned caCertificateRequestMessage = new EtsiTs103097DataSigned(request);
-        log.log(caCertificateRequestMessage.toString());
-        VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult = messagesCaGenerator.verifyCACertificateRequestMessage(caCertificateRequestMessage);
-
-
-        PublicKey pubKeySignAA = (PublicKey) cryptoManager.decodeEccPoint(
-                caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getType(),
-                (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getValue()
-        );
-        log.log(pubKeySignAA.toString());
-
-        PublicKey pubKeyEncAA = (PublicKey) cryptoManager.decodeEccPoint(
-                caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
-                (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
-        );
-        log.log(pubKeyEncAA.toString());
+        PublicKey pubKeySignAA = getPubSignKeyFromCaCertificateRequest(caCertificateRequestVerifyResult);
+        PublicKey pubKeyEncAA = getPubEncKeyFromCaCertificateRequest(caCertificateRequestVerifyResult);
 
         // Generate a reference to the Authorization CA Signing Keys
         log.log("Generating the AA certificate");
@@ -333,116 +331,26 @@ public class RootCA extends ITSEntity {
         return null;
     }
 
-
-    public EtsiTs103097Certificate rekeyAuthorizationCA(byte[] request) throws Exception {
+    public VerifyResult<CaCertificateRequest> decodeRekeyRequestMessage(byte[] request, EntityType entityType) throws Exception {
         EtsiTs103097DataSigned caCertificateRequestMessage = new EtsiTs103097DataSigned(request);
-        log.log(caCertificateRequestMessage.toString());
         SignedData signedData = (SignedData) caCertificateRequestMessage.getContent().getValue();
         HashedId8 h8 = (HashedId8) signedData.getSigner().getValue();
-        log.log(h8.toString());
-        EtsiTs103097Certificate AaCert = getCertFromCTL(h8, CtlEntry.CtlEntryChoices.aa);
-        log.log(AaCert.toString());
-        if(AaCert != null){
+        CtlEntry.CtlEntryChoices caType;
+        if (entityType == EntityType.aa) {
+            caType = CtlEntry.CtlEntryChoices.aa;
+        } else {
+            caType = CtlEntry.CtlEntryChoices.ea;
+        }
+        EtsiTs103097Certificate SubCaCert = getCertFromCTL(h8, caType); //TODO: sa utilizeze baza de date
+
+        if (SubCaCert != null) {
 
             Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{rootCACertificate});
-            Map<HashedId8, Certificate> authCACertStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{AaCert, rootCACertificate});
+            Map<HashedId8, Certificate> authCACertStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{SubCaCert, rootCACertificate});
             VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult = messagesCaGenerator.verifyCACertificateRekeyingMessage(caCertificateRequestMessage, authCACertStore, trustStore);
-
-            PublicKey pubKeySignAA = (PublicKey) cryptoManager.decodeEccPoint(
-                    caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getType(),
-                    (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getValue()
-            );
-            log.log(pubKeySignAA.toString());
-
-            PublicKey pubKeyEncAA = (PublicKey) cryptoManager.decodeEccPoint(
-                    caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
-                    (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
-            );
-            log.log(pubKeyEncAA.toString());
-
-            // Generate a reference to the Authorization CA Signing Keys
-            log.log("Generating the AA new certificate");
-            EtsiTs103097Certificate authorityCACertificate = authorityCertGenerator.genAuthorizationCA(
-                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getId().toString(), // CA Name //TODO: is this the HOSTNAME?
-                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getValidityPeriod(),
-                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getRegion(),  //GeographicRegion
-                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getAssuranceLevel(), // subject assurance (optional)
-                    signatureScheme, //signingPublicKeyAlgorithm
-                    pubKeySignAA, // signPublicKey, i.e public key in certificate
-                    rootCACertificate, // signerCertificate
-                    rootCASignPubKey, // signCertificatePublicKey,
-                    rootCASignPrvKey,
-                    symmAlg, // symmAlgorithm
-                    encryptionScheme,  // encPublicKeyAlgorithm
-                    pubKeyEncAA // encryption public key
-            );
-            log.log(authorityCACertificate.toString());
-
-            CTL.add(new CtlCommand(new CtlEntry(new AaEntry(
-                    authorityCACertificate,
-                    new Url("http://localhost:8082/massa/authorization"))
-            )));
-            generateCTL();
-            return authorityCACertificate;
+            return caCertificateRequestVerifyResult;
+        } else {
+            throw new MassaException("decodeRekeyMessage: Null SubCaCert");
         }
-
-        return null;
     }
-
-    public EtsiTs103097Certificate rekeyEnrollmentCA(byte[] request) throws Exception {
-        EtsiTs103097DataSigned caCertificateRequestMessage = new EtsiTs103097DataSigned(request);
-        log.log(caCertificateRequestMessage.toString());
-        SignedData signedData = (SignedData) caCertificateRequestMessage.getContent().getValue();
-        HashedId8 h8 = (HashedId8) signedData.getSigner().getValue();
-        log.log(h8.toString());
-        EtsiTs103097Certificate EaCert = getCertFromCTL(h8, CtlEntry.CtlEntryChoices.ea);
-        log.log(EaCert.toString());
-        if(EaCert != null){
-
-            Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{rootCACertificate});
-            Map<HashedId8, Certificate> authCACertStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{EaCert, rootCACertificate});
-            VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult = messagesCaGenerator.verifyCACertificateRekeyingMessage(caCertificateRequestMessage, authCACertStore, trustStore);
-
-            PublicKey pubKeySignEA = (PublicKey) cryptoManager.decodeEccPoint(
-                    caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getType(),
-                    (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getVerificationKey().getValue()
-            );
-            log.log(pubKeySignEA.toString());
-
-            PublicKey pubKeyEncEA = (PublicKey) cryptoManager.decodeEccPoint(
-                    caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getType(),
-                    (EccCurvePoint) caCertificateRequestVerifyResult.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()
-            );
-            log.log(pubKeyEncEA.toString());
-
-            // Generate a reference to the Authorization CA Signing Keys
-            log.log("Generating the EA new certificate");
-            EtsiTs103097Certificate enrollmentCACertificate = authorityCertGenerator.genEnrollmentCA(
-                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getId().toString(), // CA Name //TODO: is this the HOSTNAME?
-                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getValidityPeriod(),
-                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getRegion(),  //GeographicRegion
-                    caCertificateRequestVerifyResult.getValue().getRequestedSubjectAttributes().getAssuranceLevel(), // subject assurance (optional)
-                    signatureScheme, //signingPublicKeyAlgorithm
-                    pubKeySignEA, // signPublicKey, i.e public key in certificate
-                    rootCACertificate, // signerCertificate
-                    rootCASignPubKey, // signCertificatePublicKey,
-                    rootCASignPrvKey,
-                    symmAlg, // symmAlgorithm
-                    encryptionScheme,  // encPublicKeyAlgorithm
-                    pubKeyEncEA // encryption public key
-            );
-            log.log(enrollmentCACertificate.toString());
-
-            CTL.add(new CtlCommand(new CtlEntry(new EaEntry(
-                    enrollmentCACertificate,
-                    new Url("http://localhost:8081/massa/validation"),
-                    new Url("http://localhost:8081/massa/enrollment"))
-            )));
-            generateCTL();
-            return enrollmentCACertificate;
-        }
-
-        return null;
-    }
-
 }

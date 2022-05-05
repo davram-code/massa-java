@@ -1,0 +1,203 @@
+1. Operator
+
+1.1. Insert Operator 
+POST /rootca/operator
+
+JSON input:  {"name": "Name", "certificate": "base64 encoded x509 certificate" } 
+JSON output: {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+1.2. Update Operator
+PUT /rootca/operator
+
+JSON input:  { "id" : id, "name": null/"NAME", certificate" : null//"base64 value"}
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+1.3 Select
+GET /rootca/operator?id=x&name=name&certificate=base64value
+
+parameters to be used in GET : { "id" : null/id, "name": null/"NAME", certificate" : null//"base64 value"}
+JSON output:{"succes":"true"/"false" , "error_details": null/{"error_code": id, ","error_message": "error message"},
+              array of { "id": id, "name": "Name", "certificate": "base64 encoded x509 certificate"  }
+			}
+
+1.4 Delete Operator
+DELETE /rootca/operator
+
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+2. Engine 
+
+2.1. Insert Engine 
+POST /rootca/engine
+
+JSON input:  { "name": "name", "description" : "description", "status": 1/0 according to ct_engine_status, "adress": "172.16.101.180", "port": 25125, "keychain" : "base64 val", "pin": "12515523"}
+JSON output:  {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+2.2 Update Engine 
+PUT  /rootca/engine
+
+JSON input:  { "id": id, "name": null/"name", "description" : null/"description", "status": null/ 1 or 0 according to ct_engine_status, "adress": null/"172.16.101.180", "port": null/25125, "keychain" : null/"base64 val", "pin": null/"12515523"}
+JSON output: {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+2.3 Select Engine 
+GET /rootca/engine?id=x&name=name&.....
+
+parameters to be used in GET  { "id": null/id, "name": null/"name", "description" : null/"description", "status": null/ 1 or 0 according to ct_engine_status, "adress": null/"172.16.101.180", "port": null/25125, "keychain" : null/"base64 val", "pin": null/"12515523"}
+
+JSON output  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"},
+			   array of {"id": 1, "name": "name", "description" : "description", "status": 1/0 according to ct_engine_status, "adress": "172.16.101.180", "port": 25125, "keychain" : "base64 val", "pin": "12515523"}
+ }
+
+2.4. Delete Engine
+DELETE /rootca/engine 
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+3. CA
+
+3.1 Insert CA
+POST /rootca/ca
+JSON Input: { "name": "name of CA", "description": "description", "keyname": "keyname label", "pp": "public point in base64", "curve_id": id from ct_curve_type, "certificate" : null/"certficate in base64", "ca_status_id": id from ct_ca_status table, "engine_id": id from engine table, "registerdate" : "date", "enddate": "date of expiration", "operator_id": id from operator table  }
+JSON output: {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+3.2 Update CA: 
+PUT /rootca/ca
+JSON input:   { "id": id, "name": null/"name of CA", "description": null/"description", "keyname": null/"keyname label", "pp": null/"public point in base64", "curve_id": null/id from ct_curve_type, "certificate" : null/"certficate in base64", "ca_status_id": null/id from ct_ca_status table, "engine_id": null/id from engine table, "registerdate" : null/"date", "enddate": null/"date of expiration", "operator_id": null/id from operator table  }
+JSON output: {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+3.3. Select CA
+GET /rootca/ca?id=x&name=name&...
+
+parameters to get  { "id": null/id, "name": null/"name of CA", "description": null/"description", "keyname": null/"keyname label", "pp": null/"public point in base64", "curve_id": null/id from ct_curve_type, "certificate" : null/"certficate in base64", "ca_status_id": null/id from ct_ca_status table, "engine_id": null/id from engine table, "registerdate" : null/"date", "enddate": null/"date of expiration", "operator_id": null/id from operator table  }
+
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"},
+
+array of  { "id": id, "name": "name of CA", "description": "description", "keyname": "keyname label", "pp": "public point in base64", "curve_id": id from ct_curve_type, "certificate" : null/"certficate in base64", "ca_status_id": id from ct_ca_status table, "engine_id": id from engine table, "registerdate" : "date", "enddate": "date of expiration", "operator_id": id from operator table  }
+
+}
+
+3.4 Delete CA
+DELETE /rootca/ca
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+4. Request 
+
+4.1 Insert Request
+POST /rootca/request
+
+JSON input:  {"requestdate" : "request date", "requesttype_id": id from ct_request_type table, "entitytype_id" : id from ct_entity_type table, "requeststatus_id": id from ct_request_stats, "certificate" : "base64 value", "eov" : "date", "receiveddate": "date", "processeddate": "date", verificationpubkey"  : "base64 value", "encryptionpubkey": "base64 value", "apppermissions": "base64 value", "certissuepermissions": "base64 value", "certrequestpermissions": null/ "base64 value", "certificate": null/"base64 value", "caid": id from CA table }
+
+JSON output: {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+4.2 Update Request
+PUT /rootca/request
+
+JSON input:  { "id": id , "requestdate" : null/"request date", "requesttype_id": null/id from ct_request_type table, "entitytype_id" : null/id from ct_entity_type table, "requeststatus_id": null/id from ct_request_stats, "certificate" : null/"base64 value", "eov" : null/"date", "receiveddate": null/"date", "processeddate": null/"date", verificationpubkey"  : null/"base64 value", "encryptionpubkey": null/"base64 value", null/"apppermissions": null/"base64 value", "certissuepermissions": null/"base64 value", "certrequestpermissions": null/ "base64 value","certificate": null/"base64 value", "caid": null/id from CA table }
+
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+4.3 Select Request
+GET /rootca/request?id=x&requestdate=....
+
+get parameters  { "id": null/id , "requestdate" : null/"request date", "requesttype_id": null/id from ct_request_type table, "entitytype_id" : null/id from ct_entity_type table, "requeststatus_id": null/id from ct_request_stats, "certificate" : null/"base64 value", "eov" : null/"date", "receiveddate": null/"date", "processeddate": null/"date", verificationpubkey"  : null/"base64 value", "encryptionpubkey": null/"base64 value", null/"apppermissions": null/"base64 value", "certissuepermissions": null/"base64 value", "certrequestpermissions": null/ "base64 value","certificate": null/"base64 value", "caid": null/id from CA table }
+
+JSON output:{"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"},
+
+array of { "id": id , "requestdate" : "request date", "requesttype_id": id from ct_request_type table, "entitytype_id" : id from ct_entity_type table, "requeststatus_id": id from ct_request_stats, "certificate" : "base64 value", "eov" : "date", "receiveddate": "date", "processeddate": "date", verificationpubkey"  : "base64 value", "encryptionpubkey": "base64 value", "apppermissions": "base64 value", "certissuepermissions": "base64 value", "certrequestpermissions":  "base64 value","certificate": "base64 value", "caid": id from CA table }
+}
+
+4.4. Delete Request
+DELETE /rootca/request
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+5. ctl
+
+5.1 Insert CTL
+POST /rootca/ctl
+JSON input:  { "issuedate": "date", "value" : "base64 value"}
+JSON output: {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+5.2 Update CTL
+PUT /rootca/ctl
+JSON input:  { "id": id,  "issuedate": null/"date", "value" : null/"base64 value"}
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+5.3 Select CTL
+GET /rootca/ctl?id=x&issuedate=...
+
+paramters of get:  { "id": null/id, "issuedate": null/"date", "value" : null/"base64 value"}
+JSON output: {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"},
+
+	array of { "id": id, "issuedate": "date", "value" : "base64 value"}
+}
+
+5.4 Delete CTL
+DELETE /rootca/ctl
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+6. revoked_certificates
+
+6.1 Insert revoked certificate
+POST /rootca/revoked_certificates
+JSON input:  { "revokedate": "date", "certificate_id": "base64 encoded value", "reason": null/"reason", "includedincrl": true/false, "crlid": null/id from crl table if included includedincrl" }
+JSON output: {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+6.2 Update revoked Certificate
+PUT /rootca/revoked_certificates
+JSON input:  { "id": id,  "revokedate": null/"date", "certificate_id": null/"base64 encoded value", "reason": null/"reason", "includedincrl": null/true or false, "crlid": null/id from crl table if included includedincrl" }
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+6.3 Select revoked certificate
+GET /rootca/revoked_certificates?id=x&revokedate=....
+
+get paramters: { "id": null/id, "revokedate": null/"date", "certificate_id": null/"base64 encoded value", "reason": null/"reason", "includedincrl": null/true or false, "crlid": null/id from crl table if included includedincrl" }
+
+JSON output:{"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"},
+array of { "id": id,  "revokedate": "date", "certificate_id": "base64 encoded value", "reason": null/"reason", "includedincrl": true/false, "crlid": null/id from crl table if included includedincrl" }
+}
+
+6.4 Delete revoked_certificates
+DELETE /rootca/revoked_certificates
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+7. crl
+
+7.1 Insert CRL
+POST /rootca/crl
+JSON input:  { "issuedate": "date", "value" : "base64 value"}
+JSON output: {"succes":"true"/"false","id" : ID_of_inserted value, "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+7.2 Update CRL
+PUT /rootca/crl
+JSON input:   { "id": id,  "issuedate": null/"date", "value" : null/"base64 value"}
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }
+
+7.3 Select CRL
+GET /rootca/crl?id=x&issuedate=...
+get paramters :  { "id": null/id, "issuedate": null/"date", "value" : null/"base64 value"}
+
+JSON output:{"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"},
+array of { "id": id, "issuedate": "date", "value" : "base64 value"}
+}
+
+7.4 Delete CRL
+DELETE /rootca/crl
+JSON input:  { "id" : id } 
+JSON output:  {"succes":"true"/"false", "error_details": null/{"error_code": id, ","error_message": "error message"} }

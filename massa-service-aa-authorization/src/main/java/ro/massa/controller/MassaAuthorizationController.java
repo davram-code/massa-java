@@ -43,7 +43,7 @@ public class MassaAuthorizationController {
 
     @PostMapping(path = "/authorization")
     public ResponseEntity<byte[]> postAuthorizationRequest(@RequestBody byte[] base64Request) {
-
-        return new ResponseEntity<byte[]>(authorizationService.resolveAuthorizationCertificateRequest(base64Request), HttpStatus.OK);
+        MassaResponse massaResponse = authorizationService.resolveAuthorizationCertificateRequest(base64Request);
+        return new ResponseEntity<byte[]>(massaResponse.getContent(), massaResponse.getHttpStatus());
     }
 }
