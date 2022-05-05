@@ -33,6 +33,7 @@ public abstract class MassaDaoImpl {
         return base64(getBytes(encodable));
     }
 
+
     protected String base64(byte[] data) {
         if (data.length > 0)
             return new String(Base64Utils.encode(data));

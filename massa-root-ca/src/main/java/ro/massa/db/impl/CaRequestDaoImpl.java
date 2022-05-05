@@ -22,6 +22,8 @@ public class CaRequestDaoImpl extends MassaDaoImpl implements ICaRequestDao {
 
     private  RequestType requestType;
     private EntityType entityType;
+    private VerifyResult<CaCertificateRequest> request;
+    private String receivedate = null;
     public CaRequestDaoImpl(RequestType requestType, EntityType entityType)
     {
         this.requestType = requestType;
@@ -33,6 +35,8 @@ public class CaRequestDaoImpl extends MassaDaoImpl implements ICaRequestDao {
     public int insert(VerifyResult<CaCertificateRequest> request) throws MassaException {
 
         log.log(request.getHeaderInfo().toString());
+        this.request = request;
+        this.receivedate = new Date().toString();
 
         JSONObject jsonPayload = new JSONObject()
                 .put("requestdate", request.getHeaderInfo().getGenerationTime().asDate().toString())
@@ -42,7 +46,7 @@ public class CaRequestDaoImpl extends MassaDaoImpl implements ICaRequestDao {
                 .put("certificate", "null")
                 .put("certificate_id", -1)
                 .put("eov", "1970-01-01")
-                .put("receiveddate", new Date().toString())
+                .put("receiveddate", receivedate)
                 .put("processeddate", "1970-01-01")
                 .put("verificationpubkey", base64(request.getValue().getPublicKeys().getVerificationKey().getValue()))
                 .put("encryptionpubkey", base64(request.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()))
@@ -66,11 +70,19 @@ public class CaRequestDaoImpl extends MassaDaoImpl implements ICaRequestDao {
                     certificate.getToBeSigned().getValidityPeriod().getDuration().getValueAsInt());
 
             JSONObject jsonPayload = new JSONObject()
+                    .put("id", id)
+                    .put("requestdate", request.getHeaderInfo().getGenerationTime().asDate().toString())
+                    .put("requesttype_id", requestType.getValue())
+                    .put("entitytype_id", entityType.getValue())
                     .put("requeststatus_id", RequestStatus.certified.getValue())
                     .put("certificate", base64(certificate.getEncoded()))
-                    .put("certificate_id", certificate.hashCode())
+                    .put("certificate_id", Integer.toString(certificate.hashCode()))
                     .put("eov", eov.toString())
+                    .put("receiveddate", receivedate)
                     .put("processeddate", new Date().toString())
+                    .put("verificationpubkey", base64(request.getValue().getPublicKeys().getVerificationKey().getValue()))
+                    .put("encryptionpubkey", base64(request.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()))
+                    .put("apppermissions", base64(request.getValue().getRequestedSubjectAttributes().getAppPermissions()))
                     .put("certissuepermissions", "null")
                     .put("certrequestpermissions", "null")
                     .put("caid", 20);

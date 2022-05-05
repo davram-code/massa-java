@@ -55,9 +55,9 @@ public class MassaRootServiceImpl implements MassaRootService {
             VerifyResult<CaCertificateRequest> certRequest = decodingAction.operate(request);
             int id = caRequestDao.insert(certRequest);
 
-            EtsiTs103097Certificate eaCert = certificationAction.operate(certRequest);
-            caRequestDao.updateCert(id, eaCert);
-            return eaCert.getEncoded();
+            EtsiTs103097Certificate caCert = certificationAction.operate(certRequest);
+            caRequestDao.updateCert(id, caCert);
+            return caCert.getEncoded();
 
         } catch (MassaException me) {
             log.error(me.getMessage());
