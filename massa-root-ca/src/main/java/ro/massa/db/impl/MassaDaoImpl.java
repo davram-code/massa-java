@@ -41,7 +41,7 @@ public abstract class MassaDaoImpl {
     }
 
     protected void testSuccess(JSONObject jsonObject) throws MassaException {
-        if (!jsonObject.getString("succes").equals("true")) {
+        if (!jsonObject.getString("success").equals("true")) {
             throw new MassaException("DB Exception: " + jsonObject.toString());
         }
     }

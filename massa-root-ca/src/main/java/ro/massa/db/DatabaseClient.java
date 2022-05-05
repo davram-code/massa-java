@@ -17,21 +17,6 @@ import java.security.cert.X509Certificate;
 public class DatabaseClient {
     static private MassaLog log = MassaLogFactory.getLog(DatabaseClient.class);
 
-    static public void database_test() {
-        JSONObject jsonPayload = new JSONObject()
-                .put("name", "Dima Andrei")
-                .put("certificate", "this0is0a0test0that0runs0at0each0rootca0start");
-
-        JSONObject response = DatabaseClient.sendDatabaseMessage("POST", "/rootca/operator", jsonPayload);
-        if (response.getString("succes").equals("true")) {
-            int id = response.getInt("id");
-            log.log("Introduced id " + id);
-            JSONObject response2 = DatabaseClient.sendDatabaseMessage("GET", "/rootca/operator", new UrlQuerry().add("id", id));
-
-        }
-
-    }
-
     static private void trustAllCerts() {
         /*
          *  fix for
