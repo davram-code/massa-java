@@ -29,7 +29,13 @@ public class EnrollmentDaoImpl extends MassaDaoImpl implements IEnrollmentDao {
 //                "certrequestpermissions": "base64 value",
 //                "certificate": null/"base64 value",
 //                "ea_id": id from EA table
-        DatabaseClient.sendDatabaseMessage("POST", "/ea/enrolment", jsonPayload);
+
+        try {
+            DatabaseClient.sendDatabaseMessage("POST", "/ea/enrolment", jsonPayload);
+        } catch (Exception e) {
+            log.log("Not implemented: " + e.getMessage());
+        }
+
 
         return "UniqueID";
     }
@@ -39,8 +45,11 @@ public class EnrollmentDaoImpl extends MassaDaoImpl implements IEnrollmentDao {
         JSONObject jsonPayload = new JSONObject()
                 .put("requeststatus_id", RequestStatus.malformed)
                 .put("request", base64(enrollmentRequest)); //TODO: ce facem cu request-urile malformed?
-
-        DatabaseClient.sendDatabaseMessage("POST", "/ea/enrolment", jsonPayload);
+        try {
+            DatabaseClient.sendDatabaseMessage("POST", "/ea/enrolment", jsonPayload);
+        } catch (Exception e) {
+            log.log("Not implemented: " + e.getMessage());
+        }
 
         return "UniqueID";
     }
@@ -51,9 +60,13 @@ public class EnrollmentDaoImpl extends MassaDaoImpl implements IEnrollmentDao {
                 .put("id", id)
                 .put("certificate", base64(ec))
                 .put("processeddate", new Date().toString())
-                .put("requeststatus_id", RequestStatus.certified);;
-
-        DatabaseClient.sendDatabaseMessage("PUT", "/aa/authorization_requests", jsonPayload);
+                .put("requeststatus_id", RequestStatus.certified);
+        ;
+        try {
+            DatabaseClient.sendDatabaseMessage("PUT", "/ea/enrollment", jsonPayload);
+        } catch (Exception e) {
+            log.log("Not implemented: " + e.getMessage());
+        }
 
     }
 
@@ -62,7 +75,10 @@ public class EnrollmentDaoImpl extends MassaDaoImpl implements IEnrollmentDao {
         JSONObject jsonPayload = new JSONObject()
                 .put("id", id)
                 .put("requeststatus_id", status);
-
-        DatabaseClient.sendDatabaseMessage("PUT", "/ea/enrolment", jsonPayload);
+        try {
+            DatabaseClient.sendDatabaseMessage("PUT", "/ea/enrolment", jsonPayload);
+        } catch (Exception e) {
+            log.log("Not implemented: " + e.getMessage());
+        }
     }
 }

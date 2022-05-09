@@ -41,10 +41,11 @@ public abstract class MassaDaoImpl {
             return "null"; //TODO
     }
 
-    protected void testSuccess(JSONObject jsonObject) throws MassaException {
+    protected boolean testSuccess(JSONObject jsonObject) throws MassaException {
         if (!jsonObject.getString("success").equals("true")) {
             throw new MassaException("DB Exception: " + jsonObject.toString());
         }
+        else return true;
     }
 
     protected Date addYearsToDate(Date date, int years) {
