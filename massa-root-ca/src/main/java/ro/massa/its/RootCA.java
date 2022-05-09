@@ -21,6 +21,7 @@ import ro.massa.db.types.EntityType;
 import ro.massa.exception.MassaException;
 import ro.massa.properties.MassaProperties;
 
+import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.time.LocalDate;
@@ -29,7 +30,6 @@ import java.time.ZoneId;
 import java.util.*;
 
 public class RootCA extends ITSEntity {
-    final static int SWEDEN = 752;
     private GeographicRegion region;
     private ETSIAuthorityCertGenerator authorityCertGenerator;
 
@@ -43,24 +43,41 @@ public class RootCA extends ITSEntity {
     List<CtlCommand> CTL;
     List<CrlEntry> CRL;
 
-    public RootCA() throws Exception {
-        // Define the region
-        List<Integer> countries = new ArrayList<Integer>();
-        countries.add(SWEDEN);
-        region = GeographicRegion.generateRegionForCountrys(countries);
+    public RootCA(
+            PublicKey rootCASignPubKey,
+            PrivateKey rootCASignPrvKey,
+            PublicKey rootCAEncPubKey,
+            GeographicRegion region,
+            ValidityPeriod rootCAValidityPeriod
+    ) throws Exception {
+        this.rootCASignPubKey = rootCASignPubKey;
+        this.rootCASignPrvKey = rootCASignPrvKey;
+        this.rootCAEncPubKey = rootCAEncPubKey;
 
-        //Step 2.1 - Create an authority certificate generator
+        this.region = region;
+        this.rootCAValidityPeriod = rootCAValidityPeriod;
+
         authorityCertGenerator = new ETSIAuthorityCertGenerator(cryptoManager);
 
-        rootCASignPubKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
-        rootCASignPrvKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
+        CTL = new ArrayList<>();
+        CRL = new ArrayList<>();
 
-        rootCAEncPubKey = Utils.readPublicKey(MassaProperties.getInstance().getPathEncPublicKey());
+        testCRL_addToBeRevokedCert(); /* TODO: delete in production */
 
+    }
 
-        rootCAValidityPeriod = new ValidityPeriod(
-                new Date(), Duration.DurationChoices.years,
-                MassaProperties.getInstance().getRootCaValidityYears());
+    public RootCA(
+            EtsiTs103097Certificate rootCACertificate,
+            PrivateKey rootCASignPrvKey
+    ) throws Exception {
+        this.rootCASignPubKey = getPubSignKeyFromCertificate(rootCACertificate);
+        this.rootCASignPrvKey = rootCASignPrvKey;
+        this.rootCAEncPubKey = getPubEncKeyFromCertificate(rootCACertificate);
+
+        this.region = rootCACertificate.getToBeSigned().getRegion();
+        this.rootCAValidityPeriod = rootCACertificate.getToBeSigned().getValidityPeriod();
+
+        authorityCertGenerator = new ETSIAuthorityCertGenerator(cryptoManager);
 
         CTL = new ArrayList<>();
         CRL = new ArrayList<>();
@@ -199,7 +216,11 @@ public class RootCA extends ITSEntity {
         Utils.dump(MassaProperties.getInstance().getPathCtl(), ctlMessage);
     }
 
-    public EtsiTs103097Certificate getSelfSignedCertificate() throws Exception {
+    public CaCredentials getSelfSignedCertificate() throws Exception {
+
+        KeyPair encKeys = generateEncKeyPair();
+        KeyPair signKeys = generateSignKeyPair();
+
         rootCACertificate = authorityCertGenerator.genRootCA(
                 MassaProperties.getInstance().getRootCaName(), // caName
                 rootCAValidityPeriod, //ValidityPeriod
@@ -208,15 +229,15 @@ public class RootCA extends ITSEntity {
                 -1, // chainDepthRange
                 Hex.decode("0138"), // cTLServiceSpecificPermissions, 2 octets
                 signatureScheme, //signingPublicKeyAlgorithm
-                rootCASignPubKey, // signPublicKey
-                rootCASignPrvKey, // signPrivateKey
+                signKeys.getPublic(), // signPublicKey
+                signKeys.getPrivate(), // signPrivateKey
                 symmAlg, // symmAlgorithm
                 encryptionScheme,  // encPublicKeyAlgorithm
-                rootCAEncPubKey); // encPublicKey
+                encKeys.getPublic()); // encPublicKey
 
         //The CTL issued by a RCA shall not contain the following information: the TLM certificate and associated linked
         //certificate (optional) and the Root CAs certificates.
-        return rootCACertificate;
+        return new CaCredentials(encKeys, signKeys, rootCACertificate);
     }
 
     public VerifyResult<CaCertificateRequest> decodeRequestMessage(byte[] request) throws Exception { //TODO: remove useless entityType here
@@ -234,6 +255,7 @@ public class RootCA extends ITSEntity {
         );
         return pubKeySign;
     }
+
 
     public PublicKey getPubEncKeyFromCaCertificateRequest(VerifyResult<CaCertificateRequest> caCertificateRequestVerifyResult) throws Exception {
         PublicKey pubKeyEnc = (PublicKey) cryptoManager.decodeEccPoint(

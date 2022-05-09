@@ -3,12 +3,14 @@ package ro.massa.db.impl;
 import org.certificateservices.custom.c2x.common.Encodable;
 import org.json.JSONObject;
 import org.springframework.util.Base64Utils;
+import java.util.Base64;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.exception.MassaException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -39,6 +41,14 @@ public abstract class MassaDaoImpl {
             return new String(Base64Utils.encode(data));
         else
             return "null"; //TODO
+    }
+
+    protected byte[] decodeBase64(String data){
+        if (data.length() > 0) {
+            return Base64.getDecoder().decode(data.getBytes(StandardCharsets.UTF_8));
+        }
+        else
+            return null; //TODO
     }
 
     protected boolean testSuccess(JSONObject jsonObject) throws MassaException {

@@ -5,7 +5,7 @@ import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResu
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.json.JSONObject;
 import ro.massa.db.DatabaseClient;
-import ro.massa.db.ICaRequestDao;
+import ro.massa.db.IRequestDao;
 import ro.massa.db.UrlQuerry;
 import ro.massa.db.types.EntityType;
 import ro.massa.db.types.RequestStatus;
@@ -13,18 +13,15 @@ import ro.massa.db.types.RequestType;
 import ro.massa.exception.MassaException;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.PublicKey;
-import java.util.Calendar;
 import java.util.Date;
 
-public class CaRequestDaoImpl extends MassaDaoImpl implements ICaRequestDao {
+public class RequestDaoImpl extends MassaDaoImpl implements IRequestDao {
 
     private  RequestType requestType;
     private EntityType entityType;
     private VerifyResult<CaCertificateRequest> request;
     private String receivedate = null;
-    public CaRequestDaoImpl(RequestType requestType, EntityType entityType)
+    public RequestDaoImpl(RequestType requestType, EntityType entityType)
     {
         this.requestType = requestType;
         this.entityType = entityType;

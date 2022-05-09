@@ -2,12 +2,12 @@ package ro.massa.its;
 
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.camanagement.CaCertificateRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.ETSITS102941MessagesCaGenerator;
+import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.BasePublicEncryptionKey;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.HashAlgorithm;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.Signature;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.SymmAlgorithm;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.Ieee1609Dot2Data;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
@@ -15,6 +15,7 @@ import ro.massa.common.Utils;
 import ro.massa.properties.MassaProperties;
 
 import java.security.KeyPair;
+import java.security.PublicKey;
 
 public class ITSEntity {
     protected MassaLog log = MassaLogFactory.getLog(ITSEntity.class);
@@ -27,8 +28,7 @@ public class ITSEntity {
     protected Ieee1609Dot2CryptoManager cryptoManager;
     protected ETSITS102941MessagesCaGenerator messagesCaGenerator;
 
-    public ITSEntity() throws Exception
-    {
+    public ITSEntity() throws Exception {
         log.log("Initializing ITS Entity");
         msgGenVersion = MassaProperties.getInstance().getVersion();
         digestAlgorithm = MassaProperties.getInstance().getHashAlgorithm();
@@ -48,15 +48,32 @@ public class ITSEntity {
                 true); // If EC points should be represented as uncompressed.
     }
 
-//    public void generateSignKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
-//        KeyPair keyPair = cryptoManager.generateKeyPair(signatureScheme);
-//        Utils.dump(pubKeyPath, keyPair.getPublic());
-//        Utils.dump(prvKeyPath, keyPair.getPrivate());
-//    }
-//
-//    public void generateEncKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
-//        KeyPair keyPair = cryptoManager.generateKeyPair(encryptionScheme);
-//        Utils.dump(pubKeyPath, keyPair.getPublic());
-//        Utils.dump(prvKeyPath, keyPair.getPrivate());
-//    }
+    public KeyPair generateSignKeyPair() throws Exception {
+        return cryptoManager.generateKeyPair(signatureScheme);
+    }
+
+    public KeyPair generateEncKeyPair() throws Exception {
+        return cryptoManager.generateKeyPair(encryptionScheme);
+    }
+
+    public PublicKey getPubSignKeyFromCertificate(EtsiTs103097Certificate cert) throws Exception {
+        /* Din ce am cautat eu, certificatele Etsi sunt ExplicitCertificate as defined in IEEE Std 1609.2 si contin verificationKey */
+        PublicVerificationKey verificationKey = (PublicVerificationKey) cert.getToBeSigned().getVerifyKeyIndicator().getValue();
+        PublicKey pubKeySign = (PublicKey) cryptoManager.decodeEccPoint(
+                verificationKey.getType(),
+                (EccCurvePoint) verificationKey.getValue()
+        );
+        return pubKeySign;
+
+    }
+
+    public PublicKey getPubEncKeyFromCertificate(EtsiTs103097Certificate cert) throws Exception {
+        PublicKey pubKeyEnc = (PublicKey) cryptoManager.decodeEccPoint(
+                cert.getToBeSigned().getEncryptionKey().getPublicKey().getType(),
+                (EccCurvePoint) cert.getToBeSigned().getEncryptionKey().getPublicKey().getValue()
+        );
+
+        return pubKeyEnc;
+    }
+
 }

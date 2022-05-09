@@ -1,27 +1,21 @@
 package ro.massa.service.impl;
 
 
-import org.certificateservices.custom.c2x.common.Encodable;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.camanagement.CaCertificateRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.springframework.stereotype.Component;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
-import ro.massa.common.Utils;
-import ro.massa.db.DatabaseClient;
-import ro.massa.db.ICaRequestDao;
-import ro.massa.db.impl.CaRequestDaoImpl;
+import ro.massa.db.IRequestDao;
+import ro.massa.db.impl.RequestDaoImpl;
 import ro.massa.db.types.EntityType;
 import ro.massa.db.types.RequestType;
 import ro.massa.exception.MassaException;
-import ro.massa.its.CertificationAction;
-import ro.massa.its.DecodingAction;
-import ro.massa.its.RootCA;
+import ro.massa.its.*;
 import ro.massa.service.MassaRootService;
 
 import java.nio.charset.StandardCharsets;
-import java.security.PublicKey;
 
 @Component
 public class MassaRootServiceImpl implements MassaRootService {
@@ -31,7 +25,7 @@ public class MassaRootServiceImpl implements MassaRootService {
     public MassaRootServiceImpl() {
         log.log("Initializing MASSA Root Service");
         try {
-            rootCA = new RootCA();
+            rootCA = AuthorityFactory.getInstance().createRootCa();
         } catch (Exception e) {
             log.error(e.getMessage());
         }
@@ -41,8 +35,9 @@ public class MassaRootServiceImpl implements MassaRootService {
     public byte[] getSelfSignedCertificate() {
         log.log("Getting the Self Signed certificate of the Root CA");
         try {
-            EtsiTs103097Certificate rootCert = rootCA.getSelfSignedCertificate();
-            return rootCert.getEncoded();
+            CaCredentials rootCredentials = rootCA.getSelfSignedCertificate();
+            AuthorityFactory.getInstance().updateRootCa(rootCredentials);
+            return rootCredentials.getCertificate().getEncoded();
         } catch (Exception e) {
             log.error(e.getMessage());
             return e.getMessage().getBytes(StandardCharsets.UTF_8);
@@ -50,7 +45,7 @@ public class MassaRootServiceImpl implements MassaRootService {
     }
 
 
-    private byte[] certifyCA(byte[] request, DecodingAction decodingAction, CertificationAction certificationAction, ICaRequestDao caRequestDao) {
+    private byte[] certifyCA(byte[] request, DecodingAction decodingAction, CertificationAction certificationAction, IRequestDao caRequestDao) {
         try {
             VerifyResult<CaCertificateRequest> certRequest = decodingAction.operate(request);
             int id = caRequestDao.insert(certRequest);
@@ -72,7 +67,7 @@ public class MassaRootServiceImpl implements MassaRootService {
     @Override
     public byte[] certifyEnrollmentCA(byte[] request) {
         log.log("Resolving EA Certificate Request");
-        ICaRequestDao caRequestDao = new CaRequestDaoImpl(RequestType.initial, EntityType.ea);
+        IRequestDao caRequestDao = new RequestDaoImpl(RequestType.initial, EntityType.ea);
         return certifyCA(
                 request,
                 (req) -> {
@@ -88,7 +83,7 @@ public class MassaRootServiceImpl implements MassaRootService {
     @Override
     public byte[] certifyAuthorizationCA(byte[] request) {
         log.log("Resolving AA Certificate Request");
-        ICaRequestDao caRequestDao = new CaRequestDaoImpl(RequestType.initial, EntityType.aa);
+        IRequestDao caRequestDao = new RequestDaoImpl(RequestType.initial, EntityType.aa);
         return certifyCA(
                 request,
                 (req) -> {
@@ -104,7 +99,7 @@ public class MassaRootServiceImpl implements MassaRootService {
     @Override
     public byte[] rekeyAuthorizationCA(byte[] request) {
         log.log("Resolving AA Rekey Certificate Request");
-        ICaRequestDao caRequestDao = new CaRequestDaoImpl(RequestType.rekey, EntityType.aa);
+        IRequestDao caRequestDao = new RequestDaoImpl(RequestType.rekey, EntityType.aa);
         return certifyCA(
                 request,
                 (req) -> {
@@ -120,7 +115,7 @@ public class MassaRootServiceImpl implements MassaRootService {
     @Override
     public byte[] rekeyEnrollmentCA(byte[] request) {
         log.log("Resolving EA Rekey Certificate Request");
-        ICaRequestDao caRequestDao = new CaRequestDaoImpl(RequestType.rekey, EntityType.ea);
+        IRequestDao caRequestDao = new RequestDaoImpl(RequestType.rekey, EntityType.ea);
         return certifyCA(
                 request,
                 (req) -> {
