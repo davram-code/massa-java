@@ -5,6 +5,7 @@ plugins {
 group 'org.example'
 version '1.0-SNAPSHOT'
 
+
 repositories {
     mavenCentral()
 }
@@ -19,3 +20,13 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+jar {
+    manifest {
+        attributes(
+                "Main-Class": "massa.Application",
+                "Class-Path": "bcprov-jdk15on-1.70.jar bctls-jdk15on-1.70.jar bcpkix-jdk15on-1.70.jar commons-logging-1.2.jar commons-codec-1.15.jar json-20210307.jar bcprov-debug-jdk15on-1.53.jar c2c-common.main.jar massa-lib.main.jar jcommander-1.81.jar time4j-core-2.0.jar CryptoClient-1.0-SNAPSHOT-plain.jar httpclient-4.5.13.jar httpcore-4.4.14.jar"
+        )
+    }
+}
+

@@ -69,6 +69,7 @@ public class CommandLineParser {
 
         } catch (Exception e) {
             System.err.println(e.toString());
+            e.printStackTrace();
             return;
         }
     }
