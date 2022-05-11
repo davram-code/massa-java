@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group 'org.example'
+group 'massa.its'
 version '1.0-SNAPSHOT'
 
 repositories {
@@ -17,4 +17,13 @@ dependencies {
 
 test {
     useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes(
+                "Main-Class": "massa.Application",
+                "Class-Path": "bcprov-jdk15on-1.70.jar c2c-common.main.jar jcommander-1.81.jar time4j-core-2.0.jar"
+        )
+    }
 }
