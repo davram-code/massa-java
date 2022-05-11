@@ -11,5 +11,6 @@ final public class CryptoServerProvider extends Provider {
          put("KeyPairGenerator.RemoteECDSA", "ro.massa.crypto.provider.RemoteKeyPairGenerator");
          put("KeyGenerator.RemoteAES", "ro.massa.crypto.provider.RemoteKeyGenerator"); // RemoteAES/CCM
          put("Cipher.RemoteAES", "ro.massa.crypto.provider.RemoteAes");
+         put("KeyFactory.RemoteECDSA", "ro.massa.crypto.provider.RemoteKeyFactory");
     }
 }

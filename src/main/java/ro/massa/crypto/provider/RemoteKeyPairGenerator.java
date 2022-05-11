@@ -24,9 +24,13 @@ public class RemoteKeyPairGenerator extends KeyPairGeneratorSpi {
         String curveName;
         boolean initialised = false;
 
-        public RemoteKeyPairGenerator() throws Exception {
+    public RemoteKeyPairGenerator() throws Exception {
+        try {
             cryptoClient = new CryptoClient(new CryptoApiClient(endpoint, 6325), "the-organization", "the-user");
+        } catch (Exception e) {
+            e.printStackTrace();
         }
+    }
 
     @Override
     public void initialize(int keysize, SecureRandom random) {
