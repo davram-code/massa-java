@@ -13,6 +13,7 @@ import ro.massa.db.impl.EnrollmentDaoImpl;
 import ro.massa.db.impl.RegistrationDaoImpl;
 import ro.massa.db.types.RequestStatus;
 import ro.massa.exception.DecodeEncodeException;
+import ro.massa.exception.MassaException;
 import ro.massa.its.EnrollmentAuthority;
 import ro.massa.service.MassaEnrollmentService;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
@@ -22,6 +23,8 @@ import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 
 import ro.massa.its.InitialCA;
+
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class MassaEnrollmentServiceImpl implements MassaEnrollmentService {
@@ -83,7 +86,7 @@ public class MassaEnrollmentServiceImpl implements MassaEnrollmentService {
 
         try {
             RequestVerifyResult<InnerEcRequest> enrollmentRequest = ea.decodeRequestMessage(enrollmentRequestMsg);
-            String id = enrollmentDao.insert(enrollmentRequest);
+            int id = enrollmentDao.insert(enrollmentRequest);
 
             try {
 
@@ -111,6 +114,11 @@ public class MassaEnrollmentServiceImpl implements MassaEnrollmentService {
             /* Eroare la parsare */
             enrollmentDao.insertMalformed(enrollmentRequestMsg);
             response = new MassaResponse(null, HttpStatus.BAD_REQUEST);
+        }
+
+        catch (MassaException e) {
+            /* Eroare la parsare */
+            response = new MassaResponse(e.getMessage().getBytes(StandardCharsets.UTF_8), HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         return response;

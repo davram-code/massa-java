@@ -8,77 +8,86 @@ import ro.massa.db.DatabaseClient;
 import ro.massa.db.IEnrollmentDao;
 import ro.massa.db.types.RequestStatus;
 import ro.massa.db.types.RequestType;
+import ro.massa.exception.MassaException;
 
 import java.util.Date;
 
 public class EnrollmentDaoImpl extends MassaDaoImpl implements IEnrollmentDao {
     @Override
-    public String insert(RequestVerifyResult<InnerEcRequest> enrollmentRequest) {
+    public int insert(RequestVerifyResult<InnerEcRequest> enrollmentRequest) throws MassaException {
         JSONObject jsonPayload = new JSONObject()
-                .put("requestdate", enrollmentRequest.getHeaderInfo().getGenerationTime().toString())
-                .put("request_type", new RequestType(enrollmentRequest).getValue())
-                .put("requeststatus_id", RequestStatus.unprocessed)
-                .put("certificateid", base64(enrollmentRequest.getSignerIdentifier().getValue()))
+                .put("request_date", enrollmentRequest.getHeaderInfo().getGenerationTime().asDate().toString())
+                .put("request_type_id", new RequestType(enrollmentRequest).getValue())
+                .put("request_status_id", RequestStatus.unprocessed.getValue())
+                .put("certificate_id", base64(enrollmentRequest.getSignerIdentifier().getValue()))
 //                "eov": "date",
-                .put("receiveddate", new Date().toString())
+                .put("received_date", new Date().toString())
 //                "processeddate": "date",
-                .put("verificationpubkey", base64(enrollmentRequest.getValue().getPublicKeys().getVerificationKey().getValue()))
-                .put("encryptionpubkey", base64(enrollmentRequest.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()));
+                .put("verification_pubkey", base64(enrollmentRequest.getValue().getPublicKeys().getVerificationKey().getValue()))
+                .put("encryption_pubkey", base64(enrollmentRequest.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()));
 //                .put("apppermissions", base64(enrollmentRequest.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getAppPermissions()))
 //                .put("certissuepermissions", base64(enrollmentRequest.getValue().getSharedAtRequest().getRequestedSubjectAttributes().getCertIssuePermissions()))
 //                "certrequestpermissions": "base64 value",
 //                "certificate": null/"base64 value",
 //                "ea_id": id from EA table
 
-        try {
-            DatabaseClient.sendDatabaseMessage("POST", "/ea/enrolment", jsonPayload);
-        } catch (Exception e) {
-            log.log("Not implemented: " + e.getMessage());
-        }
 
+        JSONObject response = DatabaseClient.sendDatabaseMessage("POST", "/ea/enrolment", jsonPayload);
 
-        return "UniqueID";
+        testSuccess(response);
+
+        return response.getInt("id");
     }
 
     @Override
-    public String insertMalformed(byte[] enrollmentRequest) {
-        JSONObject jsonPayload = new JSONObject()
-                .put("requeststatus_id", RequestStatus.malformed)
-                .put("request", base64(enrollmentRequest)); //TODO: ce facem cu request-urile malformed?
+    public void insertMalformed(byte[] enrollmentRequest){
         try {
-            DatabaseClient.sendDatabaseMessage("POST", "/ea/enrolment", jsonPayload);
-        } catch (Exception e) {
-            log.log("Not implemented: " + e.getMessage());
-        }
+            JSONObject jsonPayload = new JSONObject()
+                    .put("request_status_id", RequestStatus.malformed.getValue())
+                    .put("request", base64(enrollmentRequest)); //TODO: ce facem cu request-urile malformed?
+            JSONObject response = DatabaseClient.sendDatabaseMessage("PUT", "/ea/enrolment", jsonPayload);
+            testSuccess(response);
 
-        return "UniqueID";
+        } catch (Exception e) {
+            log.log("Unable to insert malformed request in DB: " + e.getMessage());
+        }
     }
 
     @Override
-    public void updateCert(String id, EtsiTs103097Certificate ec) {
-        JSONObject jsonPayload = new JSONObject()
-                .put("id", id)
-                .put("certificate", base64(ec))
-                .put("processeddate", new Date().toString())
-                .put("requeststatus_id", RequestStatus.certified);
-        ;
+    public void updateCert(int id, EtsiTs103097Certificate certificate) throws MassaException {
         try {
-            DatabaseClient.sendDatabaseMessage("PUT", "/ea/enrollment", jsonPayload);
+            Date eov = addYearsToDate(certificate.getToBeSigned().getValidityPeriod().getStart().asDate(),
+                    certificate.getToBeSigned().getValidityPeriod().getDuration().getValueAsInt());
+
+            JSONObject jsonPayload = new JSONObject()
+                    .put("id", id)
+                    .put("certificate", base64(certificate))
+                    .put("eov", eov.toString())
+                    .put("processed_date", new Date().toString())
+                    .put("request_status_id", RequestStatus.certified.getValue());
+
+
+            JSONObject response = DatabaseClient.sendDatabaseMessage("PUT", "/ea/enrolment", jsonPayload);
+            testSuccess(response);
+
         } catch (Exception e) {
-            log.log("Not implemented: " + e.getMessage());
+            throw new MassaException("DB exception: updateCert :", e);
         }
 
     }
 
     @Override
-    public void updateStatus(String id, RequestStatus status) {
-        JSONObject jsonPayload = new JSONObject()
-                .put("id", id)
-                .put("requeststatus_id", status);
+    public void updateStatus(int id, RequestStatus status) throws MassaException {
         try {
-            DatabaseClient.sendDatabaseMessage("PUT", "/ea/enrolment", jsonPayload);
+            JSONObject jsonPayload = new JSONObject()
+                    .put("id", id)
+                    .put("request_status_id", status.getValue());
+
+            JSONObject response = DatabaseClient.sendDatabaseMessage("PUT", "/ea/enrolment", jsonPayload);
+            testSuccess(response);
+
         } catch (Exception e) {
-            log.log("Not implemented: " + e.getMessage());
+            throw new MassaException("DB exception: updateStatus :", e);
         }
     }
 }

@@ -12,7 +12,8 @@ import ro.massa.exception.MassaException;
 public class RegistrationDaoImpl  extends MassaDaoImpl implements IRegistrationDao  {
     @Override
     public boolean checkRegistration(RequestVerifyResult<InnerEcRequest> enrollmentRequest) throws MassaException {
-        JSONObject response = DatabaseClient.sendDatabaseMessage("GET", "/ea/registration", new UrlQuerry().add("id", 11));
+        UrlQuerry querry = new UrlQuerry().add("canonicalid", hex(enrollmentRequest.getValue().getItsId()));
+        JSONObject response = DatabaseClient.sendDatabaseMessage("GET", "/ea/registration", querry);
         return testSuccess(response);
     }
 }

@@ -87,7 +87,8 @@ public class DatabaseClient {
 
     static private HttpURLConnection getDatabaseConnection(String requestMethod, String uri) throws Exception {
         trustAllCerts();
-        uri = "https://data-api.certsign.ro/massa" + uri;
+        //uri = "https://data-api.certsign.ro/massa" + uri;
+        uri = "http://localhost/massa" + uri;
         log.log(uri);
 
         URL url = new URL(uri);
