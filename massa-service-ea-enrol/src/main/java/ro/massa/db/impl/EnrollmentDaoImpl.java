@@ -9,6 +9,7 @@ import ro.massa.db.IEnrollmentDao;
 import ro.massa.db.types.RequestStatus;
 import ro.massa.db.types.RequestType;
 import ro.massa.exception.MassaException;
+import ro.massa.its.ITSEntity;
 
 import java.util.Date;
 
@@ -19,7 +20,7 @@ public class EnrollmentDaoImpl extends MassaDaoImpl implements IEnrollmentDao {
                 .put("request_date", enrollmentRequest.getHeaderInfo().getGenerationTime().asDate().toString())
                 .put("request_type_id", new RequestType(enrollmentRequest).getValue())
                 .put("request_status_id", RequestStatus.unprocessed.getValue())
-                .put("certificate_id", base64(enrollmentRequest.getSignerIdentifier().getValue()))
+                .put("certificate_id", "null")
 //                "eov": "date",
                 .put("received_date", new Date().toString())
 //                "processeddate": "date",
@@ -45,7 +46,7 @@ public class EnrollmentDaoImpl extends MassaDaoImpl implements IEnrollmentDao {
             JSONObject jsonPayload = new JSONObject()
                     .put("request_status_id", RequestStatus.malformed.getValue())
                     .put("request", base64(enrollmentRequest)); //TODO: ce facem cu request-urile malformed?
-            JSONObject response = DatabaseClient.sendDatabaseMessage("PUT", "/ea/enrolment", jsonPayload);
+            JSONObject response = DatabaseClient.sendDatabaseMessage("POST", "/ea/enrolment", jsonPayload);
             testSuccess(response);
 
         } catch (Exception e) {
@@ -62,6 +63,7 @@ public class EnrollmentDaoImpl extends MassaDaoImpl implements IEnrollmentDao {
             JSONObject jsonPayload = new JSONObject()
                     .put("id", id)
                     .put("certificate", base64(certificate))
+                    .put("certificate_id", ITSEntity.computeHashedId8String(certificate))
                     .put("eov", eov.toString())
                     .put("processed_date", new Date().toString())
                     .put("request_status_id", RequestStatus.certified.getValue());

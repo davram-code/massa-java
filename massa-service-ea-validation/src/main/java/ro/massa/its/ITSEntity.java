@@ -1,17 +1,15 @@
 package ro.massa.its;
 
+import org.bouncycastle.util.encoders.Hex;
+import org.certificateservices.custom.c2x.common.crypto.AlgorithmIndicator;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.ETSITS102941MessagesCaGenerator;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.BasePublicEncryptionKey;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.HashAlgorithm;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.Signature;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.SymmAlgorithm;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.Ieee1609Dot2Data;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
-import ro.massa.common.Utils;
 import ro.massa.properties.MassaProperties;
 
 import java.security.KeyPair;
@@ -24,7 +22,7 @@ public class ITSEntity {
     protected static BasePublicEncryptionKey.BasePublicEncryptionKeyChoices encryptionScheme;
     protected static SymmAlgorithm symmAlg;
 
-    protected Ieee1609Dot2CryptoManager cryptoManager;
+    static protected Ieee1609Dot2CryptoManager cryptoManager;
     protected ETSITS102941MessagesCaGenerator messagesCaGenerator;
 
     public ITSEntity() throws Exception
@@ -48,15 +46,30 @@ public class ITSEntity {
                 true); // If EC points should be represented as uncompressed.
     }
 
-//    public void generateSignKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
-//        KeyPair keyPair = cryptoManager.generateKeyPair(signatureScheme);
-//        Utils.dump(pubKeyPath, keyPair.getPublic());
-//        Utils.dump(prvKeyPath, keyPair.getPrivate());
-//    }
-//
-//    public void generateEncKeyPair(String pubKeyPath, String prvKeyPath) throws Exception{
-//        KeyPair keyPair = cryptoManager.generateKeyPair(encryptionScheme);
-//        Utils.dump(pubKeyPath, keyPair.getPublic());
-//        Utils.dump(prvKeyPath, keyPair.getPrivate());
-//    }
+    public KeyPair generateSignKeyPair() throws Exception{
+        KeyPair keyPair = cryptoManager.generateKeyPair(signatureScheme);
+        return keyPair;
+    }
+
+    public KeyPair generateEncKeyPair() throws Exception{
+        KeyPair keyPair = cryptoManager.generateKeyPair(encryptionScheme);
+        return keyPair;
+    }
+
+
+    static private byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception {
+        AlgorithmIndicator alg = certificate.getSignature() != null ? certificate.getSignature().getType() : HashAlgorithm.sha256;
+        byte[] certHash = cryptoManager.digest(certificate.getEncoded(), alg);
+        return certHash;
+    }
+
+    static private HashedId8 computeHashedId8(EtsiTs103097Certificate certificate) throws Exception {
+        byte[] hash = computeHash(certificate);
+        return new HashedId8(hash);
+    }
+
+    static public String computeHashedId8String(EtsiTs103097Certificate certificate) throws Exception {
+        HashedId8 hashedId8 = computeHashedId8(certificate);
+        return new String(Hex.encode(hashedId8.getData()));
+    }
 }

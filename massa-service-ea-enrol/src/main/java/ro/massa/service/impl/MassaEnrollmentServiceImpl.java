@@ -92,6 +92,7 @@ public class MassaEnrollmentServiceImpl implements MassaEnrollmentService {
 
                 if (registrationDao.checkRegistration(enrollmentRequest)) {
                     EtsiTs103097Certificate enrollmentCredentialCert = ea.generateEnrollmentCredential(enrollmentRequest);
+                    log.log(enrollmentCredentialCert.toString());
                     enrollmentDao.updateCert(id, enrollmentCredentialCert);
 
                     EtsiTs103097DataEncryptedUnicast enrolResponseMessage = ea.generateOkEnrollmentResponse(enrollmentCredentialCert, enrollmentRequest);

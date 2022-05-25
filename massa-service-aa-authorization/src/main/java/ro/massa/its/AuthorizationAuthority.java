@@ -1,5 +1,6 @@
 package ro.massa.its;
 
+import org.certificateservices.custom.c2x.common.crypto.AlgorithmIndicator;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.*;
@@ -53,6 +54,23 @@ public class AuthorizationAuthority extends SubCA {
         AaRecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, SelfCert)});
         region = GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
     }
+
+    private byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception {
+        AlgorithmIndicator alg = certificate.getSignature() != null ? certificate.getSignature().getType() : HashAlgorithm.sha256;
+        byte[] certHash = this.cryptoManager.digest(certificate.getEncoded(), (AlgorithmIndicator) alg);
+        return certHash;
+    }
+
+    private HashedId8 computeHashedId8(EtsiTs103097Certificate certificate) throws Exception {
+        byte[] hash = computeHash(certificate);
+        return new HashedId8(hash);
+    }
+
+    private String computeHashedId8String(EtsiTs103097Certificate certificate) throws Exception {
+        HashedId8 hashedId8 = computeHashedId8(certificate);
+        return new String(Hex.encode(hashedId8.getData()));
+    }
+
 
     public RequestVerifyResult<InnerAtRequest> decodeRequestMessage(byte[] authRequestMessage) throws DecodeEncodeException {
         log.log("Decrypting Authorization Request");
@@ -168,6 +186,7 @@ public class AuthorizationAuthority extends SubCA {
     ) throws Exception {
         log.log("Generating the Authorization Validation Request for Authorization Request");
         InnerAtRequest innerAtRequest = authRequestResult.getValue();
+
         AuthorizationValidationRequest authorizationValidationRequest = new AuthorizationValidationRequest(
                 innerAtRequest.getSharedAtRequest(), innerAtRequest.getEcSignature());
 

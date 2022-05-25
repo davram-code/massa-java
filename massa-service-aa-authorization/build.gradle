@@ -19,7 +19,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.json:json:20190722'
     testImplementation('org.springframework.boot:spring-boot-starter-test')
-
+    testImplementation "junit:junit:4.11"
 }
 
 test {
@@ -29,5 +29,12 @@ test {
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(13)
+    }
+}
+sourceSets {
+    test {
+        java {
+            srcDirs = ["src/main/test"]  // Note @Peter's comment below
+        }
     }
 }

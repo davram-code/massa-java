@@ -44,29 +44,6 @@ public class RootCA extends ITSEntity {
     List<CrlEntry> CRL;
 
     public RootCA(
-            PublicKey rootCASignPubKey,
-            PrivateKey rootCASignPrvKey,
-            PublicKey rootCAEncPubKey,
-            GeographicRegion region,
-            ValidityPeriod rootCAValidityPeriod
-    ) throws Exception {
-        this.rootCASignPubKey = rootCASignPubKey;
-        this.rootCASignPrvKey = rootCASignPrvKey;
-        this.rootCAEncPubKey = rootCAEncPubKey;
-
-        this.region = region;
-        this.rootCAValidityPeriod = rootCAValidityPeriod;
-
-        authorityCertGenerator = new ETSIAuthorityCertGenerator(cryptoManager);
-
-        CTL = new ArrayList<>();
-        CRL = new ArrayList<>();
-
-        testCRL_addToBeRevokedCert(); /* TODO: delete in production */
-
-    }
-
-    public RootCA(
             EtsiTs103097Certificate rootCACertificate,
             PrivateKey rootCASignPrvKey
     ) throws Exception {
@@ -82,7 +59,7 @@ public class RootCA extends ITSEntity {
         CTL = new ArrayList<>();
         CRL = new ArrayList<>();
 
-        testCRL_addToBeRevokedCert(); /* TODO: delete in production */
+        //testCRL_addToBeRevokedCert(); /* TODO: delete in production */
 
     }
 

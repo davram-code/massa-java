@@ -7,6 +7,12 @@ app = Flask(__name__)
 db_conn = sqlite3.connect('massa.db', check_same_thread=False)
 
 
+def get_first_attribute_value_pair_in_request(request):
+    for arg in request.args:
+        attribute = arg
+        value = request.args.get(attribute)
+        return attribute, value
+
 def get_row_by_attribute_as_json(table, attribute, value):
     row = db_select(db_conn, table, attribute, value)
     row["success"] = "true"
@@ -35,20 +41,19 @@ def get_rootca_ca():
 
 @app.route('/massa/ea/registration', methods = ['GET'])
 def get_ea_registration():
-    for arg in request.args:
-        attribute = arg
-        value = request.args.get(attribute)
-        break
+    attribute, value = get_first_attribute_value_pair_in_request(request)
     return get_row_by_attribute_as_json('registration', attribute, value)
 
-@app.route('/massa/ea/enrolment', methods = ['POST', 'PUT'])
+@app.route('/massa/ea/enrolment', methods = ['POST', 'PUT', 'GET'])
 def post_ea_enrollment():
     if request.method == 'POST':
         return insert_row('enrollment', request.get_json())
     elif request.method == 'PUT':
-        print(request.get_json())
         update_row('enrollment', request.get_json())
         return '{"success" : "true"}'
+    elif request.method == 'GET':
+        attribute, value = get_first_attribute_value_pair_in_request(request)
+        return get_row_by_attribute_as_json('enrollment', attribute, value)
 
 
 if __name__ == '__main__':
