@@ -3,14 +3,13 @@ package ro.massa.db.impl;
 import org.certificateservices.custom.c2x.common.Encodable;
 import org.json.JSONObject;
 import org.springframework.util.Base64Utils;
-import java.util.Base64;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.exception.MassaException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
-import java.nio.charset.StandardCharsets;
+import java.math.BigInteger;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -31,10 +30,17 @@ public abstract class MassaDaoImpl {
         }
     }
 
+    protected String hex(byte[] data) {
+        return new BigInteger(data).toString(16);
+    }
+
     protected String base64(Encodable encodable) {
         return base64(getBytes(encodable));
     }
 
+    protected byte[] base64decode(String encoded){
+        return Base64Utils.decodeFromString(encoded);
+    }
 
     protected String base64(byte[] data) {
         if (data.length > 0)
@@ -43,19 +49,10 @@ public abstract class MassaDaoImpl {
             return "null"; //TODO
     }
 
-    protected byte[] decodeBase64(String data){
-        if (data.length() > 0) {
-            return Base64.getDecoder().decode(data.getBytes(StandardCharsets.UTF_8));
-        }
-        else
-            return null; //TODO
-    }
-
     protected boolean testSuccess(JSONObject jsonObject) throws MassaException {
         if (!jsonObject.getString("success").equals("true")) {
             throw new MassaException("DB Exception: " + jsonObject.toString());
-        }
-        else return true;
+        } else return true;
     }
 
     protected Date addYearsToDate(Date date, int years) {

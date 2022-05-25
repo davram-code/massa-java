@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -22,13 +23,20 @@ public class Utils {
     public static void dump(String fileName, Encodable encodable) throws Exception {
         File fout = new File(fileName);
         try (FileOutputStream outputStream = new FileOutputStream(fout)) {
-            // aici exista metoda getEncoded(), dar nu exista interfata si ar trebui scrisa de 3x functia
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream dos = new DataOutputStream(baos);
-            encodable.encode(dos);
-            byte[] result = baos.toByteArray();
+            byte[] result = getByteArray(encodable);
             outputStream.write(result);
         }
+    }
+
+    public static byte [] getByteArray(Encodable encodable) throws Exception{
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        encodable.encode(dos);
+        return baos.toByteArray();
+    }
+
+    public static String hex(byte[] data) {
+        return new BigInteger(1, data).toString(16);
     }
 
     public static void dump(String fileName, Key pubKey) throws Exception {

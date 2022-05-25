@@ -1,23 +1,30 @@
 package ro.massa.service.impl;
 
-import org.apache.commons.io.FileUtils;
-import org.springframework.stereotype.Component;
-//import ro.massa.CmdLineUtils;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationRequest;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
+import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
+import org.springframework.stereotype.Component;
+import ro.massa.common.MassaLog;
+import ro.massa.common.MassaLogFactory;
+import ro.massa.db.IEnrollmentDao;
+import ro.massa.db.impl.EnrollmentDaoImpl;
 import ro.massa.its.EnrollmentAuthority;
 import ro.massa.service.MassaValidationService;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
+
+//import ro.massa.CmdLineUtils;
 
 @Component
 public class MassaValidationServiceImpl implements MassaValidationService {
-    EnrollmentAuthority ea_app;
+    EnrollmentAuthority ea;
+    MassaLog log = MassaLogFactory.getLog(MassaValidationServiceImpl.class);
+
     public MassaValidationServiceImpl()
     {
         try{
-            ea_app = new EnrollmentAuthority();
+            ea = new EnrollmentAuthority();
         }
         catch(Exception e)
         {
@@ -28,15 +35,23 @@ public class MassaValidationServiceImpl implements MassaValidationService {
 
     @Override
     public byte[] validateAuthorizationCertificateRequest(byte[] authorizationRequest) {
+        log.log("Verifying Validation Authorization Request");
+
+        IEnrollmentDao enrollmentDao = new EnrollmentDaoImpl();
 
         try {
-            System.out.println("Validating ITS...");
-
-            EtsiTs103097DataEncryptedUnicast validation = ea_app.genAuthentificationValidationResponse(authorizationRequest);
-
-            byte[] authorizationValidationResponse = validation.getEncoded();
-            System.out.println("ITS Validation ok!");
-            return authorizationValidationResponse;
+            RequestVerifyResult<AuthorizationValidationRequest> authValidRequest = ea.decodeRequestMessage(authorizationRequest);
+            String signer = ea.getSignerIdentifier(authValidRequest);
+            EtsiTs103097Certificate ecCert = enrollmentDao.getEcCert(signer);
+            if (ea.checkEnrollment(authValidRequest, ecCert))
+            {
+                EtsiTs103097DataEncryptedUnicast authorizationValidationResponse = ea.genAuthorizationValidationResponse(authValidRequest);
+                return authorizationValidationResponse.getEncoded();
+            }
+            else
+            {
+                return "Error".getBytes(StandardCharsets.UTF_8);
+            }
         } catch (Exception e) {
             System.out.println(e.toString());
             return e.toString().getBytes(StandardCharsets.UTF_8);
@@ -46,7 +61,7 @@ public class MassaValidationServiceImpl implements MassaValidationService {
     @Override
     public void reset() {
         try{
-            ea_app = new EnrollmentAuthority();
+            ea = new EnrollmentAuthority();
         }
         catch(Exception e)
         {

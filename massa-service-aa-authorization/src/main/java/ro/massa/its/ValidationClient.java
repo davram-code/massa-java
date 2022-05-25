@@ -17,7 +17,7 @@ public class ValidationClient {
     {
         String ip = MassaProperties.getInstance().getEaIP();
         String port = MassaProperties.getInstance().getEaPort();
-        return "http://" + ip + ":" + port + "/massa/validation/";
+        return "http://" + ip + ":" + port + "/massa/validation";
     }
 
     static public byte[] postBinaryMessageToEA(byte [] payload) throws Exception {

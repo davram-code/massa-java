@@ -42,10 +42,9 @@ public class EnrollmentAuthority extends SubCA {
         trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{selfCaChain[1]});
     }
 
-    public RequestVerifyResult<InnerEcRequest> decodeRequestMessage(byte[] enrollmentRequestMessage) throws DecodeEncodeException
-    {
+    public RequestVerifyResult<InnerEcRequest> decodeRequestMessage(byte[] enrollmentRequestMessage) throws DecodeEncodeException {
         log.log("Decrypting Enrollment Request");
-        try{
+        try {
             EtsiTs103097DataEncryptedUnicast enrolRequestMessage = new EtsiTs103097DataEncryptedUnicast(enrollmentRequestMessage);
 
             Map<HashedId8, Certificate> enrolCredCertStore = messagesCaGenerator.buildCertStore(selfCaChain);
@@ -60,12 +59,10 @@ public class EnrollmentAuthority extends SubCA {
                     trustStore,
                     enrolCARecipients
             );
-
+            log.log(enrolmentRequestResult.toString());
             return enrolmentRequestResult;
 
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new DecodeEncodeException("Error decoding Enrollment Request Message", e);
         }
     }
@@ -114,13 +111,26 @@ public class EnrollmentAuthority extends SubCA {
         return enrollmentCredentialCert;
     }
 
-    public EtsiTs103097DataEncryptedUnicast generateEnrollmentResponse(
+    public EtsiTs103097DataEncryptedUnicast generateOkEnrollmentResponse(
             EtsiTs103097Certificate enrollmentCredentialCert, RequestVerifyResult<InnerEcRequest> enrolmentRequestResult
+    ) throws Exception {
+        return generateEnrollmentResponse(enrolmentRequestResult, EnrollmentResponseCode.ok, enrollmentCredentialCert);
+    }
+
+    public EtsiTs103097DataEncryptedUnicast generateDeniedEnrollmentResponse(RequestVerifyResult<InnerEcRequest> enrolmentRequestResult
+    ) throws Exception {
+        return generateEnrollmentResponse(enrolmentRequestResult, EnrollmentResponseCode.deniedrequest, null);
+    }
+
+    private EtsiTs103097DataEncryptedUnicast generateEnrollmentResponse(
+            RequestVerifyResult<InnerEcRequest> enrolmentRequestResult,
+            EnrollmentResponseCode code,
+            EtsiTs103097Certificate enrollmentCredentialCert
     ) throws Exception {
         // First generate a InnerECResponse
         InnerEcResponse innerEcResponse = new InnerEcResponse(
                 enrolmentRequestResult.getRequestHash(),
-                EnrollmentResponseCode.ok,
+                code,
                 enrollmentCredentialCert);
         // Then generate the EnrolmentResponseMessage with:
         EtsiTs103097DataEncryptedUnicast enrolResponseMessage = messagesCaGenerator.genEnrolmentResponseMessage(

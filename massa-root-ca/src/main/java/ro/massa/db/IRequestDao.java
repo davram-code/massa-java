@@ -7,7 +7,7 @@ import ro.massa.exception.MassaException;
 
 import java.security.PublicKey;
 
-public interface ICaRequestDao {
+public interface IRequestDao {
     int insert(VerifyResult<CaCertificateRequest> request) throws MassaException;
     void updateCert(int id, EtsiTs103097Certificate certificate) throws Exception;
 }

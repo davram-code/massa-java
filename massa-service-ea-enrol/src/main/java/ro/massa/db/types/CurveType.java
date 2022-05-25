@@ -1,7 +1,7 @@
 package ro.massa.db.types;
 
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.Signature;
-import ro.massa.exception.DbException;
+import ro.massa.exception.MassaException;
 
 public class CurveType implements IMassaType {
 
@@ -19,7 +19,7 @@ public class CurveType implements IMassaType {
 
     CurveTypeValue value;
 
-    public CurveType(Signature.SignatureChoices signatureChoices) throws DbException
+    public CurveType(Signature.SignatureChoices signatureChoices) throws MassaException
     {
         switch (signatureChoices)
         {
@@ -33,7 +33,7 @@ public class CurveType implements IMassaType {
                 value = CurveTypeValue.brainpoolP384r1;
                 break;
             default:
-                throw new DbException("Unknown Signature Choice!");
+                throw new MassaException("Unknown Signature Choice!");
         }
     }
 

@@ -8,6 +8,14 @@ fi
 mkdir certificates
 mkdir certificates/station #in folderul test vor exista si certificatele statiei ITS
 
+cd ../massa-its-station
+echo "Creating folder for ITS Station"
+if [ -d "certificates" ]; then
+    rm -r certificates
+fi
+mkdir certificates
+
+
 echo "Creating certificates folder for RootCA..."
 cd ../massa-root-ca
 if [ -d "certificates" ]; then
@@ -130,6 +138,12 @@ cp ../massa-service-ea-enrol/certificates/services/ea/EAcert.bin ../massa-servic
 cp ../massa-service-aa-authorization/certificates/services/aa/AAcert.bin ../massa-service-ea-enrol/certificates/services/ea
 cp ../massa-service-aa-authorization/certificates/services/aa/AAcert.bin ../massa-service-ea-validation/certificates/services/ea
 
+cp ../massa-root-ca/certificates/services/ca/rootCAcert.bin                 ../massa-its-station/certificates
+cp ../massa-service-ea-enrol/certificates/services/ea/EAcert.bin            ../massa-its-station/certificates
+cp ../massa-service-aa-authorization/certificates/services/aa/AAcert.bin    ../massa-its-station/certificates
+
+# obsolete
 cp ../massa-root-ca/certificates/services/ca/rootCAcert.bin                 ../test/certificates/station
 cp ../massa-service-ea-enrol/certificates/services/ea/EAcert.bin            ../test/certificates/station
 cp ../massa-service-aa-authorization/certificates/services/aa/AAcert.bin    ../test/certificates/station
+

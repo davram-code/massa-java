@@ -15,14 +15,14 @@ public class AuthorizationRequestDaoImpl extends MassaDaoImpl implements IAuthor
 
     public String insert(RequestVerifyResult<InnerAtRequest> ar) {
         JSONObject jsonPayload = new JSONObject()
-                .put("requestdate", new Date().toString())
+                .put("requestdate", ar.getHeaderInfo().getGenerationTime().toString())
                 .put("requeststatus_id", RequestStatus.unprocessed)
                 .put("ea_id", base64(ar.getValue().getSharedAtRequest().getEaId()))
                 .put("keytag", base64(ar.getValue().getSharedAtRequest().getKeyTag()))
                 .put("certificateformat", base64(ar.getValue().getSharedAtRequest().getCertificateFormat()))
                 .put("requestedsubjectattreibute", base64(ar.getValue().getSharedAtRequest().getRequestedSubjectAttributes()))
                 .put("eov", "X")
-                .put("receiveddate", "X")
+                .put("receiveddate", new Date().toString())
                 .put("processeddate", "X")
                 .put("verificationpubkey", base64(ar.getValue().getPublicKeys().getVerificationKey().getValue()))
                 .put("encryptionpubkey", base64(ar.getValue().getPublicKeys().getEncryptionKey().getPublicKey().getValue()))
@@ -40,7 +40,6 @@ public class AuthorizationRequestDaoImpl extends MassaDaoImpl implements IAuthor
     @Override
     public String insertMalformed(byte[] ar) {
         JSONObject jsonPayload = new JSONObject()
-                .put("requestdate", new Date().toString())
                 .put("requeststatus_id", RequestStatus.malformed)
                 .put("request", base64(ar)); //TODO: ce facem cu request-urile malformed?
 
