@@ -1,0 +1,36 @@
+plugins {
+    id 'java-library'
+    id 'org.springframework.boot' version '2.6.1'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+apply plugin: 'java'
+apply plugin: 'io.spring.dependency-management'
+
+task CryptoClient(type: Jar) {
+    from { configurations.implementation.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+
+dependencies {
+    //implementation group: 'org.bouncycastle', name: 'bctls-fips', version: '1.0.9'
+    implementation group: 'org.bouncycastle', name: 'bctls-jdk15on', version: '1.70'
+    //implementation group: 'org.bouncycastle', name: 'bc-fips', version: '1.0.2'
+    implementation group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.70'
+    //implementation group: 'org.bouncycastle', name: 'bcpkix-fips', version: '1.0.3'
+    implementation group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.70'
+    implementation group: 'org.json', name: 'json', version: '20210307'
+    implementation  'org.apache.httpcomponents:httpclient:4.5.13'
+}
+
+
+test {
+    useJUnitPlatform()
+}
