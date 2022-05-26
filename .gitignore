@@ -1,4 +1,4 @@
-
+libs/
 src/test/certificates/
 # Created by https://www.toptal.com/developers/gitignore/api/java,intellij,gradle
 # Edit at https://www.toptal.com/developers/gitignore?templates=java,intellij,gradle
@@ -34,8 +34,7 @@ src/test/certificates/
 .idea/**/libraries
 
 # Gradle and Maven with auto-import
-# When using Gradle or Maven with auto-import, you should exclude module files,
-# since they will be recreated, and may cause churn.  Uncomment if using
+# When using Gradle or Maven with auto-import, you should exclude module files,# since they will be recreated, and may cause churn.  Uncomment if using
 # auto-import.
 # .idea/artifacts
 # .idea/compiler.xml
