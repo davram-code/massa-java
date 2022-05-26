@@ -1,0 +1,3 @@
+[submodule "c2c-common"]
+	path = c2c-common
+	url = git@github.com:davram-code/c2c-common-remote.git
