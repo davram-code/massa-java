@@ -9,6 +9,8 @@ import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2Crypto
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.Ieee1609Dot2Data;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.security.KeyPair;
 
 import static org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.PublicVerificationKey.PublicVerificationKeyChoices.ecdsaNistP256;

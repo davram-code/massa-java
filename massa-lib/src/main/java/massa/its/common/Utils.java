@@ -3,15 +3,19 @@ package massa.its.common;
 import org.certificateservices.custom.c2x.common.Encodable;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
+import ro.massa.crypto.provider.RemoteECPrivateKey;
+import ro.massa.crypto.provider.RemoteECPublicKey;
+import ro.massa.crypto.provider.RemoteKeySpec;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-
+import java.util.Scanner;
 
 
 public class Utils {
@@ -33,33 +37,38 @@ public class Utils {
     public static void dump(String fileName, Key pubKey) throws Exception {
         File fout = new File(fileName);
         try (FileOutputStream outputStream = new FileOutputStream(fout)) {
-            outputStream.write(pubKey.getEncoded());
+            if (pubKey instanceof RemoteECPublicKey)
+                outputStream.write(((RemoteECPublicKey)pubKey).getLabel().getBytes(StandardCharsets.UTF_8));
+            if (pubKey instanceof RemoteECPrivateKey)
+                outputStream.write(((RemoteECPrivateKey)pubKey).getLabel().getBytes(StandardCharsets.UTF_8));
         }
     }
 
-
-
     /* UTILS for reading from files */
-
     private static byte[] getByteArray(String fileName) throws Exception {
         File fin = new File(fileName);
         return Files.readAllBytes(fin.toPath());
     }
 
     public static PublicKey readPublicKey(String fileName) throws Exception {
-        byte[] keyBytes = getByteArray(fileName);
-        X509EncodedKeySpec spec =
-                new X509EncodedKeySpec(keyBytes);
-        KeyFactory kf = KeyFactory.getInstance("EC", "BC");
+        File fin = new File(fileName);
+        Scanner myReader = new Scanner(fin);
+        String label = myReader.nextLine();
+        myReader.close();
+
+        KeyFactory kf = KeyFactory.getInstance("RemoteECDSA", "CryptoServerProvider");
+        RemoteKeySpec spec = new RemoteKeySpec(label);
         return kf.generatePublic(spec);
     }
 
     public static PrivateKey readPrivateKey(String fileName) throws Exception {
-        byte[] keyBytes = getByteArray(fileName);
+        File fin = new File(fileName);
+        Scanner myReader = new Scanner(fin);
+        String label = myReader.nextLine();
+        myReader.close();
 
-        PKCS8EncodedKeySpec spec =
-                new PKCS8EncodedKeySpec(keyBytes);
-        KeyFactory kf = KeyFactory.getInstance("EC", "BC");
+        KeyFactory kf = KeyFactory.getInstance("RemoteECDSA", "CryptoServerProvider");
+        RemoteKeySpec spec = new RemoteKeySpec(label);
         return kf.generatePrivate(spec);
     }
 

@@ -31,9 +31,6 @@ import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSA
 
 
 public class EnrollmentAuthority extends ITSEntity {
-
-
-
     private EtsiTs103097Certificate[] enrollmentCAChain;
 
     private ETSIEnrollmentCredentialGenerator enrollmentCredentialCertGenerator;
