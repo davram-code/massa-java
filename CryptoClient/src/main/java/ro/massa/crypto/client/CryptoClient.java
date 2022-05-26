@@ -1,4 +1,5 @@
 package ro.massa.crypto.client;
+
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.http.Header;
@@ -8,8 +9,10 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 import ro.massa.crypto.client.models.EciesEncryptedKey;
+import ro.massa.crypto.provider.RemoteECPublicKey;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 public class CryptoClient {
 
@@ -26,15 +29,14 @@ public class CryptoClient {
     }
 
     private JSONObject checkResult(HttpResponse response) throws CryptoClientException, IOException, DecoderException {
-        if (response == null)
-        {
+        if (response == null) {
             throw new CryptoClientException("Response is null");
         }
         JSONObject responseJson;
         responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
         System.out.println(responseJson.toString());
 
-        if (responseJson.getBoolean("success")){
+        if (responseJson.getBoolean("success")) {
             if (responseJson.has("result"))
                 return responseJson.getJSONObject("result");
             else
@@ -45,8 +47,7 @@ public class CryptoClient {
         }
     }
 
-    public boolean login(String method, String pin)
-    {
+    public boolean login(String method, String pin) {
         JSONObject postDataJson = new JSONObject();
         JSONObject responseJson;
 
@@ -67,8 +68,7 @@ public class CryptoClient {
         return true;
     }
 
-    public boolean logout()
-    {
+    public boolean logout() {
         JSONObject responseJson;
 
         try {
@@ -86,16 +86,13 @@ public class CryptoClient {
     }
 
     /**
-     *
      * @param keyLabel
      * @param keyType
      * @param curveName
-     *
      * @return publicPointUncompressed
      * @throws IOException
      */
-    public byte[] generateKeyPair(String keyLabel, String keyType, String curveName) throws IOException, DecoderException
-    {
+    public byte[] generateKeyPair(String keyLabel, String keyType, String curveName) throws IOException, DecoderException {
         JSONObject responseJson;
         JSONObject postDataJson = new JSONObject();
         JSONObject ecParam = new JSONObject();
@@ -118,8 +115,7 @@ public class CryptoClient {
             return null;
     }
 
-    public void getKeysInfo() throws IOException
-    {
+    public void getKeysInfo() throws IOException {
         JSONObject responseJson;
         HttpResponse response = cryptoApiClient.get(cryptoApiPaths.getApiGetKeysInfo(), null);
         responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
@@ -128,8 +124,7 @@ public class CryptoClient {
         System.out.println(responseJson.toString());
     }
 
-    public byte[] sign(String keyLabel, String mechanims, byte[] data) throws IOException, DecoderException
-    {
+    public byte[] sign(String keyLabel, String mechanims, byte[] data) throws IOException, DecoderException {
         JSONObject responseJson;
         JSONObject postDataJson = new JSONObject();
 
@@ -139,15 +134,15 @@ public class CryptoClient {
         HttpResponse response = cryptoApiClient.post(cryptoApiPaths.getApiSign(keyLabel), postDataJson.toString(), null);
 
         responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
-        if (responseJson.getBoolean("success")){
+        if (responseJson.getBoolean("success")) {
+            System.out.println(responseJson);
             JSONObject sinatureJson = responseJson.getJSONObject("result");
             return Hex.decodeHex(sinatureJson.getString("signature"));
         }
         return null;
     }
 
-    public void generateSymmetricKey(String label) throws IOException
-    {
+    public void generateSymmetricKey(String label) throws IOException {
         JSONObject responseJson;
         JSONObject getDataJson = new JSONObject();
 
@@ -169,7 +164,7 @@ public class CryptoClient {
         System.out.println("aici: " + responseJson);
     }
 
-    public void destroySymmetricKey(String label) throws  IOException {
+    public void destroySymmetricKey(String label) throws IOException {
         JSONObject responseJson;
 
         HttpResponse response = cryptoApiClient.delete(cryptoApiPaths.getApiDestroySymmetricKey(label), null);
@@ -185,13 +180,13 @@ public class CryptoClient {
         String kdfSharedInfoHexString = Hex.encodeHexString(kdfSharedInfo);
 
         return unwrapSymmetric(ephemeralPublicPointHexString, encryptedKeyHexString, authenticationTagHexString,
-                                unwrappingKeyLabel, newKeyLabel, kdfSharedInfoHexString);
+                unwrappingKeyLabel, newKeyLabel, kdfSharedInfoHexString);
     }
-
 
 
     /**
      * Return the unwrapped key label
+     *
      * @param ephemeralPublicPoint
      * @param encryptedKey
      * @param authenticationTag
@@ -238,24 +233,26 @@ public class CryptoClient {
 
     /**
      * Wrap symmetric key
-     * @param algorithm
+     *
+     * @param curveName
      * @param recipientPublicPoint
-     * @param keyLabel Symmetric Key Label
+     * @param keyLabel             Symmetric Key Label
      * @return
      * @throws IOException
      */
-    public EciesEncryptedKey wrapSymmetricKey(String algorithm, String recipientPublicPoint, String keyLabel, String kdfSharedInfo) throws IOException {
+    public EciesEncryptedKey wrapSymmetricKey(String curveName, String recipientPublicPoint, String keyLabel, String kdfSharedInfo) throws IOException {
         JSONObject responseJson;
         JSONObject postDataJson = new JSONObject();
 
         postDataJson.put("mechanism", "EciesIeee16092");
-        postDataJson.put("recipientCurveNameOrOid", algorithm);
+        postDataJson.put("recipientCurveNameOrOid", curveName);
         postDataJson.put("recipientPublicPoint", recipientPublicPoint);
         postDataJson.put("kdfSharedInfo", kdfSharedInfo);
 
         Header[] headers = new Header[1];
         headers[0] = new BasicHeader(HTTP.CONTENT_TYPE, "application/json");
 
+        System.out.println("===============" + postDataJson);
         HttpResponse response = cryptoApiClient.get(cryptoApiPaths.getApiWrapSymmetricKey(keyLabel),
                 postDataJson.toString(), headers);
         //responseJson = new JSONObject(EntityUtils.toString(response.getEntity()));
@@ -304,7 +301,7 @@ public class CryptoClient {
     }
 
     public byte[] symmetricKeyDecrypt(String keyLabel, int authTagLenBytes, String nonce, String data, String additionalAuthData)
-            throws IOException,DecoderException {
+            throws IOException, DecoderException {
         JSONObject responseJson;
         JSONObject postDataJson = new JSONObject();
 
@@ -328,8 +325,7 @@ public class CryptoClient {
         return Hex.decodeHex(responseJson.getJSONObject("result").getString("decryption"));
     }
 
-    public void destroyKeyPair(String keyLabel)
-    {
+    public void destroyKeyPair(String keyLabel) {
         JSONObject responseJson;
         HttpResponse response;
         try {
@@ -341,9 +337,8 @@ public class CryptoClient {
         }
     }
 
-    public void getKeyInfo(String keyLabel)
-    {
-        JSONObject responseJson;
+    public RemoteECPublicKey getKeyInfo(String keyLabel) {
+        JSONObject responseJson = null;
         HttpResponse response;
         try {
             response = cryptoApiClient.get(cryptoApiPaths.getApiGetKeyInfo(keyLabel), null);
@@ -352,6 +347,23 @@ public class CryptoClient {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        byte[] pubPointUncompressed = null;
+        String label = null;
+        String type = null;
+        String curveName = null;
+
+        try {
+            JSONObject keyDetails = responseJson.getJSONObject("result");
+            label = keyDetails.getString("label");
+            type = keyDetails.getString("type");
+            curveName = keyDetails.getJSONObject("ecPublicKey").getString("curveNameOrOid");
+            pubPointUncompressed = Hex.decodeHex(keyDetails.getJSONObject("ecPublicKey").getString("publicPointUncompressed"));
+        } catch (DecoderException e) {
+            e.printStackTrace();
+        }
+
+        return new RemoteECPublicKey(label, type, curveName, pubPointUncompressed);
     }
 
 }

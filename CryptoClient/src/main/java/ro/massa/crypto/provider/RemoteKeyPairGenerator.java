@@ -67,33 +67,20 @@ public class RemoteKeyPairGenerator extends KeyPairGeneratorSpi {
             String uuid = UUID.randomUUID().toString();
 
             String type = "Ec";
-            String name = "";
+            curveName = Utils.translateCurveName(params.getName());
 
-            switch (params.getName()) {
-                case "brainpoolp256r1":
-                    name ="brainpool256r1";
-                    break;
-                case "brainpoolp384r1":
-                    name = "brainpool384r1";
-                    break;
-                case "P-256":
-                    name ="secp256r1";
-                    break;
-                default:
-                    name = "brainpool256r1";
-                    break;
-            }
+
 
 
             // String name = "brainpool256r1";
             byte[] publicPointUncompressed = new byte[0];
             try {
-                publicPointUncompressed = cryptoClient.generateKeyPair(uuid, type, name);
+                publicPointUncompressed = cryptoClient.generateKeyPair(uuid, type, curveName);
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-            PublicKey pubkey = new RemoteECPublicKey(uuid, type, name, publicPointUncompressed);
+            PublicKey pubkey = new RemoteECPublicKey(uuid, type, curveName, publicPointUncompressed);
             PrivateKey privKey = new RemoteECPrivateKey(uuid);
 
             System.out.println("Public Key: " + Hex.encodeHexString(pubkey.getEncoded()));

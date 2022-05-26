@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
 import java.util.UUID;
 
 public class KeyWrapper {
@@ -25,13 +26,13 @@ public class KeyWrapper {
         }
     }
 
-    public EciesEncryptedKey wrapKey(SecretKey key, String algorithm, PublicKey pubkey)
+    public EciesEncryptedKey wrapKey(SecretKey key, String curveName, PublicKey pubkey)
     {
         EciesEncryptedKey ret = null;
 
         // TODO: Remove HARDCODED  kdfSharedInfo
         try {
-            ret = cc.wrapSymmetricKey(algorithm, Hex.encodeHexString(pubkey.getEncoded()),
+            ret = cc.wrapSymmetricKey(Utils.translateCurveName(curveName), Utils.getHexstringOfPubKey((ECPublicKey) pubkey, Utils.getKeySizeByCurve(curveName)),
                 ((RemoteSecretKey)key).getLabel(), "");
         } catch (IOException e) {
             e.printStackTrace();

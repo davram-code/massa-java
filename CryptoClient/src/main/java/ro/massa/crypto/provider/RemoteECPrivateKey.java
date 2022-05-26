@@ -1,6 +1,7 @@
 package ro.massa.crypto.provider;
 
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.PrivateKey;
 
@@ -24,7 +25,7 @@ public class RemoteECPrivateKey implements PrivateKey {
 
     @Override
     public byte[] getEncoded() {
-        return new byte[0];
+        return null;
     }
 
     public String getLabel() {

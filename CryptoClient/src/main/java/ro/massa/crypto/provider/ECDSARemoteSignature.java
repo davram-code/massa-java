@@ -1,6 +1,7 @@
 package ro.massa.crypto.provider;
 
 import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
 import ro.massa.crypto.client.CryptoApiClient;
 import ro.massa.crypto.client.CryptoClient;
 import ro.massa.crypto.client.models.RemoteEcPublicKey;
@@ -68,7 +69,7 @@ public class ECDSARemoteSignature extends SignatureSpi {
 
     @Override
     protected byte[] engineSign() throws SignatureException {
-        System.out.println("engineInitSign");
+        System.out.println("engineSign");
         String mechanism = "Ecdsa";
         byte[] signature = null;
         try {
