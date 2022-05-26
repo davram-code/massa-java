@@ -1,19 +1,4 @@
-*/build/
-*/.gradle/
-*/.idea/
-*/certificates/
-*/log.txt
 
-# Created by https://www.toptal.com/developers/gitignore/api/gradle,java,linux,windows,vim,intellij
-# Edit at https://www.toptal.com/developers/gitignore?templates=gradle,java,linux,windows,vim,intellij
-# Keystores
-*.jks
-*.p12
-*.crt
-*.pem
-
-libs/
-src/test/certificates/
 # Created by https://www.toptal.com/developers/gitignore/api/java,intellij,gradle
 # Edit at https://www.toptal.com/developers/gitignore?templates=java,intellij,gradle
 
@@ -50,7 +35,6 @@ src/test/certificates/
 # Gradle and Maven with auto-import
 # When using Gradle or Maven with auto-import, you should exclude module files,
 # since they will be recreated, and may cause churn.  Uncomment if using
-# When using Gradle or Maven with auto-import, you should exclude module files,# since they will be recreated, and may cause churn.  Uncomment if using
 # auto-import.
 # .idea/artifacts
 # .idea/compiler.xml
@@ -149,67 +133,6 @@ fabric.properties
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 
-### Linux ###
-*~
-
-# temporary files which can be created if a process still has a handle open of a deleted file
-.fuse_hidden*
-
-# KDE directory preferences
-.directory
-
-# Linux trash folder which might appear on any partition or disk
-.Trash-*
-
-# .nfs files are created when an open file is removed but is still being accessed
-.nfs*
-
-### Vim ###
-# Swap
-[._]*.s[a-v][a-z]
-!*.svg  # comment out if you don't need vector files
-[._]*.sw[a-p]
-[._]s[a-rt-v][a-z]
-[._]ss[a-gi-z]
-[._]sw[a-p]
-
-# Session
-Session.vim
-Sessionx.vim
-
-# Temporary
-.netrwhist
-# Auto-generated tag files
-tags
-# Persistent undo
-[._]*.un~
-
-### Windows ###
-# Windows thumbnail cache files
-Thumbs.db
-Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-
-# Dump file
-*.stackdump
-
-# Folder config file
-[Dd]esktop.ini
-
-# Recycle Bin used on file shares
-$RECYCLE.BIN/
-
-# Windows Installer files
-*.cab
-*.msi
-*.msix
-*.msm
-*.msp
-
-# Windows shortcuts
-*.lnk
-
 ### Gradle ###
 .gradle
 build/
@@ -229,11 +152,4 @@ gradle-app.setting
 ### Gradle Patch ###
 **/build/
 
-# Eclipse Gradle plugin generated files
-# Eclipse Core
-.project
-# JDT-specific (Eclipse Java Development Tools)
-.classpath
-
-# End of https://www.toptal.com/developers/gitignore/api/gradle,java,linux,windows,vim,intellij
 # End of https://www.toptal.com/developers/gitignore/api/java,intellij,gradle

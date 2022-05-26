@@ -1,0 +1,18 @@
+<component name="ArtifactManager">
+  <artifact name="massa-cli.main:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/massa_cli_main_jar</output-path>
+    <root id="root">
+      <element id="archive" name="massa-cli.main.jar">
+        <element id="directory" name="META-INF">
+          <element id="file-copy" path="$PROJECT_DIR$/src/main/java/META-INF/MANIFEST.MF" />
+        </element>
+        <element id="module-output" name="massa-cli.main" />
+      </element>
+      <element id="file-copy" path="$PROJECT_DIR$/libs/bcprov-debug-jdk15on-1.53.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/libs/c2c-common.main.jar" />
+      <element id="file-copy" path="$PROJECT_DIR$/libs/massa-lib.main.jar" />
+      <element id="library" level="project" name="Gradle: com.beust:jcommander:1.81" />
+      <element id="file-copy" path="$PROJECT_DIR$/libs/time4j-core-2.0.jar" />
+    </root>
+  </artifact>
+</component>
