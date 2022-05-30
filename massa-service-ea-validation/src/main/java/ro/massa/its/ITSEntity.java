@@ -57,13 +57,13 @@ public class ITSEntity {
     }
 
 
-    static private byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception {
+    static public byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception {
         AlgorithmIndicator alg = certificate.getSignature() != null ? certificate.getSignature().getType() : HashAlgorithm.sha256;
         byte[] certHash = cryptoManager.digest(certificate.getEncoded(), alg);
         return certHash;
     }
 
-    static private HashedId8 computeHashedId8(EtsiTs103097Certificate certificate) throws Exception {
+    static public HashedId8 computeHashedId8(EtsiTs103097Certificate certificate) throws Exception {
         byte[] hash = computeHash(certificate);
         return new HashedId8(hash);
     }

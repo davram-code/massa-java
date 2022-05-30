@@ -7,7 +7,6 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authoriz
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.CertificateSubjectAttributes;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EcSignature;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
-import org.certificateservices.custom.c2x.etsits102941.v131.generator.ETSITS102941SecureDataGenerator;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
@@ -25,50 +24,42 @@ import ro.massa.common.Utils;
 import ro.massa.exception.MassaException;
 import ro.massa.properties.MassaProperties;
 
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.KeyPair;
 import java.util.Date;
 import java.util.Map;
 
 import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
 
 
-public class EnrollmentAuthority extends ITSEntity {
+public class ValidationEnrollmentAuthority extends SubCA {
     private EtsiTs103097Certificate[] enrollmentCAChain;
     private EtsiTs103097Certificate[] authorizationCAChain;
 
-    EtsiTs103097Certificate EaCert;
-    EtsiTs103097Certificate RootCaCert;
     EtsiTs103097Certificate AaCert;
 
-    private ETSIEnrollmentCredentialGenerator enrollmentCredentialCertGenerator;
-    private Map<HashedId8, Certificate> trustStore;
-    ETSITS102941SecureDataGenerator securedDataGenerator;
-
-    PrivateKey signPrivateKey;
-    PublicKey signPublicKey;
-
-    PrivateKey encPrivateKey;
     Map<HashedId8, Receiver> enrolCAReceipients;
 
-    public EnrollmentAuthority() throws Exception {
+    private ETSIEnrollmentCredentialGenerator enrollmentCredentialCertGenerator;
+
+
+
+    public ValidationEnrollmentAuthority(EtsiTs103097Certificate rootCaCert,
+                                         KeyPair signKeyPair,
+                                         KeyPair encKeyPair) throws Exception {
+        this(rootCaCert, null, signKeyPair, encKeyPair);
+    }
+
+    public ValidationEnrollmentAuthority(EtsiTs103097Certificate rootCaCert,
+                                         EtsiTs103097Certificate eaCert,
+                                         KeyPair signKeyPair,
+                                         KeyPair encKeyPair) throws Exception {
+        super(rootCaCert, eaCert, signKeyPair, encKeyPair);
+        log.log("Initializing EA - Validation Instance");
         enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
-
-        EaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathEaCert());
-        RootCaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathRootCaCert());
         AaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathAaCert());
-
-        enrollmentCAChain = new EtsiTs103097Certificate[]{EaCert, RootCaCert};
         authorizationCAChain = new EtsiTs103097Certificate[]{AaCert, RootCaCert};
-
-        trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{enrollmentCAChain[1]});
-
-        signPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
-        signPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
-
-        encPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathEncPrivateKey());
-
-        enrolCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, EaCert)});
+        enrollmentCAChain = new EtsiTs103097Certificate[]{SelfCert, RootCaCert};
+        enrolCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, SelfCert)});
     }
 
     public RequestVerifyResult<AuthorizationValidationRequest> decodeRequestMessage(byte[] authorizationRequest) throws MassaException {
@@ -77,6 +68,9 @@ public class EnrollmentAuthority extends ITSEntity {
 
             Map<HashedId8, Certificate> authCACertStore = messagesCaGenerator.buildCertStore(authorizationCAChain);
             Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{RootCaCert});
+
+            log.log(SelfCert.toString());
+            log.log(encPrivateKey.toString());
 
             RequestVerifyResult<AuthorizationValidationRequest> authorizationValidationRequestVerifyResult = messagesCaGenerator.decryptAndVerifyAuthorizationValidationRequestMessage(
                     authorizationValidationRequestMessage,
@@ -90,44 +84,35 @@ public class EnrollmentAuthority extends ITSEntity {
         }
     }
 
-    public String getSignerIdentifier(RequestVerifyResult<AuthorizationValidationRequest> authorizationValidationRequest) throws MassaException
-    {
-        try{
-            EcSignature ecSignature =  authorizationValidationRequest.getValue().getEcSignature();
+    public String getSignerIdentifier(RequestVerifyResult<AuthorizationValidationRequest> authorizationValidationRequest) throws MassaException {
+        try {
+            EcSignature ecSignature = authorizationValidationRequest.getValue().getEcSignature();
             EtsiTs103097DataSignedExternalPayload payload = null;
-            if(ecSignature.getType() == EcSignature.EcSignatureChoices.encryptedEcSignature)
-            {
+            if (ecSignature.getType() == EcSignature.EcSignatureChoices.encryptedEcSignature) {
                 throw new MassaException("not implemented!");
 //                byte[] decryptedData = this.securedDataGenerator.decryptData(ecSignature.getEncryptedEcSignature(), enrolCAReceipients);
 //                EtsiTs103097DataSignedExternalPayload ecSignaturePayload = new EtsiTs103097DataSignedExternalPayload(decryptedData);
 //                log.log("test this shit!");
 //                log.log(ecSignaturePayload.toString());
-            }
-            else
-            {
+            } else {
                 payload = ecSignature.getEcSignature();
             }
 
             SignedData signedData = (SignedData) payload.getContent().getValue();
             return Utils.hex(Utils.getByteArray(signedData.getSigner().getValue()));
+        } catch (Exception e) {
+            throw new MassaException("Could not get EcSignature", e);
         }
-       catch (Exception e)
-       {
-           throw new MassaException("Could not get EcSignature", e);
-       }
     }
 
     public boolean checkEnrollment(RequestVerifyResult<AuthorizationValidationRequest> authValidRequest, EtsiTs103097Certificate ecCert) {
-        try{
-            EtsiTs103097Certificate[] enrollmentCredCertChain = new EtsiTs103097Certificate[]{ecCert, EaCert, RootCaCert};
+        try {
+            EtsiTs103097Certificate[] enrollmentCredCertChain = new EtsiTs103097Certificate[]{ecCert, SelfCert, RootCaCert};
             Map<HashedId8, Certificate> enrolCredCertStore = messagesCaGenerator.buildCertStore(enrollmentCredCertChain);
             boolean expectPrivacy;
-            if(authValidRequest.getValue().getEcSignature().getType() == EcSignature.EcSignatureChoices.encryptedEcSignature)
-            {
+            if (authValidRequest.getValue().getEcSignature().getType() == EcSignature.EcSignatureChoices.encryptedEcSignature) {
                 expectPrivacy = true;
-            }
-            else
-            {
+            } else {
                 expectPrivacy = false;
             }
 
@@ -139,9 +124,7 @@ public class EnrollmentAuthority extends ITSEntity {
                     trustStore,
                     enrolCAReceipients);
             return true;
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             log.log("Validation failed with error: " + e.getMessage());
             return false;
         }
@@ -153,7 +136,7 @@ public class EnrollmentAuthority extends ITSEntity {
         AuthorizationValidationResponse authorizationValidationResponse = new AuthorizationValidationResponse(
                 authorizationValidationRequestVerifyResult.getRequestHash(),
                 AuthorizationValidationResponseCode.ok,
-                genDummyConfirmedSubjectAttributes(EaCert)
+                genDummyConfirmedSubjectAttributes(SelfCert)
         );
 
         EtsiTs103097DataEncryptedUnicast authorizationValidationResponseMessage = messagesCaGenerator.genAuthorizationValidationResponseMessage(

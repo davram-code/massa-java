@@ -3,12 +3,15 @@ package ro.massa.common;
 import org.certificateservices.custom.c2x.common.Encodable;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -16,19 +19,34 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
 
 public class Utils {
     /* UTILS for writing to files */
     public static void dump(String fileName, Encodable encodable) throws Exception {
         File fout = new File(fileName);
         try (FileOutputStream outputStream = new FileOutputStream(fout)) {
-            // aici exista metoda getEncoded(), dar nu exista interfata si ar trebui scrisa de 3x functia
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            DataOutputStream dos = new DataOutputStream(baos);
-            encodable.encode(dos);
-            byte[] result = baos.toByteArray();
+            byte[] result = getByteArray(encodable);
             outputStream.write(result);
         }
+    }
+
+    public static byte[] getByteArray(Encodable encodable) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        encodable.encode(dos);
+        return baos.toByteArray();
+    }
+
+    public static String hex(byte[] data) {
+        return new BigInteger(1, data).toString(16);
+    }
+
+    public static byte[] decodeBase64(String data) {
+        if (data.length() > 0) {
+            return Base64.getDecoder().decode(data.getBytes(StandardCharsets.UTF_8));
+        } else
+            return null; //TODO
     }
 
     public static void dump(String fileName, Key pubKey) throws Exception {
@@ -44,21 +62,28 @@ public class Utils {
         return Files.readAllBytes(fin.toPath());
     }
 
-    public static PublicKey readPublicKey(String fileName) throws Exception {
-        byte[] keyBytes = getByteArray(fileName);
+    public static PublicKey readPublicKey(byte[] keyBytes) throws Exception {
         X509EncodedKeySpec spec =
                 new X509EncodedKeySpec(keyBytes);
         KeyFactory kf = KeyFactory.getInstance("EC", "BC");
         return kf.generatePublic(spec);
     }
 
-    public static PrivateKey readPrivateKey(String fileName) throws Exception {
+    public static PublicKey readPublicKey(String fileName) throws Exception {
         byte[] keyBytes = getByteArray(fileName);
+        return readPublicKey(keyBytes);
+    }
 
+    public static PrivateKey readPrivateKey(byte[] keyBytes) throws Exception {
         PKCS8EncodedKeySpec spec =
                 new PKCS8EncodedKeySpec(keyBytes);
         KeyFactory kf = KeyFactory.getInstance("EC", "BC");
         return kf.generatePrivate(spec);
+    }
+
+    public static PrivateKey readPrivateKey(String fileName) throws Exception {
+        byte[] keyBytes = getByteArray(fileName);
+        return readPrivateKey(keyBytes);
     }
 
     public static EtsiTs103097Certificate readCertFromFile(String path) throws Exception {
@@ -73,23 +98,17 @@ public class Utils {
         return new SecretKeySpec(getByteArray(path), "AES");
     }
 
-    public static String view(String fileName)
-    {
+    public static String view(String fileName) {
         try {
             EtsiTs103097Certificate cert = readCertFromFile(fileName);
             return cert.toString();
-        }
-        catch (Exception e)
-        {
-
+        } catch (Exception e) {
         }
 
-        try{
+        try {
             EtsiTs103097DataEncryptedUnicast data = readDataEncryptedUnicast(fileName);
             return data.toString();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             System.out.println(e.getMessage());
         }
         return "Unknown file type!";

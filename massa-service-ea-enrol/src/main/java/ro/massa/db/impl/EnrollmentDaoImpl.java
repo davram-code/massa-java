@@ -42,16 +42,16 @@ public class EnrollmentDaoImpl extends MassaDaoImpl implements IEnrollmentDao {
 
     @Override
     public void insertMalformed(byte[] enrollmentRequest){
-        try {
-            JSONObject jsonPayload = new JSONObject()
-                    .put("request_status_id", RequestStatus.malformed.getValue())
-                    .put("request", base64(enrollmentRequest)); //TODO: ce facem cu request-urile malformed?
-            JSONObject response = DatabaseClient.sendDatabaseMessage("POST", "/ea/enrolment", jsonPayload);
-            testSuccess(response);
-
-        } catch (Exception e) {
-            log.log("Unable to insert malformed request in DB: " + e.getMessage());
-        }
+//        try {
+//            JSONObject jsonPayload = new JSONObject()
+//                    .put("request_status_id", RequestStatus.malformed.getValue());
+//                    //.put("request", base64(enrollmentRequest)); //TODO: ce facem cu request-urile malformed?
+//            JSONObject response = DatabaseClient.sendDatabaseMessage("POST", "/ea/enrolment", jsonPayload);
+//            testSuccess(response);
+//
+//        } catch (Exception e) {
+//            log.log("Unable to insert malformed request in DB: " + e.getMessage());
+//        }
     }
 
     @Override

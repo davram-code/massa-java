@@ -9,7 +9,8 @@ import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.db.IEnrollmentDao;
 import ro.massa.db.impl.EnrollmentDaoImpl;
-import ro.massa.its.EnrollmentAuthority;
+import ro.massa.its.AuthorityFactory;
+import ro.massa.its.ValidationEnrollmentAuthority;
 import ro.massa.service.MassaValidationService;
 
 import java.nio.charset.StandardCharsets;
@@ -18,13 +19,13 @@ import java.nio.charset.StandardCharsets;
 
 @Component
 public class MassaValidationServiceImpl implements MassaValidationService {
-    EnrollmentAuthority ea;
+    ValidationEnrollmentAuthority ea;
     MassaLog log = MassaLogFactory.getLog(MassaValidationServiceImpl.class);
 
     public MassaValidationServiceImpl()
     {
         try{
-            ea = new EnrollmentAuthority();
+            ea = AuthorityFactory.getInstance().createEA();
         }
         catch(Exception e)
         {
@@ -61,7 +62,7 @@ public class MassaValidationServiceImpl implements MassaValidationService {
     @Override
     public void reset() {
         try{
-            ea = new EnrollmentAuthority();
+            ea = AuthorityFactory.getInstance().createEA();
         }
         catch(Exception e)
         {

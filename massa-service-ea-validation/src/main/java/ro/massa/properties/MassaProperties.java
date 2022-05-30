@@ -1,13 +1,11 @@
 package ro.massa.properties;
 
-import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.BasePublicEncryptionKey;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.HashAlgorithm;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.Signature;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.SymmAlgorithm;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.Ieee1609Dot2Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 
 import java.io.FileInputStream;
 import java.util.Properties;
@@ -114,4 +112,17 @@ public class MassaProperties {
     public String getLogPrefix() {
         return  properties.getProperty("massa.log-prefix");
     }
+
+    public int getValidityYears(){
+        return Integer.parseInt(properties.getProperty("massa.validity-years"));
+    }
+    public String getCaName(){
+        return properties.getProperty("massa.ca-name");
+    }
+    public String getPathEncPublicKey(){
+        return properties.getProperty("massa.path-enc-pub-key");
+    }
+
+
+
 }
