@@ -40,9 +40,10 @@ public class EnrollmentAuthority extends SubCA {
     public EnrollmentAuthority(EtsiTs103097Certificate rootCaCert,
                                EtsiTs103097Certificate eaCert,
                                KeyPair signKeyPair,
-                               KeyPair encKeyPair) throws Exception
+                               KeyPair encKeyPair,
+                               CtlManager ctlManager) throws Exception
     {
-        super(rootCaCert, eaCert, signKeyPair, encKeyPair);
+        super(rootCaCert, eaCert, signKeyPair, encKeyPair, ctlManager);
         log.log("Initializing EA - Validation Instance");
         enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
     }

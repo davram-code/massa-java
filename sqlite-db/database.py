@@ -20,8 +20,28 @@ def db_create(conn):
   );''')
 
   conn.execute('''
-   CREATE TABLE IF NOT EXISTS REGISTRATION
-  (
+  CREATE TABLE IF NOT EXISTS ea (
+      id                      INTEGER PRIMARY KEY,
+      name                    CHAR(1000) ,
+      description             CHAR(1000) ,
+      enc_prv_key                CHAR(1000) ,
+      enc_pub_key                CHAR(1000) ,
+      sgn_prv_key                CHAR(1000) ,
+      sgn_pub_key                CHAR(1000) ,
+      pp                      CHAR(342) ,
+      curve_id                integer ,
+      certificate             CHAR(2731) ,
+      ea_status_id            integer ,
+      engine_id               integer ,
+      register_date           date,
+      end_date                date,
+      operator_id             integer ,
+      add_date                date
+  );
+  ''')
+
+  conn.execute('''
+   CREATE TABLE IF NOT EXISTS REGISTRATION (
     ID                      INTEGER PRIMARY KEY,
     REQUESTDATE             DATE,
     REQUESTSTATUS           INTEGER,
@@ -88,6 +108,20 @@ def db_create(conn):
       "4 cccc",
       "4 bbb",
       "4 aaaa"
+    );
+  ''')
+
+  conn.execute('''
+  INSERT INTO EA (id, name, description, enc_prv_key, enc_pub_key, sgn_prv_key, sgn_pub_key, ea_status_id)
+      VALUES (
+      7,
+      "ea.mta.ro",
+      "This is Dimas EA",
+      "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgFgr3bAURZRuZaai4g5DEpuD9IxClNOKvukZSq251+qagCgYIKoZIzj0DAQehRANCAAQxpwmvsvVYriaRYsyg1E4L3HYIlq0sPR5GV5ddV8sO7lGL47e8AzOnuDxGHJsvLA7VlhX9NKwfMOxtNkX/wxeQ",
+      "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEMacJr7L1WK4mkWLMoNROC9x2CJatLD0eRleXXVfLDu5Ri+O3vAMzp7g8RhybLywO1ZYV/TSsHzDsbTZF/8MXkA==",
+      "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQg/2mSR8pZ9/uB9rcNxmxMc+JunEkIETFIQ3OBoBjSK+ugCgYIKoZIzj0DAQehRANCAAThkpyeMUKxQYVUF5CtXFwOCqDAZr4947XnyvAIvpyRkCaeGSe4c3aRYpUQjq6ovEsLhxKC7Oro3XnjT5rq+HCi",
+      "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4ZKcnjFCsUGFVBeQrVxcDgqgwGa+PeO158rwCL6ckZAmnhknuHN2kWKVEI6uqLxLC4cSguzq6N1540+a6vhwog==",
+      0
     );
   ''')
 

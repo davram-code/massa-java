@@ -2,6 +2,7 @@ from flask import Flask, request
 from database import db_create, db_select, db_insert, db_update
 import sqlite3
 import json
+import base64
 
 app = Flask(__name__)
 db_conn = sqlite3.connect('massa.db', check_same_thread=False)
@@ -44,6 +45,11 @@ def get_ea_registration():
     attribute, value = get_first_attribute_value_pair_in_request(request)
     return get_row_by_attribute_as_json('registration', attribute, value)
 
+@app.route('/massa/ea/ea', methods = ['GET'])
+def get_ea_ea():
+    attribute, value = get_first_attribute_value_pair_in_request(request)
+    return get_row_by_attribute_as_json('ea', attribute, value)
+
 @app.route('/massa/ea/enrolment', methods = ['POST', 'PUT', 'GET'])
 def post_ea_enrollment():
     if request.method == 'POST':
@@ -55,6 +61,17 @@ def post_ea_enrollment():
         attribute, value = get_first_attribute_value_pair_in_request(request)
         return get_row_by_attribute_as_json('enrollment', attribute, value)
 
+
+@app.route('/massa/update_ea_cert', methods= ['POST'])
+def update_ea_cert():
+    if request.method == 'POST':
+        cert = request.files['file']
+        encoded_cert = base64.b64encode(cert.read())
+        json_dict = {'id' : 7, 'certificate' : encoded_cert.decode("utf-8")}
+        update_row('ea', json_dict)
+    
+    return '\nEA cert insertion OK'
+        
 
 if __name__ == '__main__':
    db_create(db_conn)

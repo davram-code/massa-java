@@ -61,14 +61,14 @@ mkdir certificates
 mkdir certificates/services
 mkdir certificates/services/ea
 
-echo "EA is generating its key pairs..."
-java -jar $JAR --action gen-sign-key-pair \
-    --pub-key certificates/services/ea/SignPubKey.bin \
-    --prv-key certificates/services/ea/SignPrvKey.bin
+# echo "EA is generating its key pairs..."
+# java -jar $JAR --action gen-sign-key-pair \
+#     --pub-key certificates/services/ea/SignPubKey.bin \
+#     --prv-key certificates/services/ea/SignPrvKey.bin
 
-java -jar $JAR --action gen-enc-key-pair \
-    --pub-key certificates/services/ea/EncPubKey.bin \
-    --prv-key certificates/services/ea/EncPrvKey.bin
+# java -jar $JAR --action gen-enc-key-pair \
+#     --pub-key certificates/services/ea/EncPubKey.bin \
+#     --prv-key certificates/services/ea/EncPrvKey.bin
 
 
 echo "GETing EA Certificate Request ..."

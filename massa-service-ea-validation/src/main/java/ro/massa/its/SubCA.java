@@ -28,6 +28,7 @@ public class SubCA extends ITSEntity {
 
     protected EtsiTs103097Certificate[] selfCaChain;
     protected Map<HashedId8, Certificate> trustStore;
+    protected Map<HashedId8, Certificate> certStore;
 
     protected PrivateKey signPrivateKey;
     protected PublicKey signPublicKey;
@@ -43,13 +44,15 @@ public class SubCA extends ITSEntity {
 
     GeographicRegion region;
 
+    CtlManager ctlManager;
+
 
     public SubCA(EtsiTs103097Certificate rootCaCert,
                  EtsiTs103097Certificate subCaCert,
                  KeyPair signKeyPair,
                  KeyPair encKeyPair,
+                 CtlManager ctlMngr,
                  CaStatusType status) throws Exception{
-        log.log("Initializing active SubCa");
         caStatusType = status;
         this.RootCaCert = rootCaCert;
         this.SelfCert = subCaCert;
@@ -60,20 +63,31 @@ public class SubCA extends ITSEntity {
 
         selfCaChain = new EtsiTs103097Certificate[]{SelfCert, RootCaCert};
         trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{selfCaChain[1]});
+
+        if (caStatusType == CaStatusType.active) {
+            ctlManager = ctlMngr;
+            ctlManager.setCryptoManager(cryptoManager);
+            ctlManager.decodeCtl();
+            certStore = messagesCaGenerator.buildCertStore(selfCaChain);
+        }
+
         region = GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
     }
 
     public SubCA(EtsiTs103097Certificate rootCaCert,
                  EtsiTs103097Certificate subCaCert,
                  KeyPair signKeyPair,
-                 KeyPair encKeyPair) throws Exception{
-        this(rootCaCert, subCaCert, signKeyPair, encKeyPair, CaStatusType.active);
+                 KeyPair encKeyPair,
+                 CtlManager ctlManager) throws Exception{
+        this(rootCaCert, subCaCert, signKeyPair, encKeyPair, ctlManager,CaStatusType.active);
+        log.log("Initialized active SubCa");
     }
 
     public SubCA(EtsiTs103097Certificate rootCaCert,
                  KeyPair signKeyPair,
                  KeyPair encKeyPair) throws Exception{
-        this(rootCaCert, null, signKeyPair, encKeyPair, CaStatusType.inactive);
+        this(rootCaCert, null, signKeyPair, encKeyPair, null, CaStatusType.inactive);
+        log.log("Initialized inactive SubCa");
     }
 
     public SubCA() throws Exception

@@ -9,6 +9,8 @@ import ro.massa.db.ICaDao;
 import ro.massa.db.impl.CaDaoImpl;
 import ro.massa.exception.MassaException;
 import ro.massa.properties.MassaProperties;
+import ro.massa.rest.CtlClient;
+import ro.massa.rest.IBinaryClient;
 
 import java.security.KeyPair;
 import java.security.Security;
@@ -19,9 +21,11 @@ public class AuthorityFactory {
     static MassaLog log = MassaLogFactory.getLog(AuthorityFactory.class);
     private static AuthorityFactory single_instance = null;
     ICaDao caDao = new CaDaoImpl();
+    IBinaryClient ctlClient;
 
     private AuthorityFactory() {
         Security.addProvider(new BouncyCastleProvider());
+        ctlClient = new CtlClient();
     }
 
     public static AuthorityFactory getInstance() throws Exception {
@@ -33,6 +37,16 @@ public class AuthorityFactory {
 
     public ValidationEnrollmentAuthority createEA() throws MassaException {
         try {
+            byte[] ctlBytes = ctlClient.sendMessage(
+                    "GET",
+                    "/getctl",
+                    null,
+                    null
+            );
+
+            CtlManager ctlManager = new CtlManager(ctlBytes);
+
+
             caDao.loadCa(7);
             EtsiTs103097Certificate EaCert = caDao.getCertificate();
             KeyPair signKeyPair = caDao.getSignKeyPair();
@@ -56,7 +70,8 @@ public class AuthorityFactory {
                             RootCaCert,
                             EaCert,
                             signKeyPair,
-                            encKeyPair
+                            encKeyPair,
+                            ctlManager
                     );
                 } else //CA doesn't have an active certificate
                 {
@@ -72,6 +87,7 @@ public class AuthorityFactory {
         }
         throw new MassaException("Could not load Enrollment EA");
     }
+
 
 //    public RootCA updateRootCa(CaCredentials caCredentials) throws MassaException {
 //        try {

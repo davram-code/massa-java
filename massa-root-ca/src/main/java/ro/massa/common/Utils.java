@@ -35,6 +35,13 @@ public class Utils {
         }
     }
 
+    public static void dump(String fileName, byte [] data) throws Exception {
+        File fout = new File(fileName);
+        try (FileOutputStream outputStream = new FileOutputStream(fout)) {
+            outputStream.write(data);
+        }
+    }
+
     public static void dump(String fileName, Key pubKey) throws Exception {
         File fout = new File(fileName);
         try (FileOutputStream outputStream = new FileOutputStream(fout)) {

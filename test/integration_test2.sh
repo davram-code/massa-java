@@ -1,6 +1,11 @@
 echo " " > ../log.txt
 
+./reset.sh
+
 ./init.sh
+
+curl -F "file=@../massa-service-ea-enrol/certificates/services/ea/EAcert.bin" http://localhost/massa/update_ea_cert
+
 ./reset.sh
 
 

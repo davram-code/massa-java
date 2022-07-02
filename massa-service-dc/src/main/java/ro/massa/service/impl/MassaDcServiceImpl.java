@@ -21,19 +21,20 @@ public class MassaDcServiceImpl implements MassaDcService {
     @Override
     public byte[] getCTL() {
         try{
-            return getByteArray("certificates/ctl.bin");
+            log.log("returning CTL");
+            return getByteArray("../massa-root-ca/certificates/services/ca/ctl.bin");
         }
         catch (Exception e)
         {
             log.error(e.getMessage());
-            return  null;
+            return null;
         }
     }
 
     @Override
     public byte[] getCRL() {
         try{
-            return getByteArray("certificates/crl.bin");
+            return getByteArray("../massa-root-ca/certificates/services/ca/crl.bin");
         }
         catch (Exception e)
         {

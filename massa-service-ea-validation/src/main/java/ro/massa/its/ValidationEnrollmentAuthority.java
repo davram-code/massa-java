@@ -10,6 +10,7 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetype
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097DataSigned;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097DataSignedExternalPayload;
 import org.certificateservices.custom.c2x.etsits103097.v131.generator.ETSIEnrollmentCredentialGenerator;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
@@ -18,11 +19,13 @@ import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.Certific
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.PsidGroupPermissions;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.SequenceOfPsidGroupPermissions;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.SignedData;
+import org.certificateservices.custom.c2x.ieee1609dot2.generator.DecryptResult;
+import org.certificateservices.custom.c2x.ieee1609dot2.generator.SecuredDataGenerator;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.CertificateReciever;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
 import ro.massa.common.Utils;
+import ro.massa.db.types.EntityType;
 import ro.massa.exception.MassaException;
-import ro.massa.properties.MassaProperties;
 
 import java.security.KeyPair;
 import java.util.Date;
@@ -32,10 +35,9 @@ import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSA
 
 
 public class ValidationEnrollmentAuthority extends SubCA {
-    private EtsiTs103097Certificate[] enrollmentCAChain;
-    private EtsiTs103097Certificate[] authorizationCAChain;
+    //private EtsiTs103097Certificate[] authorizationCAChain;
 
-    EtsiTs103097Certificate AaCert;
+    //EtsiTs103097Certificate AaCert;
 
     Map<HashedId8, Receiver> enrolCAReceipients;
 
@@ -44,27 +46,45 @@ public class ValidationEnrollmentAuthority extends SubCA {
 
 
     public ValidationEnrollmentAuthority(EtsiTs103097Certificate rootCaCert,
-                                         KeyPair signKeyPair,
-                                         KeyPair encKeyPair) throws Exception {
-        this(rootCaCert, null, signKeyPair, encKeyPair);
+                               KeyPair signKeyPair,
+                               KeyPair encKeyPair) throws Exception
+    {
+        super(rootCaCert, signKeyPair, encKeyPair);
+        log.log("Initializing EA - Validation Instance");
+        enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
     }
 
     public ValidationEnrollmentAuthority(EtsiTs103097Certificate rootCaCert,
-                                         EtsiTs103097Certificate eaCert,
-                                         KeyPair signKeyPair,
-                                         KeyPair encKeyPair) throws Exception {
-        super(rootCaCert, eaCert, signKeyPair, encKeyPair);
+                               EtsiTs103097Certificate eaCert,
+                               KeyPair signKeyPair,
+                               KeyPair encKeyPair,
+                               CtlManager ctlManager) throws Exception
+    {
+        super(rootCaCert, eaCert, signKeyPair, encKeyPair, ctlManager);
         log.log("Initializing EA - Validation Instance");
         enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
-        AaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathAaCert());
-        authorizationCAChain = new EtsiTs103097Certificate[]{AaCert, RootCaCert};
-        enrollmentCAChain = new EtsiTs103097Certificate[]{SelfCert, RootCaCert};
+        //AaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathAaCert());
+        //authorizationCAChain = new EtsiTs103097Certificate[]{AaCert, RootCaCert};
         enrolCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, SelfCert)});
     }
 
     public RequestVerifyResult<AuthorizationValidationRequest> decodeRequestMessage(byte[] authorizationRequest) throws MassaException {
         try {
+            SecuredDataGenerator securedDataGenerator = new SecuredDataGenerator(msgGenVersion,
+                    cryptoManager, // The initialized crypto manager to use.
+                    digestAlgorithm, // digest algorithm to use.
+                    signatureScheme);
+
             EtsiTs103097DataEncryptedUnicast authorizationValidationRequestMessage = new EtsiTs103097DataEncryptedUnicast(authorizationRequest);
+
+            log.log("Avem AA?");
+            log.log(authorizationValidationRequestMessage.toString());
+
+            DecryptResult decryptedData = securedDataGenerator.decryptDataWithSecretKey(authorizationValidationRequestMessage, enrolCAReceipients);
+            EtsiTs103097DataSigned outerSignature = new EtsiTs103097DataSigned(decryptedData.getData());
+            log.log(outerSignature.toString());
+            EtsiTs103097Certificate AaCert = ctlManager.getSignerCertFromCTL(outerSignature, EntityType.aa);
+            EtsiTs103097Certificate[] authorizationCAChain = new EtsiTs103097Certificate[]{AaCert, RootCaCert};
 
             Map<HashedId8, Certificate> authCACertStore = messagesCaGenerator.buildCertStore(authorizationCAChain);
             Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{RootCaCert});
@@ -142,7 +162,7 @@ public class ValidationEnrollmentAuthority extends SubCA {
         EtsiTs103097DataEncryptedUnicast authorizationValidationResponseMessage = messagesCaGenerator.genAuthorizationValidationResponseMessage(
                 new Time64(new Date()), // generation Time
                 authorizationValidationResponse,
-                enrollmentCAChain, // EA signing chain
+                selfCaChain, // EA signing chain
                 signPrivateKey, // EA signing private key
                 symmAlg, // Encryption algorithm used.
                 authorizationValidationRequestVerifyResult.getSecretKey() // The symmetric key generated in the request.

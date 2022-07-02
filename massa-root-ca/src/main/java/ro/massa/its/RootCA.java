@@ -190,7 +190,7 @@ public class RootCA extends ITSEntity {
 
         ctlSequence += 1;
         log.log(ctlMessage.toString());
-        Utils.dump(MassaProperties.getInstance().getPathCtl(), ctlMessage);
+        Utils.dump(MassaProperties.getInstance().getPathCtl(), ctlMessage.getEncoded());
     }
 
     public CaCredentials getSelfSignedCertificate() throws Exception {
