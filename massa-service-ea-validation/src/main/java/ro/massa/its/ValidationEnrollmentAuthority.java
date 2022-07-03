@@ -35,62 +35,50 @@ import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSA
 
 
 public class ValidationEnrollmentAuthority extends SubCA {
-    //private EtsiTs103097Certificate[] authorizationCAChain;
-
-    //EtsiTs103097Certificate AaCert;
-
     Map<HashedId8, Receiver> enrolCAReceipients;
 
     private ETSIEnrollmentCredentialGenerator enrollmentCredentialCertGenerator;
-
+    private SecuredDataGenerator securedDataGenerator;
 
 
     public ValidationEnrollmentAuthority(EtsiTs103097Certificate rootCaCert,
-                               KeyPair signKeyPair,
-                               KeyPair encKeyPair) throws Exception
-    {
+                                         KeyPair signKeyPair,
+                                         KeyPair encKeyPair) throws Exception {
         super(rootCaCert, signKeyPair, encKeyPair);
-        log.log("Initializing EA - Validation Instance");
-        enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
+        InitGenerators();
     }
 
     public ValidationEnrollmentAuthority(EtsiTs103097Certificate rootCaCert,
-                               EtsiTs103097Certificate eaCert,
-                               KeyPair signKeyPair,
-                               KeyPair encKeyPair,
-                               CtlManager ctlManager) throws Exception
-    {
-        super(rootCaCert, eaCert, signKeyPair, encKeyPair, ctlManager);
-        log.log("Initializing EA - Validation Instance");
-        enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
-        //AaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathAaCert());
-        //authorizationCAChain = new EtsiTs103097Certificate[]{AaCert, RootCaCert};
+                                         EtsiTs103097Certificate eaCert,
+                                         KeyPair signKeyPair,
+                                         KeyPair encKeyPair,
+                                         byte[] ctlBytes) throws Exception {
+        super(rootCaCert, eaCert, signKeyPair, encKeyPair, ctlBytes);
+        InitGenerators();
         enrolCAReceipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, SelfCert)});
+    }
+
+    private void InitGenerators() throws MassaException {
+        try {
+            securedDataGenerator = new SecuredDataGenerator(msgGenVersion,
+                    cryptoManager, // The initialized crypto manager to use.
+                    digestAlgorithm, // digest algorithm to use.
+                    signatureScheme);
+            enrollmentCredentialCertGenerator = new ETSIEnrollmentCredentialGenerator(cryptoManager);
+        } catch (Exception e) {
+            throw new MassaException("EA Initializaiton Exception", e);
+        }
+
     }
 
     public RequestVerifyResult<AuthorizationValidationRequest> decodeRequestMessage(byte[] authorizationRequest) throws MassaException {
         try {
-            SecuredDataGenerator securedDataGenerator = new SecuredDataGenerator(msgGenVersion,
-                    cryptoManager, // The initialized crypto manager to use.
-                    digestAlgorithm, // digest algorithm to use.
-                    signatureScheme);
-
             EtsiTs103097DataEncryptedUnicast authorizationValidationRequestMessage = new EtsiTs103097DataEncryptedUnicast(authorizationRequest);
+            EtsiTs103097Certificate AaCert = getAaCertFromCtl(authorizationValidationRequestMessage);
 
-            log.log("Avem AA?");
-            log.log(authorizationValidationRequestMessage.toString());
-
-            DecryptResult decryptedData = securedDataGenerator.decryptDataWithSecretKey(authorizationValidationRequestMessage, enrolCAReceipients);
-            EtsiTs103097DataSigned outerSignature = new EtsiTs103097DataSigned(decryptedData.getData());
-            log.log(outerSignature.toString());
-            EtsiTs103097Certificate AaCert = ctlManager.getSignerCertFromCTL(outerSignature, EntityType.aa);
             EtsiTs103097Certificate[] authorizationCAChain = new EtsiTs103097Certificate[]{AaCert, RootCaCert};
-
             Map<HashedId8, Certificate> authCACertStore = messagesCaGenerator.buildCertStore(authorizationCAChain);
             Map<HashedId8, Certificate> trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{RootCaCert});
-
-            log.log(SelfCert.toString());
-            log.log(encPrivateKey.toString());
 
             RequestVerifyResult<AuthorizationValidationRequest> authorizationValidationRequestVerifyResult = messagesCaGenerator.decryptAndVerifyAuthorizationValidationRequestMessage(
                     authorizationValidationRequestMessage,
@@ -104,7 +92,21 @@ public class ValidationEnrollmentAuthority extends SubCA {
         }
     }
 
-    public String getSignerIdentifier(RequestVerifyResult<AuthorizationValidationRequest> authorizationValidationRequest) throws MassaException {
+    private EtsiTs103097Certificate getAaCertFromCtl(
+            EtsiTs103097DataEncryptedUnicast authorizationValidationRequest
+    ) throws MassaException {
+        try {
+            DecryptResult decryptedData = securedDataGenerator.decryptDataWithSecretKey(authorizationValidationRequest, enrolCAReceipients);
+            EtsiTs103097DataSigned outerSignature = new EtsiTs103097DataSigned(decryptedData.getData());
+            EtsiTs103097Certificate AaCert = ctlManager.getSignerCertFromCTL(outerSignature, EntityType.aa);
+            return AaCert;
+        } catch (Exception e) {
+            throw new MassaException("Exception when getting the Aa Certificate", e);
+        }
+
+    }
+
+    public String getEcSignerIdentifier(RequestVerifyResult<AuthorizationValidationRequest> authorizationValidationRequest) throws MassaException {
         try {
             EcSignature ecSignature = authorizationValidationRequest.getValue().getEcSignature();
             EtsiTs103097DataSignedExternalPayload payload = null;

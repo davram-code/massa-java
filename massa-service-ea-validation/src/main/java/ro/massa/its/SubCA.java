@@ -51,7 +51,7 @@ public class SubCA extends ITSEntity {
                  EtsiTs103097Certificate subCaCert,
                  KeyPair signKeyPair,
                  KeyPair encKeyPair,
-                 CtlManager ctlMngr,
+                 byte[] ctlBytes,
                  CaStatusType status) throws Exception{
         caStatusType = status;
         this.RootCaCert = rootCaCert;
@@ -65,9 +65,7 @@ public class SubCA extends ITSEntity {
         trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{selfCaChain[1]});
 
         if (caStatusType == CaStatusType.active) {
-            ctlManager = ctlMngr;
-            ctlManager.setCryptoManager(cryptoManager);
-            ctlManager.decodeCtl();
+            ctlManager = new CtlManager(ctlBytes, cryptoManager);
             certStore = messagesCaGenerator.buildCertStore(selfCaChain);
         }
 
@@ -78,8 +76,8 @@ public class SubCA extends ITSEntity {
                  EtsiTs103097Certificate subCaCert,
                  KeyPair signKeyPair,
                  KeyPair encKeyPair,
-                 CtlManager ctlManager) throws Exception{
-        this(rootCaCert, subCaCert, signKeyPair, encKeyPair, ctlManager,CaStatusType.active);
+                 byte[] ctlBytes) throws Exception{
+        this(rootCaCert, subCaCert, signKeyPair, encKeyPair, ctlBytes,CaStatusType.active);
         log.log("Initialized active SubCa");
     }
 

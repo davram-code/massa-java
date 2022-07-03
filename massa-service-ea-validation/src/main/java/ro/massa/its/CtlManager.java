@@ -26,44 +26,23 @@ import ro.massa.db.types.EntityType;
 import ro.massa.exception.MassaException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class CtlManager {
     protected MassaLog log = MassaLogFactory.getLog(CtlManager.class);
     List<CtlCommand> CTL;
-    byte[] ctlBytes;
 
     private EtsiTs103097Certificate rootCaCert;
-
-
     protected Ieee1609Dot2CryptoManager cryptoManager;
 
 
-    public CtlManager(byte[] ctlBytes) {
-        CTL = new ArrayList<>();
-        this.ctlBytes = ctlBytes;
-    }
-
-    private void setRootCaCert(SignedData signedData) {
-        SequenceOfCertificate sc = (SequenceOfCertificate)signedData.getSigner().getValue();
-        Certificate signer = (Certificate)sc.getSequenceValues()[0];
-        this.rootCaCert = new EtsiTs103097Certificate(signer.getIssuer(), signer.getToBeSigned(), signer.getSignature());
-    }
-
-
-    public void setCryptoManager(Ieee1609Dot2CryptoManager cryptoManager) {
+    public CtlManager(byte[] ctlBytes, Ieee1609Dot2CryptoManager cryptoManager) throws MassaException {
         this.cryptoManager = cryptoManager;
-    }
 
-    public void decodeCtl() throws MassaException {
         try {
             log.log("Decoding CTL: " + Utils.hex(ctlBytes));
             EtsiTs103097DataSigned rcaCertTL = new EtsiTs103097DataSigned(ctlBytes);
-
-//            Map<HashedId8, Certificate> crlTrustStore = new HashMap<>();
-//            VerifyResult<ToBeSignedRcaCtl> rcaCtl = messagesCaGenerator.verifyRcaCertificateTrustListMessage(rcaCertTL, crlTrustStore, trustStore);
 
             SignedData signedData = (SignedData) rcaCertTL.getContent().getValue();
             EtsiTs102941Data data = this.parseEtsiTs102941Data(signedData, "RcaCertificateTrustListMessage", EtsiTs102941DataContent.EtsiTs102941DataContentChoices.certificateTrustListRca);
@@ -72,21 +51,20 @@ public class CtlManager {
 
             setRootCaCert(signedData);
             CTL = Arrays.asList(rcaCtl.getCtlCommands());
-            log.log(CTL.toString());
-            log.log(rootCaCert.toString());
             ctlBytes = null;
         } catch (Exception e) {
             log.log("CTL decoding failed: " + e.getMessage());
             throw new MassaException("CtlManager decoding error: " + e.getMessage());
         }
-
     }
 
-    public EtsiTs103097Certificate getRootCaCert() {
-        return rootCaCert;
+    private void setRootCaCert(SignedData signedData) {
+        SequenceOfCertificate sc = (SequenceOfCertificate)signedData.getSigner().getValue();
+        Certificate signer = (Certificate)sc.getSequenceValues()[0];
+        this.rootCaCert = new EtsiTs103097Certificate(signer.getIssuer(), signer.getToBeSigned(), signer.getSignature());
     }
 
-    EtsiTs102941Data parseEtsiTs102941Data(SignedData signedData, String messageName, EtsiTs102941DataContent.EtsiTs102941DataContentChoices expectedType) throws IOException {
+    private EtsiTs102941Data parseEtsiTs102941Data(SignedData signedData, String messageName, EtsiTs102941DataContent.EtsiTs102941DataContentChoices expectedType) throws IOException {
         Ieee1609Dot2Data unsecuredData = signedData.getTbsData().getPayload().getData();
         if (unsecuredData.getContent().getType() != Ieee1609Dot2Content.Ieee1609Dot2ContentChoices.unsecuredData) {
             throw new IllegalArgumentException("Invalid encoding in " + messageName + ", signed data should contain payload of unsecuredData.");
@@ -101,6 +79,25 @@ public class CtlManager {
         }
     }
 
+    public EtsiTs103097Certificate getRootCaCert() throws MassaException{
+        throw new MassaException("This should not be used!");
+        //return rootCaCert;
+    }
+
+
+
+    public EtsiTs103097Certificate getSignerCertFromCTL(EtsiTs103097DataSigned dataSigned, EntityType entityType) throws Exception
+    {
+        SignedData signedData = (SignedData) dataSigned.getContent().getValue();
+        HashedId8 h8 = (HashedId8) signedData.getSigner().getValue();
+        CtlEntry.CtlEntryChoices caType;
+        if (entityType == EntityType.aa) {
+            caType = CtlEntry.CtlEntryChoices.aa;
+        } else {
+            caType = CtlEntry.CtlEntryChoices.ea;
+        }
+        return getCertFromCTL(h8, caType);
+    }
 
     private EtsiTs103097Certificate getCertFromCTL(HashedId8 h8, CtlEntry.CtlEntryChoices caType) throws Exception {
         for (CtlCommand ctlCommand : CTL) {
@@ -125,20 +122,6 @@ public class CtlManager {
         return null;
     }
 
-    public EtsiTs103097Certificate getSignerCertFromCTL(EtsiTs103097DataSigned dataSigned, EntityType entityType) throws Exception
-    {
-        SignedData signedData = (SignedData) dataSigned.getContent().getValue();
-        HashedId8 h8 = (HashedId8) signedData.getSigner().getValue();
-        CtlEntry.CtlEntryChoices caType;
-        if (entityType == EntityType.aa) {
-            caType = CtlEntry.CtlEntryChoices.aa;
-        } else {
-            caType = CtlEntry.CtlEntryChoices.ea;
-        }
-        return getCertFromCTL(h8, caType);
-    }
-
-
     private byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception {
         AlgorithmIndicator alg = certificate.getSignature() != null ? certificate.getSignature().getType() : HashAlgorithm.sha256;
         byte[] certHash = this.cryptoManager.digest(certificate.getEncoded(), (AlgorithmIndicator) alg);
@@ -154,6 +137,4 @@ public class CtlManager {
         HashedId8 hashedId8 = computeHashedId8(certificate);
         return new String(Hex.encode(hashedId8.getData()));
     }
-
-
 }

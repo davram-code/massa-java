@@ -15,7 +15,6 @@ import ro.massa.service.MassaValidationService;
 
 import java.nio.charset.StandardCharsets;
 
-//import ro.massa.CmdLineUtils;
 
 @Component
 public class MassaValidationServiceImpl implements MassaValidationService {
@@ -42,7 +41,7 @@ public class MassaValidationServiceImpl implements MassaValidationService {
 
         try {
             RequestVerifyResult<AuthorizationValidationRequest> authValidRequest = ea.decodeRequestMessage(authorizationRequest);
-            String signer = ea.getSignerIdentifier(authValidRequest);
+            String signer = ea.getEcSignerIdentifier(authValidRequest);
             EtsiTs103097Certificate ecCert = enrollmentDao.getEcCert(signer);
             if (ea.checkEnrollment(authValidRequest, ecCert))
             {
