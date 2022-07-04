@@ -6,6 +6,7 @@ import org.springframework.util.Base64Utils;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.exception.MassaException;
+import ro.massa.rest.DatabaseClient;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -14,6 +15,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 public abstract class MassaDaoImpl {
+    static protected DatabaseClient databaseClient = new DatabaseClient();
     static protected MassaLog log = MassaLogFactory.getLog(MassaDaoImpl.class);
 
     protected byte[] getBytes(Encodable encodable) {

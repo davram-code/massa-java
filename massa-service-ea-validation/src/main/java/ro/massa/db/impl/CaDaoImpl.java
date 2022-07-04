@@ -3,9 +3,9 @@ package ro.massa.db.impl;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.json.JSONObject;
 import ro.massa.common.Utils;
-import ro.massa.db.DatabaseClient;
+import ro.massa.rest.DatabaseClient;
 import ro.massa.db.ICaDao;
-import ro.massa.db.UrlQuerry;
+import ro.massa.rest.UrlQuerry;
 import ro.massa.exception.MassaException;
 import ro.massa.its.ITSEntity;
 
@@ -44,7 +44,7 @@ public class CaDaoImpl extends MassaDaoImpl implements ICaDao {
 
     @Override
     public int loadCa(int id) throws MassaException {
-        JSONObject response = DatabaseClient.sendDatabaseMessage("GET", "/ea/ea", new UrlQuerry().add("id", Integer.toString(id)));
+        JSONObject response = databaseClient.sendDatabaseMessage("GET", "/ea/ea", new UrlQuerry().add("id", Integer.toString(id)));
         try {
             certificate = new EtsiTs103097Certificate(Utils.decodeBase64(response.getString("certificate")));
         } catch (Exception e) {
@@ -81,7 +81,7 @@ public class CaDaoImpl extends MassaDaoImpl implements ICaDao {
 
     @Override
     public void updateCert() throws Exception {
-        JSONObject response = DatabaseClient.sendDatabaseMessage("GET", "/ea/ea", new UrlQuerry().add("id", 7));
+        JSONObject response = databaseClient.sendDatabaseMessage("GET", "/ea/ea", new UrlQuerry().add("id", 7));
         log.log("EA data:");
         log.log(response.toString());
     }

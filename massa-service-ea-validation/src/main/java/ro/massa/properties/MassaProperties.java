@@ -85,17 +85,10 @@ public class MassaProperties {
         return Ieee1609Dot2Data.DEFAULT_VERSION;
     }
 
-    public String getPathEaCert() {
-        return properties.getProperty("massa.path-ea-cert");
-    }
-
     public String getPathRootCaCert(){
         return properties.getProperty("massa.path-root-ca-cert");
     }
 
-    public String getPathAaCert(){
-        return properties.getProperty("massa.path-aa-cert");
-    }
 
     public String getPathSignPrivateKey(){
         return properties.getProperty("massa.path-sign-prv-key");
@@ -123,6 +116,11 @@ public class MassaProperties {
         return properties.getProperty("massa.path-enc-pub-key");
     }
 
-
+    public String getUrlDc(){
+        return properties.getProperty("massa.url-dc");
+    }
+    public String getUrlDatabase(){
+        return properties.getProperty("massa.url-database");
+    }
 
 }

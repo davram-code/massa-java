@@ -3,7 +3,6 @@ package ro.massa.rest;
 import org.json.JSONObject;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
-import ro.massa.db.UrlQuerry;
 
 import javax.net.ssl.*;
 import java.io.BufferedReader;
@@ -99,7 +98,7 @@ public abstract class RestClient implements IClient {
                 uri += urlQuerry.toString();
             }
 
-            HttpURLConnection con = buildConnection(requestMethod, endpoint);
+            HttpURLConnection con = buildConnection(requestMethod, uri);
 
             if (payload != null) {
                 log.log(payload.toString());
