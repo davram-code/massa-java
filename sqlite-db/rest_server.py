@@ -40,6 +40,9 @@ def get_rootca_ca():
     id = request.args.get('id')
     return get_row_by_attribute_as_json('ca', 'id', id)
 
+
+###################### ENROLLMENT AUTHORITY ######################
+
 @app.route('/massa/ea/registration', methods = ['GET'])
 def get_ea_registration():
     attribute, value = get_first_attribute_value_pair_in_request(request)
@@ -72,6 +75,32 @@ def update_ea_cert():
     
     return '\nEA cert insertion OK'
         
+
+###################### AUTHORIZATION AUTHORITY ######################
+
+@app.route('/massa/aa/authorization_requests', methods = ['POST', 'PUT'])
+def post_ea_authorization():
+    if request.method == 'POST':
+        return insert_row('authorizations_requests', request.get_json())
+    elif request.method == 'PUT':
+        update_row('authorizations_requests', request.get_json())
+        return '{"success" : "true"}'
+
+
+@app.route('/massa/aa/aa', methods = ['GET'])
+def get_aa_aa():
+    attribute, value = get_first_attribute_value_pair_in_request(request)
+    return get_row_by_attribute_as_json('aa', attribute, value)
+
+@app.route('/massa/update_aa_cert', methods= ['POST'])
+def update_aa_cert():
+    if request.method == 'POST':
+        cert = request.files['file']
+        encoded_cert = base64.b64encode(cert.read())
+        json_dict = {'id' : 5, 'certificate' : encoded_cert.decode("utf-8")}
+        update_row('aa', json_dict)
+    
+    return '\nEA cert insertion OK'
 
 if __name__ == '__main__':
    db_create(db_conn)

@@ -1,20 +1,17 @@
 package ro.massa.its;
 
+import org.bouncycastle.util.encoders.Hex;
+import org.certificateservices.custom.c2x.common.crypto.AlgorithmIndicator;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManager;
 import org.certificateservices.custom.c2x.common.crypto.DefaultCryptoManagerParams;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.ETSITS102941MessagesCaGenerator;
+import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.certificateservices.custom.c2x.ieee1609dot2.crypto.Ieee1609Dot2CryptoManager;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.BasePublicEncryptionKey;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.HashAlgorithm;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.Signature;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.SymmAlgorithm;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.secureddata.Ieee1609Dot2Data;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
-import ro.massa.common.Utils;
 import ro.massa.properties.MassaProperties;
 
-import java.security.Key;
 import java.security.KeyPair;
 
 public class ITSEntity {
@@ -25,18 +22,12 @@ public class ITSEntity {
     protected static BasePublicEncryptionKey.BasePublicEncryptionKeyChoices encryptionScheme;
     protected static SymmAlgorithm symmAlg;
 
-    protected Ieee1609Dot2CryptoManager cryptoManager;
+    static protected Ieee1609Dot2CryptoManager cryptoManager;
     protected ETSITS102941MessagesCaGenerator messagesCaGenerator;
 
-    private String name;
-    private String description;
-
-    public ITSEntity() throws Exception {
+    public ITSEntity() throws Exception
+    {
         log.log("Initializing ITS Entity");
-        name = MassaProperties.getInstance().getCaName();
-        description = MassaProperties.getInstance().getDescription();
-
-
         msgGenVersion = MassaProperties.getInstance().getVersion();
         digestAlgorithm = MassaProperties.getInstance().getHashAlgorithm();
         signatureScheme = MassaProperties.getInstance().getSignatureChoice();
@@ -55,25 +46,30 @@ public class ITSEntity {
                 true); // If EC points should be represented as uncompressed.
     }
 
-    public KeyPair generateSignKeyPair() throws Exception {
+    public KeyPair generateSignKeyPair() throws Exception{
         KeyPair keyPair = cryptoManager.generateKeyPair(signatureScheme);
         return keyPair;
     }
 
-    public KeyPair generateEncKeyPair() throws Exception {
+    public KeyPair generateEncKeyPair() throws Exception{
         KeyPair keyPair = cryptoManager.generateKeyPair(encryptionScheme);
         return keyPair;
     }
 
-    public String getName() {
-        return this.name;
+
+    static public byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception {
+        AlgorithmIndicator alg = certificate.getSignature() != null ? certificate.getSignature().getType() : HashAlgorithm.sha256;
+        byte[] certHash = cryptoManager.digest(certificate.getEncoded(), alg);
+        return certHash;
     }
 
-    public String getDescription() {
-        return this.description;
+    static public HashedId8 computeHashedId8(EtsiTs103097Certificate certificate) throws Exception {
+        byte[] hash = computeHash(certificate);
+        return new HashedId8(hash);
     }
 
-    public Signature.SignatureChoices getSignatureScheme(){
-        return this.signatureScheme;
+    static public String computeHashedId8String(EtsiTs103097Certificate certificate) throws Exception {
+        HashedId8 hashedId8 = computeHashedId8(certificate);
+        return new String(Hex.encode(hashedId8.getData()));
     }
 }

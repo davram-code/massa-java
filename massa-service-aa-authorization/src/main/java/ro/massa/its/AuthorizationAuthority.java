@@ -3,7 +3,9 @@ package ro.massa.its;
 import org.certificateservices.custom.c2x.common.crypto.AlgorithmIndicator;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authorizationvalidation.AuthorizationValidationResponse;
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.VerifyResult;
+import org.certificateservices.custom.c2x.etsits103097.v131.generator.ETSIEnrollmentCredentialGenerator;
 import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.*;
+import org.certificateservices.custom.c2x.ieee1609dot2.generator.SecuredDataGenerator;
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.PreSharedKeyReceiver;
 import ro.massa.common.Utils;
 import org.bouncycastle.util.encoders.Hex;
@@ -21,7 +23,9 @@ import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Certif
 import org.certificateservices.custom.c2x.ieee1609dot2.generator.receiver.Receiver;
 import ro.massa.exception.ATException;
 import ro.massa.exception.DecodeEncodeException;
+import ro.massa.exception.MassaException;
 
+import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
@@ -41,34 +45,35 @@ public class AuthorizationAuthority extends SubCA {
     Map<HashedId8, Receiver> AaRecipients;
 
     EtsiTs103097Certificate EaCert;
-    GeographicRegion region;
 
+    public AuthorizationAuthority(EtsiTs103097Certificate rootCaCert,
+                                         KeyPair signKeyPair,
+                                         KeyPair encKeyPair) throws Exception {
+        super(rootCaCert, signKeyPair, encKeyPair);
+        InitGenerators();
+    }
 
-    public AuthorizationAuthority() throws Exception {
-        log.log("Initializing the Authorization Service");
-        eatg = new ETSIAuthorizationTicketGenerator(cryptoManager);
-
-        EaCert = Utils.readCertFromFile("certificates/services/aa/EAcert.bin");
-        enrollmentCAChain = new EtsiTs103097Certificate[]{EaCert, RootCaCert};
-
+    public AuthorizationAuthority(EtsiTs103097Certificate rootCaCert,
+                                         EtsiTs103097Certificate eaCert,
+                                         KeyPair signKeyPair,
+                                         KeyPair encKeyPair,
+                                         byte[] ctlBytes) throws Exception {
+        super(rootCaCert, eaCert, signKeyPair, encKeyPair, ctlBytes);
+        InitGenerators();
         AaRecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, SelfCert)});
-        region = GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
     }
 
-    private byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception {
-        AlgorithmIndicator alg = certificate.getSignature() != null ? certificate.getSignature().getType() : HashAlgorithm.sha256;
-        byte[] certHash = this.cryptoManager.digest(certificate.getEncoded(), (AlgorithmIndicator) alg);
-        return certHash;
-    }
+    private void InitGenerators() throws MassaException {
+        try {
+            log.log("Initializing the Authorization Service");
+            eatg = new ETSIAuthorizationTicketGenerator(cryptoManager);
 
-    private HashedId8 computeHashedId8(EtsiTs103097Certificate certificate) throws Exception {
-        byte[] hash = computeHash(certificate);
-        return new HashedId8(hash);
-    }
+            EaCert = Utils.readCertFromFile("certificates/services/aa/EAcert.bin");
+            enrollmentCAChain = new EtsiTs103097Certificate[]{EaCert, RootCaCert};
+        } catch (Exception e) {
+            throw new MassaException("EA Initializaiton Exception", e);
+        }
 
-    private String computeHashedId8String(EtsiTs103097Certificate certificate) throws Exception {
-        HashedId8 hashedId8 = computeHashedId8(certificate);
-        return new String(Hex.encode(hashedId8.getData()));
     }
 
 

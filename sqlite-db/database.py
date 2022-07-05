@@ -19,6 +19,7 @@ def db_create(conn):
     OPERATORID              INTEGER
   );''')
 
+###################### ENROLLMENT AUTHORITY ######################
   conn.execute('''
   CREATE TABLE IF NOT EXISTS ea (
       id                      INTEGER PRIMARY KEY,
@@ -125,6 +126,65 @@ def db_create(conn):
     );
   ''')
 
+###################### AUTHORIZATION AUTHORITY ######################
+
+  conn.execute('''
+  CREATE TABLE IF NOT EXISTS authorizations_requests (
+      id                          integer PRIMARY KEY autoincrement,
+      request_date                date,
+      request_status              integer ,
+      ea_id                       CHAR(342) ,
+      key_tag                     CHAR(342) ,
+      certificate_format          CHAR(342) ,
+      requested_subject_attribute CHAR(342) ,
+      eov                         date ,
+      received_date               date,
+      processed_date              date,
+      verification_pubkey         CHAR(342) ,
+      encryption_pubkey           CHAR(342) ,
+      app_permissions             CHAR(342),
+      cert_issue_permissions      CHAR(342) ,
+      cert_request_permissions    CHAR(342) ,
+      certificate                 text ,
+      aa_id                       integer ,
+      add_date                    date
+  );
+  ''')
+
+  conn.execute('''
+  CREATE TABLE IF NOT EXISTS aa (
+      id                      INTEGER PRIMARY KEY,
+      name                    CHAR(1000) ,
+      description             CHAR(1000) ,
+      enc_prv_key                CHAR(1000) ,
+      enc_pub_key                CHAR(1000) ,
+      sgn_prv_key                CHAR(1000) ,
+      sgn_pub_key                CHAR(1000) ,
+      pp                      CHAR(342) ,
+      curve_id                integer ,
+      certificate             CHAR(2731) ,
+      ea_status_id            integer ,
+      engine_id               integer ,
+      register_date           date,
+      end_date                date,
+      operator_id             integer ,
+      add_date                date
+  );
+  ''')
+
+  conn.execute('''
+  INSERT INTO AA (id, name, description, enc_prv_key, enc_pub_key, sgn_prv_key, sgn_pub_key, ea_status_id)
+      VALUES (
+      5,
+      "aa.mta.ro",
+      "This is Dimas AA",
+      "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgeb3aFHB0XLh4LMKSimjW//679qnt3QPSFg7eZxh7wzigCgYIKoZIzj0DAQehRANCAARy2XbirEBdS0DSdpTuMDpbiLorygQvoSFjcQFF9UTystYSWt4VPdj4Mb+qo7KXFIDfkukxAGBByKjG4GHrJc3y",
+      "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEctl24qxAXUtA0naU7jA6W4i6K8oEL6EhY3EBRfVE8rLWElreFT3Y+DG/qqOylxSA35LpMQBgQcioxuBh6yXN8g==",
+      "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgbZhfSiEi+c1p3Nj5bfb1+qK4qD/I4hHJhKlfGoMvn/ygCgYIKoZIzj0DAQehRANCAAQFY/cl4eLnsBVe0ApCmmjcGAvWELAkAd28txWEibUCaeJrSuDWhGfxqC4585s/S++dA25wFEQ1+ktC4u6ldcpt",
+      "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEBWP3JeHi57AVXtAKQppo3BgL1hCwJAHdvLcVhIm1Amnia0rg1oRn8aguOfObP0vvnQNucBRENfpLQuLupXXKbQ==",
+      0
+    );
+  ''')
 
 
   return conn

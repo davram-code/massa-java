@@ -20,23 +20,26 @@ import ro.massa.db.IAuthorizationRequestDao;
 import ro.massa.exception.ATException;
 import ro.massa.exception.DecodeEncodeException;
 import ro.massa.exception.MassaException;
+import ro.massa.its.AuthorityFactory;
 import ro.massa.its.AuthorizationAuthority;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
-import ro.massa.its.InitialCA;
 import ro.massa.service.MassaAuthorizationService;
 import ro.massa.db.types.RequestStatus;
+
+import java.security.KeyPair;
 
 @Component
 public class MassaAuthorizationServiceImpl implements MassaAuthorizationService {
     AuthorizationAuthority aa;
-    InitialCA initialCA;
     MassaLog log = MassaLogFactory.getLog(MassaAuthorizationServiceImpl.class);
 
     public MassaAuthorizationServiceImpl() {
         log.log("Initializing MASSA Authorization Service");
         try {
-            initialCA = new InitialCA();
-            aa = new AuthorizationAuthority();
+            aa = AuthorityFactory.getInstance().createAA();
+            KeyPair enc = aa.generateEncKeyPair();
+            KeyPair sign = aa.generateSignKeyPair();
+
         } catch (Exception e) {
             log.error(e.getMessage());
         }
@@ -45,7 +48,7 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
     @Override
     public byte[] getCertificateRequest() {
         try {
-            EtsiTs103097DataSigned certReq = initialCA.getCertificateRequest();
+            EtsiTs103097DataSigned certReq = aa.getCertificateRequest();
             return certReq.getEncoded();
         } catch (Exception e) {
             log.error("Generating Certificate Request FAILED");
@@ -69,7 +72,7 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
     public void reset() {
         log.log("Reset MASSA Authorization Service");
         try {
-            aa = new AuthorizationAuthority();
+            aa = AuthorityFactory.getInstance().createAA();
         } catch (Exception e) {
             log.error("Reset MASSA Authorization Service Failed:" + e.getMessage());
         }

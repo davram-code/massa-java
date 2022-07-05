@@ -1,26 +1,34 @@
 package ro.massa.its;
 
-import org.certificateservices.custom.c2x.common.crypto.AlgorithmIndicator;
+import org.bouncycastle.util.encoders.Hex;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.CertificateSubjectAttributes;
+import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.PublicKeys;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.camanagement.CaCertificateRequest;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.secureddata.EtsiTs103097DataSigned;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.HashAlgorithm;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.HashedId8;
-import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.Time64;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.basic.*;
+import org.certificateservices.custom.c2x.ieee1609dot2.datastructs.cert.*;
 import ro.massa.common.Utils;
-import ro.massa.exception.DecodeEncodeException;
+import ro.massa.db.types.CaStatusType;
+import ro.massa.exception.MassaException;
 import ro.massa.properties.MassaProperties;
 
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Map;
 
-public class SubCA extends InitialCA {
+import static org.certificateservices.custom.c2x.etsits103097.v131.AvailableITSAID.SecuredCertificateRequestService;
+
+public class SubCA extends ITSEntity {
     protected EtsiTs103097Certificate RootCaCert;
     protected EtsiTs103097Certificate SelfCert;
 
     protected EtsiTs103097Certificate[] selfCaChain;
+    protected Map<HashedId8, Certificate> trustStore;
+    protected Map<HashedId8, Certificate> certStore;
 
     protected PrivateKey signPrivateKey;
     protected PublicKey signPublicKey;
@@ -31,32 +39,124 @@ public class SubCA extends InitialCA {
     private KeyPair selfCaReSignKeys;
     private KeyPair selfCaReEncKeys;
 
-    public SubCA() throws Exception{
-        RootCaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathRootCaCert());
-        SelfCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathSelfCert());
+    protected CaStatusType caStatusType;
+    private static final Integer SWEDEN = 752;
+
+    GeographicRegion region;
+
+    CtlManager ctlManager;
+
+
+    public SubCA(EtsiTs103097Certificate rootCaCert,
+                 EtsiTs103097Certificate subCaCert,
+                 KeyPair signKeyPair,
+                 KeyPair encKeyPair,
+                 byte[] ctlBytes,
+                 CaStatusType status) throws Exception{
+        caStatusType = status;
+        this.RootCaCert = rootCaCert;
+        this.SelfCert = subCaCert;
+        signPrivateKey = signKeyPair.getPrivate();
+        signPublicKey = signKeyPair.getPublic();
+        encPrivateKey = encKeyPair.getPrivate();
+        encPublicKey = encKeyPair.getPublic();
 
         selfCaChain = new EtsiTs103097Certificate[]{SelfCert, RootCaCert};
+        trustStore = messagesCaGenerator.buildCertStore(new EtsiTs103097Certificate[]{selfCaChain[1]});
 
-        signPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathSignPrivateKey());
-        signPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathSignPublicKey());
-        encPrivateKey = Utils.readPrivateKey(MassaProperties.getInstance().getPathEncPrivateKey());
-        encPublicKey = Utils.readPublicKey(MassaProperties.getInstance().getPathEncPublicKey());
+        if (caStatusType == CaStatusType.active) {
+            ctlManager = new CtlManager(ctlBytes, cryptoManager);
+            certStore = messagesCaGenerator.buildCertStore(selfCaChain);
+        }
+
+        region = GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
     }
 
-    private byte[] computeHash(EtsiTs103097Certificate certificate) throws Exception {
-        AlgorithmIndicator alg = certificate.getSignature() != null ? certificate.getSignature().getType() : HashAlgorithm.sha256;
-        byte[] certHash = this.cryptoManager.digest(certificate.getEncoded(), (AlgorithmIndicator) alg);
-        return certHash;
+    public SubCA(EtsiTs103097Certificate rootCaCert,
+                 EtsiTs103097Certificate subCaCert,
+                 KeyPair signKeyPair,
+                 KeyPair encKeyPair,
+                 byte[] ctlBytes) throws Exception{
+        this(rootCaCert, subCaCert, signKeyPair, encKeyPair, ctlBytes,CaStatusType.active);
+        log.log("Initialized active SubCa");
     }
 
-    private HashedId8 computeHashedId8(EtsiTs103097Certificate certificate) throws Exception {
-        byte[] hash = computeHash(certificate);
-        return new HashedId8(hash);
+    public SubCA(EtsiTs103097Certificate rootCaCert,
+                 KeyPair signKeyPair,
+                 KeyPair encKeyPair) throws Exception{
+        this(rootCaCert, null, signKeyPair, encKeyPair, null, CaStatusType.inactive);
+        log.log("Initialized inactive SubCa");
     }
+
+    public SubCA() throws Exception
+    {
+        log.log("Initializing inactive SubCa");
+        caStatusType = CaStatusType.inactive;
+    }
+
+    protected void enforceActiveStatusType() throws MassaException
+    {
+        if(caStatusType != CaStatusType.active)
+        {
+            throw new MassaException("You need an active SubCA in order to perform this operation!");
+        }
+    }
+
+    public EtsiTs103097DataSigned getCertificateRequest() throws Exception
+    {
+        // First generate inner CaCertificatRequest
+        CaCertificateRequest caCertificateRequest = genDummyCaCertificateRequest(signPublicKey, encPublicKey);
+        // The self sign the message to prove possession.
+        EtsiTs103097DataSigned caCertificateRequestMessage = messagesCaGenerator.genCaCertificateRequestMessage(
+                new Time64(new Date()), // signing generation time
+                caCertificateRequest,
+                signPublicKey, // The CAs signing keys
+                signPrivateKey);
+
+        return caCertificateRequestMessage;
+
+    }
+
+    protected CaCertificateRequest genDummyCaCertificateRequest(PublicKey signPublicKey, PublicKey encPublicKey) throws Exception {
+
+        PublicKeys publicKeys = messagesCaGenerator.genPublicKeys(signatureScheme, signPublicKey, symmAlg,  encryptionScheme, encPublicKey);
+        SubjectPermissions sp = new SubjectPermissions(SubjectPermissions.SubjectPermissionsChoices.all, null);
+        PsidGroupPermissions pgp = new PsidGroupPermissions(sp, 1, 0, new EndEntityType(true, false));
+        PsidGroupPermissions[] certIssuePermissions = new PsidGroupPermissions[]{pgp};
+
+        PsidSsp appPermCertMan = new PsidSsp(SecuredCertificateRequestService, new ServiceSpecificPermissions(ServiceSpecificPermissions.ServiceSpecificPermissionsChoices.opaque, Hex.decode("0132")));
+        PsidSsp[] appPermissions = new PsidSsp[]{appPermCertMan};
+
+        ValidityPeriod aaValidityPeriod = new ValidityPeriod(
+                new Date(), Duration.DurationChoices.years,
+                MassaProperties.getInstance().getValidityYears());
+
+        CertificateSubjectAttributes certificateSubjectAttributes =
+                genCertificateSubjectAttributes(
+                        MassaProperties.getInstance().getCaName(),
+                        aaValidityPeriod,
+                        region, new SubjectAssurance(1,3),
+                        appPermissions, certIssuePermissions);
+
+        return new CaCertificateRequest(publicKeys, certificateSubjectAttributes);
+    }
+
+    private CertificateSubjectAttributes genCertificateSubjectAttributes(String hostname, ValidityPeriod validityPeriod, GeographicRegion region,
+                                                                         SubjectAssurance assuranceLevel,
+                                                                         PsidSsp[] appPermissions, PsidGroupPermissions[] certIssuePermissions) throws Exception {
+
+        return new CertificateSubjectAttributes((hostname != null ? new CertificateId(new Hostname(hostname)): new CertificateId()),
+                validityPeriod, region, assuranceLevel,
+                new SequenceOfPsidSsp(appPermissions), (certIssuePermissions != null ?
+                new SequenceOfPsidGroupPermissions(certIssuePermissions) : null));
+    }
+
 
     public EtsiTs103097DataSigned getRekeyRequest() throws Exception
     {
         log.log("Generating Rekey Request");
+        enforceActiveStatusType();
+
         selfCaReSignKeys = generateSignKeyPair();
         selfCaReEncKeys = generateEncKeyPair();
 
@@ -91,19 +191,5 @@ public class SubCA extends InitialCA {
     }
 
 
-    public byte[] getPP()
-    {
-        return signPublicKey.getEncoded(); //TODO: nu stiu daca asta e, dar sssper :))
-    }
 
-    public byte[] getSelfCertificate() throws DecodeEncodeException
-    {
-        try{
-            return SelfCert.getEncoded();
-        }
-        catch(Exception e)
-        {
-            throw new DecodeEncodeException("Error encoding SubCA Self Certificate", e);
-        }
-    }
 }
