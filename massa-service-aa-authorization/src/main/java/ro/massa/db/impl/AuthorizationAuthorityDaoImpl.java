@@ -1,7 +1,6 @@
 package ro.massa.db.impl;
 
 import org.json.JSONObject;
-import ro.massa.db.DatabaseClient;
 import ro.massa.db.IAuthorizationAuthorityDao;
 import ro.massa.db.types.ServiceStatus;
 import ro.massa.db.types.CurveType;
@@ -11,8 +10,6 @@ import ro.massa.its.AuthorizationAuthority;
 
 
 public class AuthorizationAuthorityDaoImpl extends MassaDaoImpl implements IAuthorizationAuthorityDao {
-
-
 
     @Override
     public String insert(AuthorizationAuthority ar) throws DbException {
@@ -44,7 +41,7 @@ public class AuthorizationAuthorityDaoImpl extends MassaDaoImpl implements IAuth
                 .put("id", id)
                 .put("aa_status_id", status);
 
-        DatabaseClient.sendDatabaseMessage("PUT", "/aa/aa", jsonPayload);
+        databaseClient.sendDatabaseMessage("PUT", "/aa/aa", jsonPayload);
     }
 
     @Override

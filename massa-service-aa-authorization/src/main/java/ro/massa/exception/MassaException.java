@@ -10,6 +10,12 @@ public class MassaException extends Exception{
         this.ex = originalException;
     }
 
+    public MassaException(String msg)
+    {
+        this.msg = msg;
+        this.ex = null;
+    }
+
     @Override
     public String getMessage() {
         if(ex != null)

@@ -142,4 +142,12 @@ public class MassaProperties {
     public String getLogPrefix() {
         return  properties.getProperty("massa.log-prefix");
     }
+
+    public String getUrlDc(){
+        return properties.getProperty("massa.url-dc");
+    }
+    public String getUrlDatabase(){
+        return properties.getProperty("massa.url-database");
+    }
+
 }

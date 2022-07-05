@@ -19,6 +19,7 @@ import ro.massa.db.impl.AuthorizationRequestDaoImpl;
 import ro.massa.db.IAuthorizationRequestDao;
 import ro.massa.exception.ATException;
 import ro.massa.exception.DecodeEncodeException;
+import ro.massa.exception.MassaException;
 import ro.massa.its.AuthorizationAuthority;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
 import ro.massa.its.InitialCA;
@@ -82,45 +83,50 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
         IAuthorizationRequestDao authorizationRequestDao = new AuthorizationRequestDaoImpl();
 
         try {
-            RequestVerifyResult<InnerAtRequest> authorizationRequest = aa.decodeRequestMessage(authorizationRequestMsg);
-            String id = authorizationRequestDao.insert(authorizationRequest);
-
             try {
-                EncryptResult authorizationValidationRequest = aa.generateAuthorizationValidationRequest(authorizationRequest);
+                RequestVerifyResult<InnerAtRequest> authorizationRequest = aa.decodeRequestMessage(authorizationRequestMsg);
+                int id = authorizationRequestDao.insert(authorizationRequest);
 
-                VerifyResult<AuthorizationValidationResponse> validationResponse = aa.getValidationResponse(authorizationValidationRequest);
+                try {
+                    EncryptResult authorizationValidationRequest = aa.generateAuthorizationValidationRequest(authorizationRequest);
 
-                if (validationResponse.getValue().getResponseCode() == AuthorizationValidationResponseCode.ok) {
-                    EtsiTs103097Certificate authorizationTicket = aa.generateAuthorizationTicket(authorizationRequest);
-                    authorizationRequestDao.updateCert(id, authorizationTicket);
+                    VerifyResult<AuthorizationValidationResponse> validationResponse = aa.getValidationResponse(authorizationValidationRequest);
 
-                    EtsiTs103097DataEncryptedUnicast authResponse = aa.generateAuthorizationResponse(authorizationTicket, authorizationRequest);
-                    return new MassaResponse(authResponse.getEncoded());
-                } else {
-                    /* EA nu a validat request-ul ITSului*/
-                    log.log("Enrollment Validation Failed with code " + validationResponse.getValue().getResponseCode().toString());
+                    if (validationResponse.getValue().getResponseCode() == AuthorizationValidationResponseCode.ok) {
+                        EtsiTs103097Certificate authorizationTicket = aa.generateAuthorizationTicket(authorizationRequest);
+                        authorizationRequestDao.updateCert(id, authorizationTicket);
 
-                    EtsiTs103097DataEncryptedUnicast authResponse = aa.generateFailedAuthorizationResponse(authorizationRequest, AuthorizationResponseCode.unknownits); //TODO: exista mai multe situatii posibile pt care EA nu a validat. Vezi ARCodes
-                    return new MassaResponse(authResponse.getEncoded());
+                        EtsiTs103097DataEncryptedUnicast authResponse = aa.generateAuthorizationResponse(authorizationTicket, authorizationRequest);
+                        return new MassaResponse(authResponse.getEncoded());
+                    } else {
+                        /* EA nu a validat request-ul ITSului*/
+                        log.log("Enrollment Validation Failed with code " + validationResponse.getValue().getResponseCode().toString());
+
+                        EtsiTs103097DataEncryptedUnicast authResponse = aa.generateFailedAuthorizationResponse(authorizationRequest, AuthorizationResponseCode.unknownits); //TODO: exista mai multe situatii posibile pt care EA nu a validat. Vezi ARCodes
+                        return new MassaResponse(authResponse.getEncoded());
+                    }
+
+                } catch (ATException e) {
+                    /* Erorare la generarea AT */
+                    log.error(e.toString());
+                    authorizationRequestDao.updateStatus(id, RequestStatus.internal_error);
+                    return new MassaResponse(null, HttpStatus.INTERNAL_SERVER_ERROR);
+                } catch (Exception e) {
+                    /* Eroare necunoscuta */
+                    log.error(e.toString());
+                    authorizationRequestDao.updateStatus(id, RequestStatus.internal_error);
+                    return new MassaResponse(null, HttpStatus.INTERNAL_SERVER_ERROR);
                 }
 
-            } catch (ATException e) {
-                /* Erorare la generarea AT */
-                log.error(e.toString());
-                authorizationRequestDao.updateStatus(id, RequestStatus.internal_error);
-                return new MassaResponse(null, HttpStatus.INTERNAL_SERVER_ERROR);
-            } catch (Exception e) {
-                /* Eroare necunoscuta */
-                log.error(e.toString());
-                authorizationRequestDao.updateStatus(id, RequestStatus.internal_error);
-                return new MassaResponse(null, HttpStatus.INTERNAL_SERVER_ERROR);
+
+            } catch (DecodeEncodeException e) {
+                /* Eroare la parsare */
+                authorizationRequestDao.insertMalformed(authorizationRequestMsg);
+                return new MassaResponse(null, HttpStatus.BAD_REQUEST);
             }
-
-
-        } catch (DecodeEncodeException e) {
-            /* Eroare la parsare */
-            authorizationRequestDao.insertMalformed(authorizationRequestMsg);
-            return new MassaResponse(null, HttpStatus.BAD_REQUEST);
+        } catch (MassaException e) {
+            log.error(e.toString());
+            return new MassaResponse(null, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

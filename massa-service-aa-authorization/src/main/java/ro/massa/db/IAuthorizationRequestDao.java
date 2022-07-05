@@ -5,16 +5,17 @@ import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.authoriz
 import org.certificateservices.custom.c2x.etsits102941.v131.generator.RequestVerifyResult;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import ro.massa.db.types.RequestStatus;
+import ro.massa.exception.MassaException;
 
 public interface IAuthorizationRequestDao {
 
     //INSERT
-    String insert(RequestVerifyResult<InnerAtRequest> ar);
-    String insertMalformed(byte [] ar);
+    int insert(RequestVerifyResult<InnerAtRequest> ar) throws MassaException;
+    int insertMalformed(byte [] ar) throws MassaException;
 
     // UPDATE
-    void updateCert(String id, EtsiTs103097Certificate at);
-    void updateStatus(String id, RequestStatus status);
+    void updateCert(int id, EtsiTs103097Certificate at);
+    void updateStatus(int id, RequestStatus status);
 
     //SELECT
     //    RequestVerifyResult<InnerAtRequest> select(int id);
