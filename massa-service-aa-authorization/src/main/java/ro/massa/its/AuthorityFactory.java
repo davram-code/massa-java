@@ -19,7 +19,7 @@ public class AuthorityFactory {
     static MassaLog log = MassaLogFactory.getLog(AuthorityFactory.class);
     private static AuthorityFactory single_instance = null;
     ICaDao caDao = new CaDaoImpl();
-    IBinaryClient ctlClient;
+    CtlClient ctlClient;
 
     private AuthorityFactory() {
         Security.addProvider(new BouncyCastleProvider());
@@ -78,12 +78,7 @@ public class AuthorityFactory {
 
     public AuthorizationAuthority createAA() throws MassaException{
         try {
-            byte[] ctlBytes = ctlClient.sendMessage(
-                    "GET",
-                    "/getctl",
-                    null,
-                    null
-            );
+            byte[] ctlBytes = ctlClient.getCtlFromDc();
 
             //CtlManager ctlManager = new CtlManager(ctlBytes);
 

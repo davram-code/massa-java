@@ -1,8 +1,12 @@
 package ro.massa.its;
 
+import org.json.JSONObject;
 import ro.massa.common.MassaLog;
 import ro.massa.common.MassaLogFactory;
 import ro.massa.properties.MassaProperties;
+import ro.massa.rest.IBinaryClient;
+import ro.massa.rest.RestClient;
+import ro.massa.rest.UrlQuerry;
 import ro.massa.service.impl.MassaAuthorizationServiceImpl;
 
 import java.io.InputStream;
@@ -10,34 +14,27 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-public class ValidationClient {
+public class ValidationClient extends RestClient implements IBinaryClient {
     static MassaLog log = MassaLogFactory.getLog(MassaAuthorizationServiceImpl.class);
 
-    static private String getEaURL() throws Exception
-    {
-        String ip = MassaProperties.getInstance().getEaIP();
-        String port = MassaProperties.getInstance().getEaPort();
-        return "http://" + ip + ":" + port + "/massa/validation";
-    }
-
-    static public byte[] postBinaryMessageToEA(byte [] payload) throws Exception {
-        log.log("Posting Validation Request");
-
-        URL url = new URL(getEaURL());
+    @Override
+    public HttpURLConnection buildConnection(String requestMethod, String uri) throws Exception {
+        URL url = new URL("http://localhost:8080" + uri);
         HttpURLConnection con = (HttpURLConnection) url.openConnection();
-        con.setRequestMethod("POST");
+        con.setRequestMethod(requestMethod);
         con.setRequestProperty("Content-Type", "application/x-its-request");
         con.setDoOutput(true);
 
-        try (OutputStream os = con.getOutputStream()) {
-            byte[] input = payload;
-            os.write(input, 0, input.length);
-        }
+        return con;
+    }
 
-        try (InputStream is = con.getInputStream()) {
-            byte[] data = new byte[is.available()];
-            is.read(data);
-            return data;
-        }
+    @Override
+    public byte [] sendMessage(String requestMethod, String endpoint, byte[] payload, UrlQuerry urlQuerry) {
+        return getByteArray(getHttpConnection(requestMethod,endpoint, payload, urlQuerry));
+    }
+
+
+    public byte[] postBinaryMessageToEA(byte [] payload) throws Exception {
+        return sendMessage("POST", "/massa/validation", payload, null);
     }
 }

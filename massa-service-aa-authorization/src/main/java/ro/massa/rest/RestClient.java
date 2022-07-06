@@ -89,6 +89,16 @@ public abstract class RestClient implements IClient {
     }
 
     protected HttpURLConnection getHttpConnection(String requestMethod, String endpoint, JSONObject payload, UrlQuerry urlQuerry) {
+        byte[] payload_bytes = null;
+        if(payload != null)
+        {
+            log.log(payload.toString());
+            payload_bytes = payload.toString().getBytes(StandardCharsets.UTF_8);
+        }
+        return getHttpConnection(requestMethod, endpoint, payload_bytes, urlQuerry);
+    }
+
+    protected HttpURLConnection getHttpConnection(String requestMethod, String endpoint, byte[] payload, UrlQuerry urlQuerry) {
         log.log(requestMethod + " " + endpoint);
 
         String output = null;
@@ -101,10 +111,8 @@ public abstract class RestClient implements IClient {
             HttpURLConnection con = buildConnection(requestMethod, uri);
 
             if (payload != null) {
-                log.log(payload.toString());
-                byte[] input = payload.toString().getBytes(StandardCharsets.UTF_8);
                 OutputStream os = con.getOutputStream();
-                os.write(input, 0, input.length);
+                os.write(payload, 0, payload.length);
             }
 
             int status = con.getResponseCode();

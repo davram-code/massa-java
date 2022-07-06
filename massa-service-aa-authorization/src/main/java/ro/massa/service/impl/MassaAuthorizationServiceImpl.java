@@ -33,7 +33,7 @@ import java.security.KeyPair;
 public class MassaAuthorizationServiceImpl implements MassaAuthorizationService {
     AuthorizationAuthority aa;
     MassaLog log = MassaLogFactory.getLog(MassaAuthorizationServiceImpl.class);
-
+    ValidationClient validationClient = new ValidationClient();
     public MassaAuthorizationServiceImpl() {
         log.log("Initializing MASSA Authorization Service");
         try {
@@ -94,7 +94,7 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
                 try {
                     EtsiTs103097Certificate EaCert = aa.getEnrollmentAuthorityCert(authorizationRequest);
                     EncryptResult authorizationValidationRequest = aa.generateAuthorizationValidationRequest(authorizationRequest, EaCert);
-                    byte[] validationResponseMessage = ValidationClient.postBinaryMessageToEA(authorizationValidationRequest.getEncryptedData().getEncoded());
+                    byte[] validationResponseMessage = validationClient.postBinaryMessageToEA(authorizationValidationRequest.getEncryptedData().getEncoded());
                     VerifyResult<AuthorizationValidationResponse> validationResponse = aa.decodeValidationResponse(validationResponseMessage, authorizationValidationRequest, EaCert);
 
                     if (validationResponse.getValue().getResponseCode() == AuthorizationValidationResponseCode.ok) {

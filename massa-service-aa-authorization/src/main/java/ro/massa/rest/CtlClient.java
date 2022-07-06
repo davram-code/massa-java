@@ -8,7 +8,7 @@ import java.net.URL;
 
 public class CtlClient extends RestClient implements IBinaryClient{
     @Override
-    public byte[] sendMessage(String requestMethod, String endpoint, JSONObject payload, UrlQuerry urlQuerry) {
+    public byte[] sendMessage(String requestMethod, String endpoint, byte[] payload, UrlQuerry urlQuerry) {
         return getByteArray(getHttpConnection(requestMethod,endpoint, payload, urlQuerry));
     }
 
@@ -21,5 +21,9 @@ public class CtlClient extends RestClient implements IBinaryClient{
         con.setRequestMethod(requestMethod);
         con.setDoOutput(true);
         return con;
+    }
+
+    public byte[] getCtlFromDc(){
+        return sendMessage("GET","/getctl",null,null);
     }
 }
