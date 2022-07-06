@@ -87,6 +87,7 @@ public class AuthorityFactory {
             EtsiTs103097Certificate EaCert = caDao.getCertificate();
             KeyPair signKeyPair = caDao.getSignKeyPair();
             KeyPair encKeyPair = caDao.getEncKeyPair();
+            SubCaData subCaData = caDao.getSubCaData();
             EtsiTs103097Certificate RootCaCert = Utils.readCertFromFile(MassaProperties.getInstance().getPathRootCaCert());
 
             if (RootCaCert != null && signKeyPair != null && encKeyPair != null) {
@@ -97,14 +98,16 @@ public class AuthorityFactory {
                             EaCert,
                             signKeyPair,
                             encKeyPair,
-                            ctlBytes
+                            ctlBytes,
+                            subCaData
                     );
                 } else //CA doesn't have an active certificate
                 {
                     return new AuthorizationAuthority(
                             RootCaCert,
                             signKeyPair,
-                            encKeyPair
+                            encKeyPair,
+                            subCaData
                     );
                 }
             }

@@ -82,62 +82,18 @@ public class MassaProperties {
         }
     }
 
-    public int getVersion()
-    {
+    public int getVersion() {
         return Ieee1609Dot2Data.DEFAULT_VERSION;
-    }
-
-    public String getPathEaCert() {
-        return properties.getProperty("massa.path-ea-cert");
     }
 
     public String getPathRootCaCert(){
         return properties.getProperty("massa.path-root-ca-cert");
     }
 
-    public String getPathAaCert(){
-        return properties.getProperty("massa.path-aa-cert");
-    }
-
-    public String getPathSelfCert(){
-        return properties.getProperty("massa.path-self-cert");
-    }
-
-    public String getPathSignPrivateKey(){
-        return properties.getProperty("massa.path-sign-prv-key");
-    }
-
-    public String getPathSignPublicKey(){
-        return properties.getProperty("massa.path-sign-pub-key");
-    }
-
-    public String getPathEncPrivateKey(){
-        return properties.getProperty("massa.path-enc-prv-key");
-    }
-
-    public String getPathEncPublicKey(){
-        return properties.getProperty("massa.path-enc-pub-key");
-    }
-
-    public String getCaName(){
-        return properties.getProperty("massa.ca-name");
-    }
-
-    public String getDescription(){
-        return properties.getProperty("massa.ca-description");
-    }
-
     public int getValidityYears(){
         return Integer.parseInt(properties.getProperty("massa.validity-years"));
     }
 
-    public String getEaIP(){
-        return properties.getProperty("massa.ea.ip");
-    }
-
-    public String getEaPort(){
-        return properties.getProperty("massa.ea.port");
-    }
 
     public String getLogPrefix() {
         return  properties.getProperty("massa.log-prefix");

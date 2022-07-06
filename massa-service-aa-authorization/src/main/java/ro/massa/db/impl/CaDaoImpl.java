@@ -3,6 +3,7 @@ package ro.massa.db.impl;
 import org.certificateservices.custom.c2x.etsits103097.v131.datastructs.cert.EtsiTs103097Certificate;
 import org.json.JSONObject;
 import ro.massa.common.Utils;
+import ro.massa.its.SubCaData;
 import ro.massa.rest.DatabaseClient;
 import ro.massa.db.ICaDao;
 import ro.massa.rest.UrlQuerry;
@@ -40,6 +41,8 @@ public class CaDaoImpl extends MassaDaoImpl implements ICaDao {
     public KeyPair getSignKeyPair() {
         return signKeyPair;
     }
+
+    public SubCaData getSubCaData() {return new SubCaData(name, 10);}
 
 
     @Override

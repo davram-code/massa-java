@@ -45,8 +45,9 @@ public class AuthorizationAuthority extends SubCA {
 
     public AuthorizationAuthority(EtsiTs103097Certificate rootCaCert,
                                   KeyPair signKeyPair,
-                                  KeyPair encKeyPair) throws Exception {
-        super(rootCaCert, signKeyPair, encKeyPair);
+                                  KeyPair encKeyPair,
+                                  SubCaData subCaData) throws Exception {
+        super(rootCaCert, signKeyPair, encKeyPair, subCaData);
         InitGenerators();
     }
 
@@ -54,8 +55,9 @@ public class AuthorizationAuthority extends SubCA {
                                   EtsiTs103097Certificate selfCert,
                                   KeyPair signKeyPair,
                                   KeyPair encKeyPair,
-                                  byte[] ctlBytes) throws Exception {
-        super(rootCaCert, selfCert, signKeyPair, encKeyPair, ctlBytes);
+                                  byte[] ctlBytes,
+                                  SubCaData subCaData) throws Exception {
+        super(rootCaCert, selfCert, signKeyPair, encKeyPair, ctlBytes, subCaData);
         InitGenerators();
         AaRecipients = messagesCaGenerator.buildRecieverStore(new Receiver[]{new CertificateReciever(encPrivateKey, SelfCert)});
     }
@@ -188,7 +190,7 @@ public class AuthorizationAuthority extends SubCA {
                 selfCaChain,// The AA certificate chain to generate the signature.
                 signPrivateKey, // The AA signing keys
                 EaCert); // The EA certificate to encrypt data to.
-        
+
         return authorizationValidationRequestMessageResult;
     }
 

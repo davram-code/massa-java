@@ -39,6 +39,8 @@ public class SubCA extends ITSEntity {
     private KeyPair selfCaReSignKeys;
     private KeyPair selfCaReEncKeys;
 
+    private SubCaData subCaData;
+
     protected CaStatusType caStatusType;
     private static final Integer SWEDEN = 752;
 
@@ -52,7 +54,8 @@ public class SubCA extends ITSEntity {
                  KeyPair signKeyPair,
                  KeyPair encKeyPair,
                  byte[] ctlBytes,
-                 CaStatusType status) throws Exception{
+                 CaStatusType status,
+                 SubCaData caData) throws Exception{
         caStatusType = status;
         this.RootCaCert = rootCaCert;
         this.SelfCert = subCaCert;
@@ -70,21 +73,24 @@ public class SubCA extends ITSEntity {
         }
 
         region = GeographicRegion.generateRegionForCountrys(Arrays.asList(SWEDEN));
+        subCaData = caData;
     }
 
     public SubCA(EtsiTs103097Certificate rootCaCert,
                  EtsiTs103097Certificate subCaCert,
                  KeyPair signKeyPair,
                  KeyPair encKeyPair,
-                 byte[] ctlBytes) throws Exception{
-        this(rootCaCert, subCaCert, signKeyPair, encKeyPair, ctlBytes,CaStatusType.active);
+                 byte[] ctlBytes,
+                 SubCaData subCaData) throws Exception{
+        this(rootCaCert, subCaCert, signKeyPair, encKeyPair, ctlBytes,CaStatusType.active, subCaData);
         log.log("Initialized active SubCa");
     }
 
     public SubCA(EtsiTs103097Certificate rootCaCert,
                  KeyPair signKeyPair,
-                 KeyPair encKeyPair) throws Exception{
-        this(rootCaCert, null, signKeyPair, encKeyPair, null, CaStatusType.inactive);
+                 KeyPair encKeyPair,
+                 SubCaData subCaData) throws Exception{
+        this(rootCaCert, null, signKeyPair, encKeyPair, null, CaStatusType.inactive, subCaData);
         log.log("Initialized inactive SubCa");
     }
 
@@ -129,11 +135,11 @@ public class SubCA extends ITSEntity {
 
         ValidityPeriod aaValidityPeriod = new ValidityPeriod(
                 new Date(), Duration.DurationChoices.years,
-                MassaProperties.getInstance().getValidityYears());
+                subCaData.getValidityYears());
 
         CertificateSubjectAttributes certificateSubjectAttributes =
                 genCertificateSubjectAttributes(
-                        MassaProperties.getInstance().getCaName(),
+                        subCaData.getName(),
                         aaValidityPeriod,
                         region, new SubjectAssurance(1,3),
                         appPermissions, certIssuePermissions);
@@ -182,12 +188,7 @@ public class SubCA extends ITSEntity {
 
     private void saveReKeys() throws Exception
     {
-        log.log("Saving ReKeys");
-        Utils.dump(MassaProperties.getInstance().getPathSignPrivateKey(), selfCaReSignKeys.getPrivate());
-        Utils.dump(MassaProperties.getInstance().getPathSignPublicKey(), selfCaReSignKeys.getPublic());
-
-        Utils.dump(MassaProperties.getInstance().getPathEncPrivateKey(), selfCaReEncKeys.getPrivate());
-        Utils.dump(MassaProperties.getInstance().getPathEncPublicKey(), selfCaReEncKeys.getPublic());
+        throw new MassaException("Not implemented");
     }
 
 
