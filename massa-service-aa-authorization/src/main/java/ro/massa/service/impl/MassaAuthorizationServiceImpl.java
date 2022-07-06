@@ -23,6 +23,7 @@ import ro.massa.exception.MassaException;
 import ro.massa.its.AuthorityFactory;
 import ro.massa.its.AuthorizationAuthority;
 import org.certificateservices.custom.c2x.etsits102941.v131.datastructs.basetypes.EtsiTs103097DataEncryptedUnicast;
+import ro.massa.its.ValidationClient;
 import ro.massa.service.MassaAuthorizationService;
 import ro.massa.db.types.RequestStatus;
 
@@ -91,9 +92,10 @@ public class MassaAuthorizationServiceImpl implements MassaAuthorizationService 
                 int id = authorizationRequestDao.insert(authorizationRequest);
 
                 try {
-                    EncryptResult authorizationValidationRequest = aa.generateAuthorizationValidationRequest(authorizationRequest);
-
-                    VerifyResult<AuthorizationValidationResponse> validationResponse = aa.getValidationResponse(authorizationValidationRequest);
+                    EtsiTs103097Certificate EaCert = aa.getEnrollmentAuthorityCert(authorizationRequest);
+                    EncryptResult authorizationValidationRequest = aa.generateAuthorizationValidationRequest(authorizationRequest, EaCert);
+                    byte[] validationResponseMessage = ValidationClient.postBinaryMessageToEA(authorizationValidationRequest.getEncryptedData().getEncoded());
+                    VerifyResult<AuthorizationValidationResponse> validationResponse = aa.decodeValidationResponse(validationResponseMessage, authorizationValidationRequest, EaCert);
 
                     if (validationResponse.getValue().getResponseCode() == AuthorizationValidationResponseCode.ok) {
                         EtsiTs103097Certificate authorizationTicket = aa.generateAuthorizationTicket(authorizationRequest);

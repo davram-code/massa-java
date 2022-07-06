@@ -84,12 +84,8 @@ public class CtlManager {
         //return rootCaCert;
     }
 
-
-
-    public EtsiTs103097Certificate getSignerCertFromCTL(EtsiTs103097DataSigned dataSigned, EntityType entityType) throws Exception
+    public EtsiTs103097Certificate getCertFromCTLbyHashId8(HashedId8 h8, EntityType entityType) throws Exception
     {
-        SignedData signedData = (SignedData) dataSigned.getContent().getValue();
-        HashedId8 h8 = (HashedId8) signedData.getSigner().getValue();
         CtlEntry.CtlEntryChoices caType;
         if (entityType == EntityType.aa) {
             caType = CtlEntry.CtlEntryChoices.aa;
@@ -97,6 +93,13 @@ public class CtlManager {
             caType = CtlEntry.CtlEntryChoices.ea;
         }
         return getCertFromCTL(h8, caType);
+    }
+
+    public EtsiTs103097Certificate getSignerCertFromCTL(EtsiTs103097DataSigned dataSigned, EntityType entityType) throws Exception
+    {
+        SignedData signedData = (SignedData) dataSigned.getContent().getValue();
+        HashedId8 h8 = (HashedId8) signedData.getSigner().getValue();
+        return getCertFromCTLbyHashId8(h8, entityType);
     }
 
     private EtsiTs103097Certificate getCertFromCTL(HashedId8 h8, CtlEntry.CtlEntryChoices caType) throws Exception {
