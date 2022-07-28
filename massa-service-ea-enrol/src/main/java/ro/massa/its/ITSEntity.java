@@ -27,7 +27,7 @@ public class ITSEntity {
 
     public ITSEntity() throws Exception
     {
-        log.log("Initializing ITS Entity");
+        log.log("Initializing ITS Entity - Dima");
         msgGenVersion = MassaProperties.getInstance().getVersion();
         digestAlgorithm = MassaProperties.getInstance().getHashAlgorithm();
         signatureScheme = MassaProperties.getInstance().getSignatureChoice();
